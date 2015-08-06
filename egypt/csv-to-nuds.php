@@ -1,10 +1,11 @@
 <?php 
 
 $data = generate_json('collection-final.csv');
+$files = scandir('/e/egypt-images/reference');
 $nomismaUris = array();
 
 foreach ($data as $row){
-	generate_nuds($row);
+	generate_nuds($row, $files);
 	
 	//format XML output
 	
@@ -17,24 +18,44 @@ foreach ($data as $row){
 
 
 //functions
-function generate_nuds($row){
+function generate_nuds($row, $files){
 	$recordId = $row['recordId'];
+	$orgs = array();
+	
+	//parse references
+	if (strlen($row['reference']) > 0){
+		//strip obverse and reverse descriptions out if possible
+		preg_match('/(Obverse:?.*)Reverse/', $row['reference'], $obverse);
+		preg_match('/(Reverse:?.*)$/', $row['reference'], $reverse);
+		if (isset($obverse[1]) || isset($reverse[1])){
+			$refText = trim(str_replace($reverse[1], '', str_replace($obverse[1], '', $row['reference'])));
+		} else {
+			$refText = trim($row['reference']);
+		}
+		
+	}
 	
 	$doc = new XMLWriter();
-	$doc->openUri('php://output');
+	
+	//$doc->openUri('php://output');
+	$doc->openUri('nuds/' . $recordId . '.xml');
 	$doc->setIndent(true);
+	//now we need to define our Indent string,which is basically how many blank spaces we want to have for the indent
+	$doc->setIndentString("    ");
 	
 	$doc->startDocument('1.0','UTF-8');
 	
 	$doc->startElement('nuds');
 		$doc->writeAttribute('xmlns', 'http://nomisma.org/nuds');
-		$doc->writeAttribute('xs', 'http://www.w3.org/2001/XMLSchema');
-		$doc->writeAttribute('xlink', 'http://www.w3.org/1999/xlink');
+		$doc->writeAttribute('xmlns:xs', 'http://www.w3.org/2001/XMLSchema');
+		$doc->writeAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink');
+		$doc->writeAttribute('xmlns:mets', 'http://www.loc.gov/METS/');
 		$doc->writeAttribute('recordType', 'physical');
 		
 		//control
 		$doc->startElement('control');
 			$doc->writeElement('recordId', $recordId);
+			$doc->writeElement('publicationStatus', 'approved');
 			$doc->startElement('maintenanceAgency');
 				$doc->writeElement('agencyName', 'American Numismatic Society');
 			$doc->endElement();
@@ -66,6 +87,85 @@ function generate_nuds($row){
 	
 		//descMeta
 		$doc->startElement('descMeta');
+		
+		//generate title
+		$objectType =  processUri($row['objectType']);
+		$auth = array();
+		if (strlen($row['authorityPerson']) > 0){
+			$auth[] = processUri($row['authorityPerson']);
+			$auth[0]['certain'] = true;
+		} else if (strlen($row['org']) > 0){
+			$vals = explode('|', $row['org']);
+			$i = 0;
+			foreach ($vals as $val){
+				if (substr($val, -1) == '?'){
+					$uri = substr($val, 0, -1);
+					$auth[] = processUri($uri);
+					$auth[$i]['certain'] = false;
+				} else {
+					$uri = $val;
+					$auth[] = processUri($uri);
+					$auth[$i]['certain'] = true;
+				}
+				$i++;
+			}
+		}
+		//english
+		$title = $objectType['label'] . ' - ';
+		$authFragment = array();
+		foreach ($auth as $v){
+			$authFragment[] = $v['label'] . ($v['certain'] == false ? '?' : '');
+		}
+		$title .= implode('/', $authFragment) . ', ';
+		if (strlen($row['dob_ah']) > 0){
+			$title .= 'AH ' . $row['dob_ah'] . ' / ';
+		}
+		if (strlen($row['fromDate']) > 0 && strlen($row['toDate']) > 0){
+			$title .= 'CE ';
+			if ($row['fromDate'] == $row['toDate']){
+				$title .= $row['fromDate'];
+			} else {
+				$title .=  $row['fromDate'] . '-' . $row['toDate'];
+			}
+		}
+		if (strlen($row['dob_ah']) > 0 || (strlen($row['fromDate']) > 0 && strlen($row['toDate']) > 0)){
+			$title .= '. ';
+		}
+		
+		$title .= $recordId;
+		$doc->startElement('title');
+			$doc->writeAttribute('xml:lang', 'en');
+			$doc->text($title);	
+		$doc->endElement();
+		
+		//arabic		
+		$title = $recordId;
+		if (strlen($row['dob_ah']) > 0 || (strlen($row['fromDate']) > 0 && strlen($row['toDate']) > 0)){
+			$title .= ' .';
+		}
+		if (strlen($row['fromDate']) > 0 && strlen($row['toDate']) > 0){			
+			if ($row['fromDate'] == $row['toDate']){
+				$title .= $row['fromDate'];
+			} else {
+				$title .=  $row['toDate'] . '-' . $row['fromDate'];
+			}
+			$title .= ' CE';
+		}
+		if (strlen($row['dob_ah']) > 0){
+			$title .= ' \ ' . $row['dob_ah'];
+		}
+		$authFragment = array();
+		foreach ($auth as $v){
+			$authFragment[] = ($v['certain'] == false ? '؟' : '') . $v['ar'];
+		}
+		$title .= ' ،' . implode('/', $authFragment);
+		$title .= ' - ' . $objectType['ar'];
+		
+		
+		$doc->startElement('title');
+			$doc->writeAttribute('xml:lang', 'ar');
+			$doc->text($title);
+		$doc->endElement();
 		
 		/***** TYPEDESC *****/
 			$doc->startElement('typeDesc');
@@ -111,7 +211,7 @@ function generate_nuds($row){
 					$doc->startElement($content['element']);
 					$doc->writeAttribute('xlink:type', 'simple');
 					$doc->writeAttribute('xlink:href', $uri);
-					if($uncertainty == true){
+					if($uncertainty == true || $row['materialUncertainty'] == 'true'){
 						$doc->writeAttribute('certainty', 'uncertain');
 					}
 					$doc->text($content['label']);
@@ -188,14 +288,16 @@ function generate_nuds($row){
 							$uncertainty = false;
 							$content = processUri($uri);
 						}
-							
+						$role = ($content['element'] == 'famname' ? 'dynasty' : 'authority');
+						
 						$doc->startElement($content['element']);
-						$doc->writeAttribute('xlink:type', 'simple');
-						$doc->writeAttribute('xlink:href', $uri);
-						if($uncertainty == true){
-							$doc->writeAttribute('certainty', 'uncertain');
-						}
-						$doc->text($content['label']);
+							$doc->writeAttribute('xlink:type', 'simple');							
+							$doc->writeAttribute('xlink:role', $role);
+							$doc->writeAttribute('xlink:href', $uri);
+							if($uncertainty == true){
+								$doc->writeAttribute('certainty', 'uncertain');
+							}
+							$doc->text($content['label']);
 						$doc->endElement();
 					}
 				}
@@ -213,13 +315,65 @@ function generate_nuds($row){
 						}
 							
 						$doc->startElement($content['element']);
+							$doc->writeAttribute('xlink:type', 'simple');							
+							$doc->writeAttribute('xlink:role', 'authority');
+							$doc->writeAttribute('xlink:href', $uri);
+							if($uncertainty == true){
+								$doc->writeAttribute('certainty', 'uncertain');
+							}
+							$doc->text($content['label']);
+						$doc->endElement();
+						
+						//if there is a dynasty or org
+						if (isset($content['parent'])){
+							$orgs[] = $content['parent'];
+							$parentArray = processUri($content['parent']);
+							$role = ($parentArray['element'] == 'famname' ? 'dynasty' : 'authority');
+							$doc->startElement($parentArray['element']);
+								$doc->writeAttribute('xlink:type', 'simple');								
+								$doc->writeAttribute('xlink:role', $role);
+								$doc->writeAttribute('xlink:href', $content['parent']);
+								$doc->text($parentArray['label']);
+							$doc->endElement();
+						}
+					}
+				}
+				if (strlen($row['otherPerson']) > 0){
+					$vals = explode('|', $row['otherPerson']);
+					foreach ($vals as $val){
+						if (substr($val, -1) == '?'){
+							$uri = substr($val, 0, -1);
+							$uncertainty = true;
+							$content = processUri($uri);
+						} else {
+							$uri = $val;
+							$uncertainty = false;
+							$content = processUri($uri);
+						}
+							
+						$doc->startElement($content['element']);
 						$doc->writeAttribute('xlink:type', 'simple');
 						$doc->writeAttribute('xlink:href', $uri);
+						$doc->writeAttribute('xlink:role', 'authority');
 						if($uncertainty == true){
 							$doc->writeAttribute('certainty', 'uncertain');
 						}
 						$doc->text($content['label']);
 						$doc->endElement();
+				
+						//if there is a dynasty or org; only insert if there isn't already one
+						if (isset($content['parent'])){
+							if (!in_array($content['parent'], $orgs)){
+								$parentArray = processUri($content['parent']);
+								$role = ($parentArray['element'] == 'famname' ? 'dynasty' : 'authority');
+								$doc->startElement($parentArray['element']);
+									$doc->writeAttribute('xlink:type', 'simple');
+									$doc->writeAttribute('xlink:role', $role);
+									$doc->writeAttribute('xlink:href', $content['parent']);
+									$doc->text($parentArray['label']);
+								$doc->endElement();
+							}
+						}
 					}
 				}
 				$doc->endElement();
@@ -243,6 +397,7 @@ function generate_nuds($row){
 						
 					$doc->startElement($content['element']);
 					$doc->writeAttribute('xlink:type', 'simple');
+					$doc->writeAttribute('xlink:role', 'mint');
 					$doc->writeAttribute('xlink:href', $uri);
 					if($uncertainty == true){
 						$doc->writeAttribute('certainty', 'uncertain');
@@ -253,6 +408,30 @@ function generate_nuds($row){
 				$doc->endElement();
 			}
 			
+			//obverse
+			if (isset($obverse[1])){
+				$doc->startElement('obverse');
+					$doc->startElement('type');
+						$doc->startElement('description');
+							$doc->writeAttribute('xml:lang', 'en');
+							$doc->text(trim(str_replace('Obverse:', '', $obverse[1])));
+						$doc->endElement();
+					$doc->endElement();
+				$doc->endElement();
+			}
+			
+			//reverse
+			if (isset($reverse[1])){
+				$doc->startElement('reverse');
+					$doc->startElement('type');
+						$doc->startElement('description');
+							$doc->writeAttribute('xml:lang', 'en');
+							$doc->text(trim(str_replace('Reverse:', '', $reverse[1])));
+						$doc->endElement();
+					$doc->endElement();
+				$doc->endElement();
+			}
+			
 			//end typeDesc
 			$doc->endElement();
 			
@@ -260,7 +439,8 @@ function generate_nuds($row){
 			$doc->startElement('physDesc');
 			
 			//measurementsSet
-			if (strlen($row['weight']) > 0 || strlen($row['diameter']) > 0 || (strlen($row['height']) > 0 && strlen($row['width']) > 0)){
+			if (is_numeric($row['weight']) || is_numeric($row['diameter']) || (is_numeric($row['height']) && is_numeric($row['width']))){
+				$doc->startElement('measurementsSet');
 				if (strlen($row['weight']) > 0 && is_numeric($row['weight'])){
 					$doc->startElement('weight');
 						$doc->writeAttribute('units', 'g');
@@ -283,6 +463,7 @@ function generate_nuds($row){
 						$doc->text($row['width']);
 					$doc->endElement();
 				}
+				$doc->endElement();
 			}
 			
 			if (strlen($row['authenticity']) > 0){
@@ -292,6 +473,19 @@ function generate_nuds($row){
 			
 			//end physDesc
 			$doc->endElement();
+			
+			/***** REFDESC *****/
+			if (isset($refText)){
+				if (strlen($refText) > 0){
+					$references = explode(';', $refText);
+					
+					$doc->startElement('refDesc');
+					foreach ($references as $reference){
+						$doc->writeElement('reference', trim($reference));
+					}
+					$doc->endElement();
+				}
+			}
 			
 			/***** ADMINDESC *****/
 			$doc->startElement('adminDesc');
@@ -328,9 +522,67 @@ function generate_nuds($row){
 			}
 			
 		//end descMeta
+		$doc->endElement();
+		
+		/***** IMAGES *****/
+		$doc->startElement('digRep');
+			$doc->startElement('mets:fileSec');
+				foreach ($files as $file){
+					if (strpos($file, '.jpg') !== FALSE){
+						$arr = explode('_', str_replace('.jpg', '', $file));
+						$id = $arr[0];
+						$type = $arr[1];
+							
+						if ($id == $recordId){
+							switch ($type){
+								case 'obv':
+									$use = 'obverse';
+									break;
+								case 'rev':
+									$use = 'reverse';
+									break;
+								default:
+									$use = $type;
+							}
+							
+							$doc->startElement('mets:fileGrp');
+								$doc->writeAttribute('USE', $use);
+								
+								//reference image
+								$doc->startElement('mets:file');
+									$doc->writeAttribute('USE', 'reference');
+									$doc->writeAttribute('MIMETYPE', 'image/jpeg');
+									$doc->startElement('mets:FLocat');
+										$doc->writeAttribute('LOCTYPE', 'URL');
+										$doc->writeAttribute('xlink:href', 'media/reference/' . $file);
+									$doc->endElement();
+								$doc->endElement();
+								
+								//display thumbnail for obverse and reverse images only
+								if ($use == 'obverse' || $use == 'reverse'){
+									$doc->startElement('mets:file');
+										$doc->writeAttribute('USE', 'thumbnail');
+										$doc->writeAttribute('MIMETYPE', 'image/jpeg');
+										$doc->startElement('mets:FLocat');
+											$doc->writeAttribute('LOCTYPE', 'URL');
+											$doc->writeAttribute('xlink:href', 'media/thumbnail/' . $file);
+										$doc->endElement();
+									$doc->endElement();
+								}
+							//end mets:fileGrp	
+							$doc->endElement();
+						}
+					}					
+				}
+			//end mets:fileSec
+			$doc->endElement();
+		//end digRep
 		$doc->endElement();		
+	//end nuds
 	$doc->endElement();
 	$doc->endDocument();
+	
+	echo "Writing {$recordId}\n";
 }
 
 function processUri($uri){
@@ -345,6 +597,10 @@ function processUri($uri){
 	if (array_key_exists($uri, $nomismaUris)){
 		$type = $nomismaUris[$uri]['type'];
 		$label = $nomismaUris[$uri]['label'];
+		$ar = $nomismaUris[$uri]['ar'];
+		if (isset($nomismaUris[$uri]['parent'])){			
+			$parent = $nomismaUris[$uri]['parent'];
+		}
 	} else {
 		//if the key does not exist, look the URI up in Nomisma
 		$pieces = explode('/', $uri);
@@ -358,42 +614,64 @@ function processUri($uri){
 			$xpath->registerNamespace('rdf', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#');
 			$type = $xpath->query("/rdf:RDF/*")->item(0)->nodeName;
 			$label = $xpath->query("descendant::skos:prefLabel[@xml:lang='en']")->item(0)->nodeValue;
-			$nomismaUris[$uri] = array('label'=>$label,'type'=>$type);
+			$ar = $xpath->query("descendant::skos:prefLabel[@xml:lang='ar']")->item(0)->nodeValue;
+			
+			//get the parent, if applicable
+			$parents = $xpath->query("descendant::org:organization");
+			if ($parents->length > 0){
+				$nomismaUris[$uri] = array('label'=>$label,'type'=>$type, 'ar'=>$ar, 'parent'=>$parents->item(0)->getAttribute('rdf:resource'));
+				$parent = $parents->item(0)->getAttribute('rdf:resource');
+			} else {
+				$nomismaUris[$uri] = array('label'=>$label,'type'=>$type, 'ar'=>$ar);
+			}
 		}
 	}
 	switch($type){
 		case 'nmo:Mint':
+		case 'nmo:Region':
 			$content['element'] = 'geogname';
 			$content['label'] = $label;
+			$content['ar'] = $ar;	
 			break;
 		case 'nmo:Material':
 			$content['element'] = 'material';
 			$content['label'] = $label;
+			$content['ar'] = $ar;
 			break;
 		case 'nmo:Manufacture':
 			$content['element'] = 'manufacture';
 			$content['label'] = $label;
+			$content['ar'] = $ar;
 			break;
 		case 'nmo:ObjectType':
 			$content['element'] = 'objectType';
 			$content['label'] = $label;
+			$content['ar'] = $ar;
 			break;
 		case 'rdac:Family':
+		case 'nmo:Ethnic':
 			$content['element'] = 'famname';
 			$content['label'] = $label;
+			$content['ar'] = $ar;
 			break;
 		case 'foaf:Organization':
 		case 'foaf:Group':
 			$content['element'] = 'corpname';
 			$content['label'] = $label;
+			$content['ar'] = $ar;
 			break;
 		case 'foaf:Person':
 			$content['element'] = 'persname';
 			$content['label'] = $label;
+			$content['ar'] = $ar;
+			if (isset($parent)){
+				$content['parent'] = $parent;
+			}
 			break;
 		case 'crm:E4_Period':
 			$content['element'] = 'periodname';
 			$content['label'] = $label;
+			$content['ar'] = $ar;
 			break;
 	}
 	return $content;
