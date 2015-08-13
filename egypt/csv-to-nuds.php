@@ -288,7 +288,7 @@ function generate_nuds($row, $files){
 							$uncertainty = false;
 							$content = processUri($uri);
 						}
-						$role = ($content['element'] == 'famname' ? 'dynasty' : 'authority');
+						$role = 'authorizingEntity';
 						
 						$doc->startElement($content['element']);
 							$doc->writeAttribute('xlink:type', 'simple');							
@@ -328,7 +328,7 @@ function generate_nuds($row, $files){
 						if (isset($content['parent'])){
 							$orgs[] = $content['parent'];
 							$parentArray = processUri($content['parent']);
-							$role = ($parentArray['element'] == 'famname' ? 'dynasty' : 'authority');
+							$role = 'authorizingEntity';
 							$doc->startElement($parentArray['element']);
 								$doc->writeAttribute('xlink:type', 'simple');								
 								$doc->writeAttribute('xlink:role', $role);
@@ -365,7 +365,7 @@ function generate_nuds($row, $files){
 						if (isset($content['parent'])){
 							if (!in_array($content['parent'], $orgs)){
 								$parentArray = processUri($content['parent']);
-								$role = ($parentArray['element'] == 'famname' ? 'dynasty' : 'authority');
+								$role = 'authorizingEntity';
 								$doc->startElement($parentArray['element']);
 									$doc->writeAttribute('xlink:type', 'simple');
 									$doc->writeAttribute('xlink:role', $role);
