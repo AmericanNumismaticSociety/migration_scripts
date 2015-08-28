@@ -1,7 +1,7 @@
 <?php 
 
 $data = generate_json('collection-final.csv');
-$files = scandir('/e/egypt-images/reference');
+$files = scandir('/e/egypt-images/media/reference');
 $nomismaUris = array();
 
 foreach ($data as $row){
