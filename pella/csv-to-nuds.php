@@ -28,6 +28,9 @@ function generate_nuds($row){
 	
 	$recordId = $row['Price no.'];
 
+	if ($row['Material'] != 'vacat'){
+		
+	
 	
 	$doc = new XMLWriter();
 	
@@ -108,11 +111,17 @@ function generate_nuds($row){
 			$doc->endElement();
 			
 			if (strlen($row['Material']) > 0){
-				$vals = explode('|', $row['Material']);
+				$vals = explode('|', $row['Material']);				
 				foreach ($vals as $val){
-					$uri = 'http://nomisma.org/id/' . $val;
-					$uncertainty = false;
-					$content = processUri($uri);
+					if (substr($val, -1) == '?'){
+						$uri = 'http://nomisma.org/id/' . substr($val, 0, -1);
+						$uncertainty = true;
+						$content = processUri($uri);
+					} else {
+						$uri =  'http://nomisma.org/id/' . $val;
+						$uncertainty = false;
+						$content = processUri($uri);
+					}
 						
 					$doc->startElement($content['element']);
 						$doc->writeAttribute('xlink:type', 'simple');
@@ -178,6 +187,23 @@ function generate_nuds($row){
 							$doc->text($content['label']);
 						$doc->endElement();
 					}
+				} elseif (strlen($row['Mint ID']) > 0){
+					$vals = explode('|', $row['Mint ID']);
+					foreach ($vals as $val){
+						$uri = 'http://nomisma.org/id/' . $val;
+						$uncertainty = (strtolower(trim($row['Mint Uncertain'])) == 'true' ? true : false);
+						$content = processUri($uri);
+					
+						$doc->startElement('corpname');
+						$doc->writeAttribute('xlink:type', 'simple');
+						$doc->writeAttribute('xlink:role', 'authority');
+						$doc->writeAttribute('xlink:href', $uri);
+						if($uncertainty == true){
+							$doc->writeAttribute('certainty', 'uncertain');
+						}
+						$doc->text($content['label']);
+						$doc->endElement();
+					} 
 				}
 				
 				//magistrates
@@ -277,8 +303,6 @@ function generate_nuds($row){
 				}
 				$doc->endElement();
 			}
-			
-			
 			
 			//obverse
 			if (strlen($row['O']) > 0){
@@ -403,7 +427,18 @@ function generate_nuds($row){
 			}
 			
 			//end typeDesc
-			$doc->endElement();			
+			$doc->endElement();	
+
+			//refDesc
+			$doc->startElement('refDesc');
+				$doc->startElement('reference');
+					$doc->writeAttribute('xlink:type', 'simple');
+					$doc->writeAttribute('xlink:href', 'http://nomisma.org/id/price1911');
+					$doc->writeAttribute('semantic', 'dcterms:source');
+					$doc->text('Price (1991)');
+				$doc->endElement();
+			$doc->endElement();
+			
 		//end descMeta
 		$doc->endElement();
 			
@@ -412,6 +447,9 @@ function generate_nuds($row){
 	$doc->endDocument();
 	
 	echo "Writing {$recordId}\n";
+	} else {
+		"Ignoring vacat: {$recordId}\n";
+	}
 }
 
 function processUri($uri){
