@@ -195,7 +195,7 @@ function generate_nuds($row){
 								$doc->text($content['label']);
 							$doc->endElement();
 						}
-					} elseif (strlen($row['Mint ID']) > 0 && $row['Mint ID'] != 'uncertain_value'){
+					} /*elseif (strlen($row['Mint ID']) > 0 && $row['Mint ID'] != 'uncertain_value'){
 						$vals = explode('|', $row['Mint ID']);
 						foreach ($vals as $val){
 							$uri = 'http://nomisma.org/id/' . $val;
@@ -212,7 +212,7 @@ function generate_nuds($row){
 							$doc->text($content['label']);
 							$doc->endElement();
 						} 
-					}
+					}*/
 					
 					//magistrates
 					if (strlen($row['Magistrate ID 1']) > 0){
