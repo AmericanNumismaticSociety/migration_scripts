@@ -7,7 +7,7 @@ $csv = '"uri","coinType","regno","price"' . "\n";
 //generate concordance list
 $count = 0;
 foreach ($data as $row){
-	$coinType = parse_price($row['price'], $row['regno'], $count);
+	$coinType = parse_price($row, $count);
 	
 	$csv .= '"' . $row['uri'] . '","' . $coinType . '","' . $row['regno'] . '","' . $row['price'] . '"' . "\n";
 	$count++;
@@ -18,48 +18,52 @@ foreach ($data as $row){
 //var_dump($rrc_array);
 file_put_contents('bm-concordances.csv', $csv);
 
-function parse_price($ref, $regno, $count){
-	$num = str_replace('GC30.', '', $ref);
+function parse_price($row, $count){
+	//$num = str_replace('GC30.', '', $row['price']);
+	preg_match('/Price\s1991\s(P?[0-9]\w+)/', $row['text'], $matches);
 	
-	//check to see if the letter exists, else slice it off
-	if (ctype_alpha(substr($num, -1))){
-		//if the letter is uppercase, try the Price URI in upper case first, otherwise slice the letter off
-		if (ctype_upper(substr($num, -1))){
-			$url = 'http://numismatics.org/pella/id/price.' . $num;
-			$file_headers = @get_headers($url);
-			if ($file_headers[0] == 'HTTP/1.1 200 OK'){
-				echo "{$count}: {$regno} - {$url}\n";
-				return $url;
-			} else {
+	if (isset($matches[1])){
+		$num = $matches[1];
+		//check to see if the letter exists, else slice it off
+		if (ctype_alpha(substr($num, -1))){
+			//if the letter is uppercase, try the Price URI in upper case first, otherwise slice the letter off
+			if (ctype_upper(substr($num, -1))){
+				$url = 'http://numismatics.org/pella/id/price.' . $num;
+				$file_headers = @get_headers($url);
+				if ($file_headers[0] == 'HTTP/1.1 200 OK'){
+					echo "{$count}: {$row['regno']} - {$url}\n";
+					return $url;
+				} else {
+					$url = 'http://numismatics.org/pella/id/price.' . substr($num, 0, -1);
+					$file_headers = @get_headers($url);
+					if ($file_headers[0] == 'HTTP/1.1 200 OK'){
+						echo "{$count}: {$row['regno']} - {$url}\n";
+						return $url;
+					} else {
+						return '';
+					}
+				}
+			} elseif (ctype_lower(substr($num, -1))){
 				$url = 'http://numismatics.org/pella/id/price.' . substr($num, 0, -1);
 				$file_headers = @get_headers($url);
 				if ($file_headers[0] == 'HTTP/1.1 200 OK'){
-					echo "{$count}: {$regno} - {$url}\n";
+					echo "{$count}: {$row['regno']} - {$url}\n";
 					return $url;
 				} else {
 					return '';
 				}
 			}
-		} elseif (ctype_lower(substr($num, -1))){
-			$url = 'http://numismatics.org/pella/id/price.' . substr($num, 0, -1);
+		} else {
+			$url = 'http://numismatics.org/pella/id/price.' . $num;
 			$file_headers = @get_headers($url);
 			if ($file_headers[0] == 'HTTP/1.1 200 OK'){
-				echo "{$count}: {$regno} - {$url}\n";
+				echo "{$count}: {$row['regno']} - {$url}\n";
 				return $url;
 			} else {
 				return '';
 			}
 		}
-	} else {
-		$url = 'http://numismatics.org/pella/id/price.' . $num;
-		$file_headers = @get_headers($url);
-		if ($file_headers[0] == 'HTTP/1.1 200 OK'){
-			echo "{$count}: {$regno} - {$url}\n";
-			return $url;
-		} else {
-			return '';
-		}
-	}	
+	}
 }
 
 function generate_json($doc){
