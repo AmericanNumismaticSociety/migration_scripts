@@ -214,6 +214,26 @@ function generate_nuds($row){
 						} 
 					}*/
 					
+					if (strlen($row['Stated authority']) > 0){
+						$vals = explode('|', $row['Stated authority']);
+						foreach ($vals as $val){
+							$uri = 'http://nomisma.org/id/' . $val;
+							$uncertainty = false;
+							$content = processUri($uri);
+							$role = 'statedAuthority';
+								
+							$doc->startElement($content['element']);
+							$doc->writeAttribute('xlink:type', 'simple');
+							$doc->writeAttribute('xlink:role', $role);
+							$doc->writeAttribute('xlink:href', $uri);
+							if($uncertainty == true){
+								$doc->writeAttribute('certainty', 'uncertain');
+							}
+							$doc->text($content['label']);
+							$doc->endElement();
+						}
+					}
+					
 					//magistrates
 					if (strlen($row['Magistrate ID 1']) > 0){
 						$vals = explode('|', $row['Magistrate ID 1']);

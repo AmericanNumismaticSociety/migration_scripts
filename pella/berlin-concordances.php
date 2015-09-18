@@ -1,5 +1,10 @@
 <?php 
 
+//libxml timeout
+$options = ['http' => ['method' => 'GET','timeout' => '10']];
+$context = stream_context_create($options);
+libxml_set_streams_context($context);
+
 //Berlin's list of LIDO XML files
 $list = file_get_contents('http://ww2.smb.museum/mk_edit/coin_export/17/content.txt');
 $files = explode(PHP_EOL, $list);

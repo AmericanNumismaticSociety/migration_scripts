@@ -1,5 +1,10 @@
 <?php 
 
+//libxml timeout
+$options = ['http' => ['method' => 'GET','timeout' => '10']];
+$context = stream_context_create($options);
+libxml_set_streams_context($context);
+
 //Berlin's list of LIDO XML files
 $data = generate_json('berlin-concordances.csv', false);
 
