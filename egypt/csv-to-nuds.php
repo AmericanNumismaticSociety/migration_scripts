@@ -376,6 +376,16 @@ function generate_nuds($row, $files){
 						}
 					}
 				}
+				//add Muluk al-Tawaif
+				if ($recordId >= 1633 && $recordId <= 1636){
+					$doc->startElement('corpname');
+						$doc->writeAttribute('xlink:type', 'simple');
+						$doc->writeAttribute('xlink:role', 'authorizingEntity');
+						$doc->writeAttribute('xlink:href', 'http://nomisma.org/id/muluk_al-tawaif');
+						$doc->text('Muluk al-Tawaif');
+					$doc->endElement();
+				}
+				
 				$doc->endElement();
 			}
 			
