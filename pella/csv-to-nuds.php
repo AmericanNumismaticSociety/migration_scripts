@@ -2,7 +2,7 @@
 
 //CSV arrays
 $data = generate_json('https://docs.google.com/spreadsheets/d/1CIfUKDeN6G3QWVjpOgbnCSxzhLFTeBBMBf6ZRVo0UHY/pub?gid=481635933&single=true&output=csv');
-$stylesheet = generate_json('stylesheet.csv');
+$stylesheet = generate_json('https://docs.google.com/spreadsheets/d/1KITdoa7W5jpu0lgCqLCQs70WpNFfFPTHjfQlTGt1sts/pub?output=csv');
 $deities = generate_json('https://docs.google.com/spreadsheet/pub?hl=en_US&hl=en_US&key=0Avp6BVZhfwHAdHk2ZXBuX0RYMEZzUlNJUkZOLXRUTmc&single=true&gid=0&output=csv');
 
 
