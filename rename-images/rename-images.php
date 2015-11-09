@@ -19,7 +19,9 @@ $imageInput = '/Volumes/data03/Workgroup/PhotographyBackup/Emma Backup/Roman/';
 $imageOutput = '/Volumes/data03/Workgroup/PhotographyBackup/rename-complete/';
 $logFile = 'rename-images.log';
 
-$log = date(DATE_W3C) . ": Beginning process.\n";
+//begin log file
+error_log(date(DATE_W3C) . ": Beginning process.\n", 3, $logFile);
+
 $files = scandir($csvDir);
 foreach ($files as $file){
 	if (strpos($file, '.csv') > 0){
@@ -51,10 +53,11 @@ foreach ($files as $file){
 		$imageCount = count($images);
 		
 		//add log information
-		echo date(DATE_W3C) .  ': Processing ' . $folder . "\n";
-		$log .= date(DATE_W3C) .  ': Processing ' . $folder . "\n";
-		$log .= 'Count of rows in the spreadsheet: ' . $accnumCount . "\n";
-		$log .= 'Count of .tif images in the folder: ' . $imageCount . "\n";
+		
+		echo date(DATE_W3C) .  ": Processing {$folder}\n";
+		error_log(date(DATE_W3C) . ": Processing {$folder}\n", 3, $logFile);
+		error_log("Count of rows in the spreadsheet: {$accnumCount}\n", 3, $logFile);
+		error_log("Count of .tif images in the folder: {$imageCount}\n", 3, $logFile);
 		
 		//produce error if the number of rows in the spreadsheet is not equal to the number of unique accession numbers
 		if ($accnumCount != count($uniqueAccnums)){
@@ -84,7 +87,7 @@ foreach ($files as $file){
 				}
 			} else {
 				echo "Error: row/image numbering mismatch in {$folder}.\n";
-				$log .= "Error: row/image numbering mismatch in {$folder}.\n";
+				error_log("Error: row/image numbering mismatch in {$folder}.\n", 3, $logFile);
 			}
 		}		
 		
@@ -108,9 +111,7 @@ foreach ($files as $file){
 	}	
 }
 echo date(DATE_W3C) . ": Process complete.\n";
-$log .= date(DATE_W3C) . ": Process complete.\n";
-file_put_contents($logFile, $log, FILE_APPEND);
-
+error_log(date(DATE_W3C) . ": Process complete.\n", 3, $logFile);
 
 //functions
 function generate_json($doc){
