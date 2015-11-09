@@ -62,7 +62,7 @@ foreach ($files as $file){
 		//produce error if the number of rows in the spreadsheet is not equal to the number of unique accession numbers
 		if ($accnumCount != count($uniqueAccnums)){
 			echo "Error: number of spreadsheet rows not equal to number of unique accession numbers in {$folder}.\n";
-			$log .= "Error: number of spreadsheet rows not equal to number of unique accession numbers in {$folder}.\n";
+			error_log("Error: number of spreadsheet rows not equal to number of unique accession numbers in {$folder}.\n", 3, $logFile);
 		} else {
 			//proceed if there are two images per row in the spreadsheet
 			if (($accnumCount * 2) == $imageCount){
@@ -106,7 +106,7 @@ foreach ($files as $file){
 		
 		if ($imageCount != $postCount){
 			echo "Error: source and target image folder count mismatch: {$folder}.\n";
-			$log .= "Error: source and target image folder count mismatch: {$folder}.\n";
+			error_log(date(DATE_W3C) . "Error: source and target image folder count mismatch: {$folder}.\n", 3, $logFile);
 		}
 	}	
 }
