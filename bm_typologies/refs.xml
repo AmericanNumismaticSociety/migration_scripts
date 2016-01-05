@@ -1,0 +1,1242 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<sparql xmlns='http://www.w3.org/2005/sparql-results#'>
+	<head>
+		<variable name='ref'/>
+		<variable name='label'/>
+		<variable name='id'/>
+	</head>
+	<results>
+		<result>
+			<binding name='id'>
+				<literal>9004147772</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/7728</uri>
+			</binding>
+			<binding name='label'>
+				<literal>A Catalogue of Hoards and Single Finds from the British Isles, c. AD 410-675</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>978-1-846-14413-4</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/9448</uri>
+			</binding>
+			<binding name='label'>
+				<literal>A History of the World in 100 Objects</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>0-900652-926</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/3140</uri>
+			</binding>
+			<binding name='label'>
+				<literal>A catalogue of British historical medals 1837-1901: the reign of Queen Victoria</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>0917-1614</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/8627</uri>
+			</binding>
+			<binding name='label'>
+				<literal>A hoard of copper coins from the Kapisa-Kabul region</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>978-56656-854-8</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/9657</uri>
+			</binding>
+			<binding name='label'>
+				<literal>Afghanistan. A Cultural History</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>0021-0889</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/1080</uri>
+			</binding>
+			<binding name='label'>
+				<literal>An archaeological tour in the ancient Persis</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>978-3-7001-2893-9</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/8998</uri>
+			</binding>
+			<binding name='label'>
+				<literal>Arab-Sasanian Copper Coinage</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>3-87278-270-2</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/8317</uri>
+			</binding>
+			<binding name='label'>
+				<literal>Baktrisch. Ein Wörterbuch auf Grund der Inschriften, Handschriften, Münzen und Siegelsteine.</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>0-7141-0876-6</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/2407</uri>
+			</binding>
+			<binding name='label'>
+				<literal>British Iron Age coins in the British Museum</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>2-7177-1764-1</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/9437</uri>
+			</binding>
+			<binding name='label'>
+				<literal>Catalogue des monnaies vietnamiennes</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>2-7177-2155-X</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/9439</uri>
+			</binding>
+			<binding name='label'>
+				<literal>Catalogue des monnaies vietnamiennes, supplement</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>0-88402-193-9</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/2269</uri>
+			</binding>
+			<binding name='label'>
+				<literal>Catalogue of late Roman coins in the Dumbarton Oaks Collection and in the Whittemore Collection: from Arcadius and Honorius to the Accession of Anastasius</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>0-7141-0883-9</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/5311</uri>
+			</binding>
+			<binding name='label'>
+				<literal>Catalogue of the Aksumite Coins in the British Museum</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>0140-1149</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/8623</uri>
+			</binding>
+			<binding name='label'>
+				<literal>Coin Hoards VI</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>0078-2696</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/3098</uri>
+			</binding>
+			<binding name='label'>
+				<literal>Coins and membership tokens of the Heaven and Earth Society</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>978-969-9270-01-7</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/8322</uri>
+			</binding>
+			<binding name='label'>
+				<literal>Coins from Kashmir Smast. New Numismatic Evidence</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>0970926898</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/9362</uri>
+			</binding>
+			<binding name='label'>
+				<literal>Coins of Roman Antioch</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>0-7141-0831-6</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/3158</uri>
+			</binding>
+			<binding name='label'>
+				<literal>Coins of the Roman Empire in the British Museum, vol. 1: Augustus to Vitellius</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>0-7141-0832-4</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/3159</uri>
+			</binding>
+			<binding name='label'>
+				<literal>Coins of the Roman Empire in the British Museum, vol.II: Vespasian to Domitian</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>0-7141-0833-2</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/3160</uri>
+			</binding>
+			<binding name='label'>
+				<literal>Coins of the Roman Empire in the British Museum, vol.III: Nerva to Hadrian</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>SBN 7141-0805-7</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/3162</uri>
+			</binding>
+			<binding name='label'>
+				<literal>Coins of the Roman Empire in the British Museum, vol.IV: Antoninus Pius to Commodus. Introduction, indexes and plates.</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>0-7141-0809-X</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/3166</uri>
+			</binding>
+			<binding name='label'>
+				<literal>Coins of the Roman Empire in the British Museum, vol.VI: Severus Alexander to Balbinus and Pupienus</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>0714108243</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/2319</uri>
+			</binding>
+			<binding name='label'>
+				<literal>Coins of the Roman Republic in the British Museum, vol. 2. Coinages of Rome (continued), Roman Campania, Italy, the social war, and the provinces.</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>0714108235</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/2318</uri>
+			</binding>
+			<binding name='label'>
+				<literal>Coins of the Roman Republic in the British Museum: vol. 1 aes rude, aes signatum, aes grave, and coinage of Rome from B.C. 268.</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>8887235295</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/5920</uri>
+			</binding>
+			<binding name='label'>
+				<literal>Collezione Pangerl. Contromarche Imperiali Romane (Augustus - Vespasianus) (The Pangerl Collection Catalog and Commentary on the Countermarked Roman Imperial Coins)</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>1996-9120</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/9301</uri>
+			</binding>
+			<binding name='label'>
+				<literal>Copper coins of Vasudeva and his successors from Taxila.</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>3-7749-2711-1</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/6526</uri>
+			</binding>
+			<binding name='label'>
+				<literal>Die Antoninianpraegung der Gallischen Kaiser von Postumus bis Tetricus</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>3-7001-2923-8</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/6576</uri>
+			</binding>
+			<binding name='label'>
+				<literal>Die Muenzpraegung der Kaiser VALERIANUS I. / GALLIENUS / SALONINUS (253/268), REGALIANUS (260) und MACRIANUS / QUIETUS (260/262)</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>978-3-7001-6565-1</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/9741</uri>
+			</binding>
+			<binding name='label'>
+				<literal>Die Reichspraegung der Kaisers Traianus (98-117)</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>84-7579-610-9</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/8460</uri>
+			</binding>
+			<binding name='label'>
+				<literal>Els denaris iberics d'Ikalkusken</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>7141-813-8</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/3187</uri>
+			</binding>
+			<binding name='label'>
+				<literal>English copper, tin and bronze coins in the British Museum 1558-1958</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>0 86159 074 0</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/7642</uri>
+			</binding>
+			<binding name='label'>
+				<literal>Faccombe Netherton. Excavations of Saxon and Medieval Manorial Complex.</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>0-7141-2058-8 &amp; -1703-X</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/1640</uri>
+			</binding>
+			<binding name='label'>
+				<literal>Fake? The Art of Deception</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>0714111570</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/5396</uri>
+			</binding>
+			<binding name='label'>
+				<literal>Forgotten Empire: The world of Ancient Persia</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>02063-7707</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/3379</uri>
+			</binding>
+			<binding name='label'>
+				<literal>Forming designs, shaping medals: a collection of wax models by the Hamerani</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>13: 978-0-7141-1165-0</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/8125</uri>
+			</binding>
+			<binding name='label'>
+				<literal>From Persepolis to the Punjab. Exploring ancient Iran, Afghanistan and Pakistan</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>3-8030-1101-9/0945-4020</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/9700</uri>
+			</binding>
+			<binding name='label'>
+				<literal>Gazna/Kabbul XIV d Hurasan IV</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>0901405</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/6143</uri>
+			</binding>
+			<binding name='label'>
+				<literal>Greek Imperial Countermarks</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>978-8-7141-5074-1</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/7736</uri>
+			</binding>
+			<binding name='label'>
+				<literal>Hadrian: Empire and Conflict</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>0-939117-36-3</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/6559</uri>
+			</binding>
+			<binding name='label'>
+				<literal>Hidden Meanings in Chinese Art</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>0-7141-1442-1</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/125</uri>
+			</binding>
+			<binding name='label'>
+				<literal>Hindu Art</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>071411801x</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/6420</uri>
+			</binding>
+			<binding name='label'>
+				<literal>Historia Numorum : Italy</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>978-0-7141-1153-7</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/7725</uri>
+			</binding>
+			<binding name='label'>
+				<literal>Horse coins: pieces for Da Ma, the Chinese board-game 'Driving the Horses'</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>3 7001 07900</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/9764</uri>
+			</binding>
+			<binding name='label'>
+				<literal>Iranisches Personennamenbuch: Nomina Propria Iranica in Nummis</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>0-7141-1446-4</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/64</uri>
+			</binding>
+			<binding name='label'>
+				<literal>Japanese Art: Masterpieces in the British Museum</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>0 9524144 0 6</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/9072</uri>
+			</binding>
+			<binding name='label'>
+				<literal>Jitals. A Catalogue and Account of the Coin Denomination of Daily Use in Medieval Afghanistan and North West India.</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>0917-1614</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/8937</uri>
+			</binding>
+			<binding name='label'>
+				<literal>Kanishka's Buddha image coins revisited</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>0-7141-1487-1</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/5655</uri>
+			</binding>
+			<binding name='label'>
+				<literal>Korea: Art and Archaeology</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>84-85060-02-4</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/8194</uri>
+			</binding>
+			<binding name='label'>
+				<literal>Las Monedas Ebusu.</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>84-85060-23-7</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/8161</uri>
+			</binding>
+			<binding name='label'>
+				<literal>Las Monedas Hispano-Cataginesas</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>84-85060-47-4</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/8462</uri>
+			</binding>
+			<binding name='label'>
+				<literal>Las Monedas de Castulo con escritura indigena.  Historia Numismatica de una ciudad minera.</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>84-404-1428-5</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/8167</uri>
+			</binding>
+			<binding name='label'>
+				<literal>Las Monedas de Gadir/Gades</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>84-89157-03-0</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/8199</uri>
+			</binding>
+			<binding name='label'>
+				<literal>Las Monedas de Malaca.</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>90-74623-29-8</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/6334</uri>
+			</binding>
+			<binding name='label'>
+				<literal>Le Monnayage de l'Atelier de Lyon (43 AV. J.-C. - 413 APR. J.-C.), Supplement II</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>84-300-9489-X</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/8262</uri>
+			</binding>
+			<binding name='label'>
+				<literal>Les monedes Iberiques de Tarraco</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>0521260094</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/5977</uri>
+			</binding>
+			<binding name='label'>
+				<literal>Medieval European coinage volume 1: The early Middle Ages (5th-10th centuries)</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>ISBN 086-159-152-6</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/4918</uri>
+			</binding>
+			<binding name='label'>
+				<literal>Metallurgical analysis of Chinese coins at the British Museum</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>882050456I</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/8636</uri>
+			</binding>
+			<binding name='label'>
+				<literal>Moneta Langobardorum</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>978-0-19-726384-6</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/7803</uri>
+			</binding>
+			<binding name='label'>
+				<literal>Money as a Marker of Cultural Continuity and Change in Central Asia.</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>3950053034</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/8580</uri>
+			</binding>
+			<binding name='label'>
+				<literal>Money in the incipient Roman Empire (Anastasius I - Justinian I, 491-565)</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>9783950198720</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/8582</uri>
+			</binding>
+			<binding name='label'>
+				<literal>Money of the incipient Byzantine Empire Continued (Justin II-revolt of the Heraclii, 565-610)</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>ISBN 0-7141-1806-0</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/4919</uri>
+			</binding>
+			<binding name='label'>
+				<literal>Money on the Silk Road: the evidence from Eastern Central Asia to c. AD 800</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>2-7177-1304-2</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/6527</uri>
+			</binding>
+			<binding name='label'>
+				<literal>Monnaies de l'Empire Romain, XII.1 D'Aurélian à Florien (207-276 après J.-C.)</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>2-271-06169-5</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/9114</uri>
+			</binding>
+			<binding name='label'>
+				<literal>Monnaies du Haut Moyen Âge découvertes en France (Ve-VIIIe siècle)</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>2-9521376-0-9</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/9001</uri>
+			</binding>
+			<binding name='label'>
+				<literal>New evidence for Sasanian Numismatics: the collection of Ahmad Saeedi.</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>0904173186</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/8661</uri>
+			</binding>
+			<binding name='label'>
+				<literal>Non-Islamic States &amp; Western Colonies AD 600 - 1979</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>84-7283-772-6</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/9460</uri>
+			</binding>
+			<binding name='label'>
+				<literal>Numismatica Antiga de la Peninsula Iberica</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>0714108448; 0714108529; 0714108537</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/2354</uri>
+			</binding>
+			<binding name='label'>
+				<literal>Principal coins of the Romans: Volume I: The Republic c. 290 - 31 BC; Volume II: The Principate 31 BC - AD 296; Volume III: The Dominate AD 294 - 498.</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>3-7001-2842-8</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/853</uri>
+			</binding>
+			<binding name='label'>
+				<literal>Rediscovering the Collections of Charles Masson</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>0-89722-212-1</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/5778</uri>
+			</binding>
+			<binding name='label'>
+				<literal>Roman Medallions</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>0714108987</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/5249</uri>
+			</binding>
+			<binding name='label'>
+				<literal>Roman Provincial Coinage II</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>0714108715</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/2317</uri>
+			</binding>
+			<binding name='label'>
+				<literal>Roman provincial coinage. Vol. 1, From the death of Caesar to the death of Vitellius (44 BC-AD 69)</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>978-3-7001-6993-2</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/9651</uri>
+			</binding>
+			<binding name='label'>
+				<literal>SNS II Ohrmazd I - Ohrmazd II: Paris - Berlin - Wien</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>3-7001-3314-6</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/8997</uri>
+			</binding>
+			<binding name='label'>
+				<literal>SNS III Shapur II - Kawad I. / 2. Regierung</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>978-0-7141-2456-8</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/8124</uri>
+			</binding>
+			<binding name='label'>
+				<literal>Shah 'Abbas The Remaking of Iran</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>0-901477-04-4</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/5651</uri>
+			</binding>
+			<binding name='label'>
+				<literal>Siraf XV: The coins and monumental inscriptions</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>0714108723</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/5537</uri>
+			</binding>
+			<binding name='label'>
+				<literal>Sylloge Nummorum Graecorum: Volume IX: The British Museum.  Part I: The Black Sea</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>0714118028</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/5555</uri>
+			</binding>
+			<binding name='label'>
+				<literal>Sylloge Nummorum Graecorum: Volume IX: The British Museum.  Part II: Spain</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>3-7001-3224-7</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/9752</uri>
+			</binding>
+			<binding name='label'>
+				<literal>Sylloge Nummorum Sasanidarum, Paris - Berlin - Wien, Band I: Ardashir I. - Shapur I.</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>3700106181</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/2936</uri>
+			</binding>
+			<binding name='label'>
+				<literal>System und Chronologie der Munzpragung des Kusanreiches</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>0 904531 70 8</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/8130</uri>
+			</binding>
+			<binding name='label'>
+				<literal>The Aes Coinage of Emporion</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>0 904173 16 X</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/7328</uri>
+			</binding>
+			<binding name='label'>
+				<literal>The Ancient and Classical World 600 BC - AD 650</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>3908103002</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/3364</uri>
+			</binding>
+			<binding name='label'>
+				<literal>The Coinage in the name of Alexander the Great and Philip Arridhaeus. A British Museum Catalogue.</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>1-902040-58-9</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/7938</uri>
+			</binding>
+			<binding name='label'>
+				<literal>The Coinage of Ostrogothic Italy</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>0472101137 (v. 1)</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/8740</uri>
+			</binding>
+			<binding name='label'>
+				<literal>The Coins - 1983</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>81-215-1010-4</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/9395</uri>
+			</binding>
+			<binding name='label'>
+				<literal>The Coins of the Indian Sultanates, Covering the Area of Present-Day India, Pakistan and Bangladesh.</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>0-904173-11-9</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/7805</uri>
+			</binding>
+			<binding name='label'>
+				<literal>The Dynasty of Azes.</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>086357 372 9</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/2155</uri>
+			</binding>
+			<binding name='label'>
+				<literal>The Enduring Image, Treasures from the British Museum</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>0-904173-13-5</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/8593</uri>
+			</binding>
+			<binding name='label'>
+				<literal>The Indo-Parthians. Their Kushan Neighbours</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>0-7141-0555-4</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/2525</uri>
+			</binding>
+			<binding name='label'>
+				<literal>The Making of England: Anglo-Saxon art and culture, AD 600-900</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>0 7486 2137 7</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/9617</uri>
+			</binding>
+			<binding name='label'>
+				<literal>The New Islamic Dynasties; a chronological and genealogical manual</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>0714108707</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/7719</uri>
+			</binding>
+			<binding name='label'>
+				<literal>The Normanby Hoard and Other Roman Coin Hoards</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>0714108707</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/8552</uri>
+			</binding>
+			<binding name='label'>
+				<literal>The Normanby hoard and other Roman coin hoards</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>0907605095</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/5620</uri>
+			</binding>
+			<binding name='label'>
+				<literal>The Roman Imperial Coinage, vol. 1</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>0900696591 (Part 1); 0900696605 (Part 2)</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/2308</uri>
+			</binding>
+			<binding name='label'>
+				<literal>The Roman Imperial Coinage, vol. 5. Part 1: Valerian I to Florian. Part 2: Probus to Diocletian</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>0900696001</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/3189</uri>
+			</binding>
+			<binding name='label'>
+				<literal>The Roman Imperial Coinage, vol. 6: from Diocletian's reform (AD 294) to the death of Maximinus (AD 313)</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>0900696621</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/5591</uri>
+			</binding>
+			<binding name='label'>
+				<literal>The Roman Imperial Coinage, vol. 7: Constantine and Licinius AD 313-337</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>0-900696-85-0</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/3191</uri>
+			</binding>
+			<binding name='label'>
+				<literal>The Roman Imperial Coinage, vol. 8: the family of Constantine I, AD 337-364</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>090069663X</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/3193</uri>
+			</binding>
+			<binding name='label'>
+				<literal>The Roman Imperial Coinage, vol. 9: Valentinian I - Theodosius I</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>1902040848</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/7140</uri>
+			</binding>
+			<binding name='label'>
+				<literal>The Roman Imperial Coinage, vol.2 part 1: From AD 69 to AD 96: Vespasian to Domitian</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>0907605435</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/5624</uri>
+			</binding>
+			<binding name='label'>
+				<literal>The Roman imperial coinage, vol. 10: The divided empire and the fall of the western parts, AD 395-491.</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>0900696540</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/5621</uri>
+			</binding>
+			<binding name='label'>
+				<literal>The Roman imperial coinage, vol. 2: Vespasian to Hadrian</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>0900696559</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/5622</uri>
+			</binding>
+			<binding name='label'>
+				<literal>The Roman imperial coinage, vol. 3: Antoninus Pius to Commodus</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>0900696567</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/5623</uri>
+			</binding>
+			<binding name='label'>
+				<literal>The Roman imperial coinage, vol. 4: Pertinax - Uranius Antonius</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>0 7141 05856</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/3181</uri>
+			</binding>
+			<binding name='label'>
+				<literal>The Transformation of the Roman World AD 400- 900</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>0904173151</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/8758</uri>
+			</binding>
+			<binding name='label'>
+				<literal>The World of Islam</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>13-978-0-7141-1810-9</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/2403</uri>
+			</binding>
+			<binding name='label'>
+				<literal>The late Roman gold and silver coins from the Hoxne Treasure</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>0521225035</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/7811</uri>
+			</binding>
+			<binding name='label'>
+				<literal>The re-use of obsolete coins: the case of Roman imperial bronzes revived in the late fifth century</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>0-89722-254-7</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/2288</uri>
+			</binding>
+			<binding name='label'>
+				<literal>The silver coinage of Cappadocia, Vespasian-Commodus</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>9780520211407</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/8369</uri>
+			</binding>
+			<binding name='label'>
+				<literal>Thundering Zeus: The Making of Hellenistic Bactria</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>81-7305-317-0</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/8316</uri>
+			</binding>
+			<binding name='label'>
+				<literal>Tribal Coins of Ancient India</literal>
+			</binding>
+		</result>
+		<result>
+			<binding name='id'>
+				<literal>3 8030 1101 9/0945-4020</literal>
+			</binding>
+			<binding name='ref'>
+				<uri>http://collection.britishmuseum.org/id/bibliography/9090</uri>
+			</binding>
+			<binding name='label'>
+				<literal>Ġazna/Kabul XIV d Hurāsān IV</literal>
+			</binding>
+		</result>
+	</results>
+</sparql>
