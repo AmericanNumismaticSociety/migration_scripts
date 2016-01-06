@@ -59,11 +59,13 @@ foreach ($matches as $k=>$match){
 		if ($match['object'] == $row['object'] && $match['id'] == $row['possibleRicID']){
 			$count++;
 			$value += $row['certainty'];
+			
+			//add in legend/type description
+			$matches[$k]['obverseDescription'] = trim($row['obverseDescription']);
+			$matches[$k]['obverseInscription'] = trim($row['obverseInscription']);
+			$matches[$k]['reverseDescription'] = trim($row['reverseDescription']);
+			$matches[$k]['reverseInscription'] = trim($row['reverseInscription']);
 		}		
-		$matches[$k]['obverseDescription'] = $row['obverseDescription'];
-		$matches[$k]['obverseInscription'] = $row['obverseInscription'];
-		$matches[$k]['reverseDescription'] = $row['reverseDescription'];
-		$matches[$k]['reverseInscription'] = $row['reverseInscription'];
 	}
 	$avg = $value / $count;
 	$matches[$k]['average'] = $avg; 
