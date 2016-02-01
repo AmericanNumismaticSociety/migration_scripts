@@ -43,8 +43,6 @@ function process_row($row, $writer){
 	$id = $row['object_number'];
 	$file = 'http://ww2.smb.museum/mk_edit/coin_export/17/' . $id . '.xml';
 	
-	echo "Processing #{$count}: {$id}\n";
-	
 	$dom = new DOMDocument('1.0', 'UTF-8');
 	if ($dom->load($file) === FALSE){
 		echo "{$file} failed to load.\n";
