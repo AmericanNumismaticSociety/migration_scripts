@@ -24,6 +24,7 @@ $writer->writeAttribute('xmlns:nm', "http://nomisma.org/id/");
 $writer->writeAttribute('xmlns:nmo', "http://nomisma.org/ontology#");
 $writer->writeAttribute('xmlns:dcterms', "http://purl.org/dc/terms/");
 $writer->writeAttribute('xmlns:foaf', "http://xmlns.com/foaf/0.1/");
+$writer->writeAttribute('xmlns:geo', "http://www.w3.org/2003/01/geo/wgs84_pos#");
 $writer->writeAttribute('xmlns:rdf', "http://www.w3.org/1999/02/22-rdf-syntax-ns#");
 $writer->writeAttribute('xmlns:void', "http://rdfs.org/ns/void#");
 
