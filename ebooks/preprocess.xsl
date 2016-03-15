@@ -46,6 +46,15 @@
 			<xsl:apply-templates/>
 		</xsl:element>
 	</xsl:template>
+	
+	<xsl:template match="tei:teiHeader">
+		<teiHeader xmlns="http://www.tei-c.org/ns/1.0">
+			<xsl:apply-templates/>
+			<revisionDesc>
+				<change when="{format-date(current-date(), '[Y]-[M01]-[D01]')}">Ran TEI file through XSLT process, detailed in the Mellon EBook migration Google Document.</change>
+			</revisionDesc>
+		</teiHeader>
+	</xsl:template>
 
 	<!-- TEI header -->
 	<xsl:template match="tei:titleStmt">
