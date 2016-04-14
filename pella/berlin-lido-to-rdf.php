@@ -6,7 +6,11 @@ $context = stream_context_create($options);
 libxml_set_streams_context($context);
 
 //Berlin's list of LIDO XML files
-$data = generate_json('berlin-concordances.csv', false);
+//$data = generate_json('berlin-concordances.csv', false);
+
+//Berlin's list of LIDO XML files
+$list = file_get_contents('http://ww2.smb.museum/mk_edit/coin_export/17/content.txt');
+$files = explode(PHP_EOL, $list);
 
 //start RDF/XML file
 //use XML writer to generate RDF
@@ -29,19 +33,20 @@ $writer->writeAttribute('xmlns:rdf', "http://www.w3.org/1999/02/22-rdf-syntax-ns
 $writer->writeAttribute('xmlns:void', "http://rdfs.org/ns/void#");
 
 $count = 1;
-foreach ($data as $row){
-	if (strlen($row['URI']) > 0){
-		echo "Processing #{$count}: {$row['object_number']}\n";
-		process_row($row, $writer);
-		$count++;
+foreach ($files as $file){
+	if (strlen($file) > 0){
+		$fileArray = explode('/', $file);
+		$objectNumber = str_replace('.xml', '', $fileArray[count($fileArray) - 1]);
+		
+		process_row($objectNumber, $writer, $count);
+		$count++;		
 	}
 }
 
 $writer->endElement();
 $writer->flush();
 
-function process_row($row, $writer){	
-	$id = $row['object_number'];
+function process_row($id, $writer, $count){
 	$file = 'http://ww2.smb.museum/mk_edit/coin_export/17/' . $id . '.xml';
 	
 	$dom = new DOMDocument('1.0', 'UTF-8');
@@ -50,146 +55,170 @@ function process_row($row, $writer){
 	} else {
 		$xpath = new DOMXpath($dom);
 		$xpath->registerNamespace("lido", "http://www.lido-schema.org");
-		$title = $xpath->query("descendant::lido:titleSet/lido:appellationValue")->item(0)->nodeValue;
-		if (strlen($xpath->query("descendant::lido:displayDate")->item(0)->nodeValue) > 0){
-			$title .= ', ' . $xpath->query("descendant::lido:eventDate/lido:displayDate")->item(0)->nodeValue;
-		}		
-		$measurements = $xpath->query("descendant::lido:measurementsSet");
 		
-		$writer->startElement('nmo:NumismaticObject');
-			$writer->writeAttribute('rdf:about', "http://ww2.smb.museum/ikmk/object.php?id={$id}");
-			$writer->startElement('dcterms:title');
-				$writer->writeAttribute('xml:lang', 'de');
-				$writer->text($title);
-			$writer->endElement();
-			$writer->writeElement('dcterms:identifier', $id);
-			$writer->startElement('dcterms:publisher');
-				$writer->writeAttribute('rdf:resource', 'http://nomisma.org/id/mk_berlin');
-			$writer->endElement();
-			$writer->startElement('nmo:hasCollection');
-				$writer->writeAttribute('rdf:resource', 'http://nomisma.org/id/mk_berlin');
-			$writer->endElement();
-			$writer->startElement('nmo:hasTypeSeriesItem');
-				$writer->writeAttribute('rdf:resource', $row['URI']);
-			$writer->endElement();
+		//look for the Price URI
+		$terms = $xpath->query("descendant::lido:term[@lido:label='typereference']");
+		$hoardURI = null;
+		$typeURI = null;
 		
-			//measurements
-			foreach($measurements as $measurement){
-				$type = $measurement->getElementsByTagNameNS('http://www.lido-schema.org', 'measurementType')->item(0)->nodeValue;
-				$value = $measurement->getElementsByTagNameNS('http://www.lido-schema.org', 'measurementValue')->item(0)->nodeValue;
-					
-				switch ($type){
-					case 'diameter':
-						$writer->startElement('nmo:hasDiameter');
-							$writer->writeAttribute('rdf:datatype', 'http://www.w3.org/2001/XMLSchema#decimal');
-							$writer->text($value);
-						$writer->endElement();
-						break;
-					case 'weight':
-						$writer->startElement('nmo:hasWeight');
-							$writer->writeAttribute('rdf:datatype', 'http://www.w3.org/2001/XMLSchema#decimal');
-							$writer->text($value);
-						$writer->endElement();
-						break;
-					case 'orientation':
-						$writer->startElement('nmo:hasAxis');
-							$writer->writeAttribute('rdf:datatype', 'http://www.w3.org/2001/XMLSchema#integer');
-							$writer->text($value);
-						$writer->endElement();
-						break;
-				}
+		foreach ($terms as $term){
+			if (preg_match('/price\./', $term->nodeValue)){
+				$typeURI = $term->nodeValue;
+				echo "Processing #{$count}: {$id}, {$typeURI}\n";
+			} elseif (preg_match('/coinhoards\.org/', $term->nodeValue)){
+				$hoardURI = $term->nodeValue;
+				echo "Found {$hoardURI}\n";
 			}
-			
-		//images
-		$image_url = $xpath->query("descendant::lido:resourceRepresentation/lido:linkResource")->item(0)->nodeValue;
-		if (strlen($image_url) > 0){
-			$pieces = explode('/', $image_url);
-			$image_id = $pieces[5];
-				
-			//obverse
-			$writer->startElement('nmo:hasObverse');
-				$writer->startElement('rdf:Description');
-					$writer->startElement('foaf:thumbnail');
-						$writer->writeAttribute('rdf:resource', "http://ww2.smb.museum/mk_edit/images/{$image_id}/vs_thumb.jpg");
-					$writer->endElement();
-					$writer->startElement('foaf:depiction');
-						$writer->writeAttribute('rdf:resource', "http://ww2.smb.museum/mk_edit/images/{$image_id}/vs_opt.jpg");
-					$writer->endElement();
-				$writer->endElement();
-			$writer->endElement();
-				
-			//reverse
-			$writer->startElement('nmo:hasReverse');
-				$writer->startElement('rdf:Description');
-					$writer->startElement('foaf:thumbnail');
-						$writer->writeAttribute('rdf:resource', "http://ww2.smb.museum/mk_edit/images/{$image_id}/rs_thumb.jpg");
-					$writer->endElement();
-					$writer->startElement('foaf:depiction');
-						$writer->writeAttribute('rdf:resource', "http://ww2.smb.museum/mk_edit/images/{$image_id}/rs_opt.jpg");
-					$writer->endElement();
-				$writer->endElement();
-			$writer->endElement();
 		}
-			
 		
-		//findspots
-		$geonameId = '';
-		$findspotUri = '';
-		$places = $xpath->query("descendant::lido:place");
-		foreach ($places as $place){
-			$attr = $place->getAttribute('lido:politicalEntity');
+		if (isset($typeURI)) {
+			$title = $xpath->query("descendant::lido:titleSet/lido:appellationValue")->item(0)->nodeValue;
+			if (strlen($xpath->query("descendant::lido:displayDate")->item(0)->nodeValue) > 0){
+				$title .= ', ' . $xpath->query("descendant::lido:eventDate/lido:displayDate")->item(0)->nodeValue;
+			}		
+			$measurements = $xpath->query("descendant::lido:measurementsSet");
 			
-			if ($attr == 'finding_place'){						
-				$findspots = $place->getElementsByTagNameNS('http://www.lido-schema.org', 'placeID');
-				
-				foreach ($findspots as $findspot){
-					$findspotUri = $findspot->nodeValue;
-					if (strstr($findspotUri, 'geonames') != FALSE) {
-						$ffrags = explode('/', $findspotUri);
-						$geonameId = $ffrags[3];
-							
-						//if the id is valid
-						if ($geonameId != '0'){
-							echo "Found {$findspotUri}\n";
-								$writer->startElement('nmo:hasFindspot');
-									$writer->writeAttribute('rdf:resource', $findspotUri);
-								$writer->endElement();
-							break;
-						}
-					} elseif (strstr($findspotUri, 'nomisma') !== FALSE){
-							$writer->startElement('nmo:hasFindspot');
-								$writer->writeAttribute('rdf:resource', $findspotUri . '#this');
+			$writer->startElement('nmo:NumismaticObject');
+				$writer->writeAttribute('rdf:about', "http://ww2.smb.museum/ikmk/object.php?id={$id}");
+				$writer->startElement('dcterms:title');
+					$writer->writeAttribute('xml:lang', 'de');
+					$writer->text($title);
+				$writer->endElement();
+				$writer->writeElement('dcterms:identifier', $id);
+				$writer->startElement('dcterms:publisher');
+					$writer->writeAttribute('rdf:resource', 'http://nomisma.org/id/mk_berlin');
+				$writer->endElement();
+				$writer->startElement('nmo:hasCollection');
+					$writer->writeAttribute('rdf:resource', 'http://nomisma.org/id/mk_berlin');
+				$writer->endElement();
+				$writer->startElement('nmo:hasTypeSeriesItem');
+					$writer->writeAttribute('rdf:resource', $typeURI);
+				$writer->endElement();
+			
+				//measurements
+				foreach($measurements as $measurement){
+					$type = $measurement->getElementsByTagNameNS('http://www.lido-schema.org', 'measurementType')->item(0)->nodeValue;
+					$value = $measurement->getElementsByTagNameNS('http://www.lido-schema.org', 'measurementValue')->item(0)->nodeValue;
+						
+					switch ($type){
+						case 'diameter':
+							$writer->startElement('nmo:hasDiameter');
+								$writer->writeAttribute('rdf:datatype', 'http://www.w3.org/2001/XMLSchema#decimal');
+								$writer->text($value);
 							$writer->endElement();
+							break;
+						case 'weight':
+							$writer->startElement('nmo:hasWeight');
+								$writer->writeAttribute('rdf:datatype', 'http://www.w3.org/2001/XMLSchema#decimal');
+								$writer->text($value);
+							$writer->endElement();
+							break;
+						case 'orientation':
+							$writer->startElement('nmo:hasAxis');
+								$writer->writeAttribute('rdf:datatype', 'http://www.w3.org/2001/XMLSchema#integer');
+								$writer->text($value);
+							$writer->endElement();
+							break;
 					}
 				}
-			}					
-		}
-		
-		//void:inDataset
-		$writer->startElement('void:inDataset');
-			$writer->writeAttribute('rdf:resource', 'http://ww2.smb.museum/ikmk/');
-		$writer->endElement();
-		
-		//end nmo:NumismaticObject
-		$writer->endElement();
-		
-		//get coordinates
-		if (strlen($geonameId) > 0 && $geonameId != '0'){
-			$service = 'http://api.geonames.org/get?geonameId=' . $geonameId . '&username=anscoins&style=full';
-			$coords = query_geonames($service);
+				
+			//images
+			$image_url = $xpath->query("descendant::lido:resourceRepresentation/lido:linkResource")->item(0)->nodeValue;
+			if (strlen($image_url) > 0){
+				$pieces = explode('/', $image_url);
+				$image_id = $pieces[5];
+					
+				//obverse
+				$writer->startElement('nmo:hasObverse');
+					$writer->startElement('rdf:Description');
+						$writer->startElement('foaf:thumbnail');
+							$writer->writeAttribute('rdf:resource', "http://ww2.smb.museum/mk_edit/images/{$image_id}/vs_thumb.jpg");
+						$writer->endElement();
+						$writer->startElement('foaf:depiction');
+							$writer->writeAttribute('rdf:resource', "http://ww2.smb.museum/mk_edit/images/{$image_id}/vs_opt.jpg");
+						$writer->endElement();
+					$writer->endElement();
+				$writer->endElement();
+					
+				//reverse
+				$writer->startElement('nmo:hasReverse');
+					$writer->startElement('rdf:Description');
+						$writer->startElement('foaf:thumbnail');
+							$writer->writeAttribute('rdf:resource', "http://ww2.smb.museum/mk_edit/images/{$image_id}/rs_thumb.jpg");
+						$writer->endElement();
+						$writer->startElement('foaf:depiction');
+							$writer->writeAttribute('rdf:resource', "http://ww2.smb.museum/mk_edit/images/{$image_id}/rs_opt.jpg");
+						$writer->endElement();
+					$writer->endElement();
+				$writer->endElement();
+			}				
 			
-			$writer->startElement('geo:SpatialThing');
-				$writer->writeAttribute('rdf:about', $findspotUri);
-				$writer->writeElement('foaf:name', $coords['name']);
-				$writer->startElement('geo:lat');
-					$writer->writeAttribute('rdf:datatype', 'http://www.w3.org/2001/XMLSchema#decimal');
-					$writer->text($coords['lat']);
+			//if the $hoardURI is set, then use the hoard URI in dcterms:isPartOf; otherwise, use nmo:hasFindspot for finding_place URI
+			$geonameId = '';
+			$findspotUri = '';
+			
+			if (isset($hoardURI)) {
+				$writer->startElement('dcterms:isPartOf');
+					$writer->writeAttribute('rdf:resource', $hoardURI);
 				$writer->endElement();
-				$writer->startElement('geo:long');
-					$writer->writeAttribute('rdf:datatype', 'http://www.w3.org/2001/XMLSchema#decimal');
-					$writer->text($coords['long']);
-				$writer->endElement();
+			} else {				
+				$places = $xpath->query("descendant::lido:place");
+				foreach ($places as $place){
+					$attr = $place->getAttribute('lido:politicalEntity');
+					
+					if ($attr == 'finding_place'){						
+						$findspots = $place->getElementsByTagNameNS('http://www.lido-schema.org', 'placeID');
+						
+						foreach ($findspots as $findspot){
+							$findspotUri = $findspot->nodeValue;
+							if (strstr($findspotUri, 'geonames') != FALSE) {
+								$ffrags = explode('/', $findspotUri);
+								$geonameId = $ffrags[3];
+									
+								//if the id is valid
+								if ($geonameId != '0'){
+									echo "Found {$findspotUri}\n";
+										$writer->startElement('nmo:hasFindspot');
+											$writer->writeAttribute('rdf:resource', $findspotUri);
+										$writer->endElement();
+									break;
+								}
+							} elseif (strstr($findspotUri, 'nomisma') !== FALSE){
+									$writer->startElement('nmo:hasFindspot');
+										$writer->writeAttribute('rdf:resource', $findspotUri . '#this');
+									$writer->endElement();
+							}
+						}
+					}					
+				}
+			}				
+			
+			//void:inDataset
+			$writer->startElement('void:inDataset');
+				$writer->writeAttribute('rdf:resource', 'http://ww2.smb.museum/ikmk/');
 			$writer->endElement();
+			
+			//end nmo:NumismaticObject
+			$writer->endElement();
+			
+			//get coordinates
+			if (strlen($geonameId) > 0 && $geonameId != '0'){
+				$service = 'http://api.geonames.org/get?geonameId=' . $geonameId . '&username=anscoins&style=full';
+				$coords = query_geonames($service);
+				
+				$writer->startElement('geo:SpatialThing');
+					$writer->writeAttribute('rdf:about', $findspotUri);
+					$writer->writeElement('foaf:name', $coords['name']);
+					$writer->startElement('geo:lat');
+						$writer->writeAttribute('rdf:datatype', 'http://www.w3.org/2001/XMLSchema#decimal');
+						$writer->text($coords['lat']);
+					$writer->endElement();
+					$writer->startElement('geo:long');
+						$writer->writeAttribute('rdf:datatype', 'http://www.w3.org/2001/XMLSchema#decimal');
+						$writer->text($coords['long']);
+					$writer->endElement();
+				$writer->endElement();
+			}
 		}
 	}			
 }
