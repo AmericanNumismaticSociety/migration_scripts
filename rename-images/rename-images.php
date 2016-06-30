@@ -24,7 +24,8 @@ error_log(date(DATE_W3C) . ": Beginning process.\n", 3, $logFile);
 
 $files = scandir($csvDir);
 foreach ($files as $file){
-	if (strpos($file, '.csv') > 0){
+	//ignore hidden CSV files
+	if (strpos($file, '.csv') > 0 && substr($file, 0, 1) != '.'){
 		$data = generate_json($csvDir . $file);
 		
 		$accnumCount = count($data);
