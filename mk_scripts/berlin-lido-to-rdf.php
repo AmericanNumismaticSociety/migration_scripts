@@ -130,7 +130,6 @@ function parseReference($xpath){
 	$refNodes = $xpath->query("descendant::lido:relatedWorkSet[lido:relatedWorkRelType/lido:term='reference']/lido:relatedWork/lido:object/lido:objectNote");
 	if ($refNodes->length > 0){
 		$ref = $refNodes->item(0)->nodeValue;
-		echo "{$ref}\n";
 		//RIC
 		if (strpos($ref, 'RIC') !== FALSE){
 			$pieces = explode(' ', $ref);
