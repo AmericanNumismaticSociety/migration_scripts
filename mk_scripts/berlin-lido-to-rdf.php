@@ -9,11 +9,23 @@ libxml_set_streams_context($context);
 $collections = generate_json('https://docs.google.com/spreadsheets/d/1I01Nva_udl0DHJnsjEQ_z-Q1XJaZ6uuAptLVoQSrNfU/pub?gid=0&single=true&output=csv');
 
 foreach ($collections as $collection){
-	//use XML writer to generate RDF for void:dataDump	
-	write_dump($collection);
-	
-	//create void:Dataset
-	write_metadata($collection);
+	//if the $id is specified, only process that collection
+	if (isset($argv[1]) > 0){
+		$id = $argv[1];
+		if ($collection['project_id'] == $id){
+			//use XML writer to generate RDF for void:dataDump
+			write_dump($collection);
+			
+			//create void:Dataset
+			write_metadata($collection);
+		}
+	} else {
+		//use XML writer to generate RDF for void:dataDump
+		write_dump($collection);
+		
+		//create void:Dataset
+		write_metadata($collection);
+	}
 }
 
 function write_dump($collection){
@@ -37,7 +49,7 @@ function write_dump($collection){
 	
 	//iterate through export sets
 	foreach (explode('|', $collection['sets']) as $set){
-		$list = file_get_contents($set);
+		$list = file_get_contents(trim($set));
 		$files = explode(PHP_EOL, $list);
 	
 		echo "Parsing set {$set}\n";
@@ -118,9 +130,9 @@ function parseReference($xpath){
 	$refNodes = $xpath->query("descendant::lido:relatedWorkSet[lido:relatedWorkRelType/lido:term='reference']/lido:relatedWork/lido:object/lido:objectNote");
 	if ($refNodes->length > 0){
 		$ref = $refNodes->item(0)->nodeValue;
-		
-		//ensure the $ref has a regex match for RIC
-		if (preg_match('/RIC/', $ref) !== FALSE){
+		echo "{$ref}\n";
+		//RIC
+		if (strpos($ref, 'RIC') !== FALSE){
 			$pieces = explode(' ', $ref);
 			
 			//assemble id
@@ -447,6 +459,26 @@ function parseReference($xpath){
 					return null;
 				}
 			}
+		} else if (strpos($ref, 'RRC') !== FALSE){
+			//RRC
+			$pieces = explode(',', $ref);
+			$frag = array();
+			$frag[] = ltrim(trim($pieces[1]), '0');
+			if (isset($pieces[2])) {
+				$frag[] = ltrim(trim($pieces[2]), '0');
+			} else {
+				$frag[] = '1';
+			}
+				
+			$id = 'rrc-' . implode('.', $frag);				
+			$url = 'http://numismatics.org/crro/id/' . $id . '.xml';
+			$file_headers = @get_headers($url);
+			if ($file_headers[0] == 'HTTP/1.1 200 OK'){
+				$uri = 'http://numismatics.org/crro/id/' . $id;
+				return $uri;
+			} else {
+				return null;
+			}			
 		} else {
 			return null;
 		}
@@ -511,6 +543,7 @@ function generateNumismaticObject($id, $typeURI, $collection, $xpath, $writer){
 
 		switch ($collection['project_id']){
 			case 'berlin':
+			case 'priene':
 				$image_path = 'http://ww2.smb.museum';
 				break;
 			case 'muenster':
@@ -574,9 +607,9 @@ function generateNumismaticObject($id, $typeURI, $collection, $xpath, $writer){
 							break;
 						}
 					} elseif (strstr($findspotUri, 'nomisma') !== FALSE){
-							$writer->startElement('nmo:hasFindspot');
-								$writer->writeAttribute('rdf:resource', $findspotUri . '#this');
-							$writer->endElement();
+						$writer->startElement('nmo:hasFindspot');
+							$writer->writeAttribute('rdf:resource', $findspotUri . '#this');
+						$writer->endElement();
 					}
 				}
 			}					
