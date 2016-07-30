@@ -5,12 +5,24 @@ error_reporting(0);
 
 $data = generate_json('bm-concordances.csv', false);
 
-$open = '<rdf:RDF xmlns:xsd="http://www.w3.org/2001/XMLSchema#" xmlns:nm="http://nomisma.org/id/"
-         xmlns:dcterms="http://purl.org/dc/terms/" xmlns:foaf="http://xmlns.com/foaf/0.1/" 
-         xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:nmo="http://nomisma.org/ontology#" 
-         xmlns:void="http://rdfs.org/ns/void#">';
+//use XML writer to generate RDF
+$writer = new XMLWriter();
+$writer->openURI("bm-price.rdf");
+//$writer->openURI('php://output');
+$writer->startDocument('1.0','UTF-8');
+$writer->setIndent(true);
+//now we need to define our Indent string,which is basically how many blank spaces we want to have for the indent
+$writer->setIndentString("    ");
 
-file_put_contents('bm-price.rdf', $open);
+$writer->startElement('rdf:RDF');
+$writer->writeAttribute('xmlns:xsd', 'http://www.w3.org/2001/XMLSchema#');
+$writer->writeAttribute('xmlns:nm', "http://nomisma.org/id/");
+$writer->writeAttribute('xmlns:nmo', "http://nomisma.org/ontology#");
+$writer->writeAttribute('xmlns:dcterms', "http://purl.org/dc/terms/");
+$writer->writeAttribute('xmlns:foaf', "http://xmlns.com/foaf/0.1/");
+$writer->writeAttribute('xmlns:rdf', "http://www.w3.org/1999/02/22-rdf-syntax-ns#");
+$writer->writeAttribute('xmlns:void', "http://rdfs.org/ns/void#");
+
 
 $count = 1;
 foreach ($data as $row){
@@ -18,27 +30,37 @@ foreach ($data as $row){
 	$id = $pieces[5];
 	echo "Processing {$count}: {$id}\n";	
 	
-	$rdf = '';
 	if (strlen($row['coinType']) > 0){
-		$rdf .= '<nmo:NumismaticObject rdf:about="' . $row['uri'] . '">';
-		$rdf .= '<dcterms:title xml:lang="en">British Museum: ' . $row['regno'] . '</dcterms:title>';
-		$rdf .= '<dcterms:identifier>' . $row['regno'] . '</dcterms:identifier>';
-		$rdf .= '<dcterms:publisher rdf:resource="http://nomisma.org/id/bm"/>';
-		$rdf .= '<nmo:hasCollection rdf:resource="http://nomisma.org/id/bm"/>';
-		$rdf .= '<nmo:hasTypeSeriesItem rdf:resource="' . $row['coinType'] . '"/>';
-		$rdf .= query_bm($id);
-		$rdf .= '<void:inDataset rdf:resource="http://www.britishmuseum.org/"/>';
-		$rdf .= '</nmo:NumismaticObject>';
+		$writer->startElement('nmo:NumismaticObject');
+			$writer->writeAttribute('rdf:about', $row['uri']);
+			$writer->startElement('dcterms:title');
+				$writer->writeAttribute('xml:lang', 'en');
+				$writer->text("British Museum: " . $row['regno']);
+			$writer->endElement();
+			$writer->writeElement('dcterms:identifier', $row['regno']);
+			$writer->startElement('nmo:hasCollection');
+				$writer->writeAttribute('rdf:resource', 'http://nomisma.org/id/bm');
+			$writer->endElement();
+			$writer->startElement('nmo:hasTypeSeriesItem');
+				$writer->writeAttribute('rdf:resource', $row['coinType']);
+			$writer->endElement();
 		
-		file_put_contents('bm-price.rdf', $rdf, FILE_APPEND);
+			query_bm($writer, $row['uri']);
+			
+			//void:inDataset
+			$writer->startElement('void:inDataset');
+				$writer->writeAttribute('rdf:resource', 'http://www.britishmuseum.org/');
+			$writer->endElement();
+			
+		//end nmo:NumismaticObject
+		$writer->endElement();
 	}
 	$count++;
-	//echo $rdf;
 }
+$writer->endElement();
+$writer->flush();
 
-file_put_contents('bm-price.rdf', '</rdf:RDF>', FILE_APPEND);
-
-function query_bm($id){
+function query_bm($writer, $uri){
 	$db = sparql_connect( "http://collection.britishmuseum.org/sparql" );
 	if( !$db ) {
 		print sparql_errno() . ": " . sparql_error(). "\n"; exit;
@@ -48,61 +70,87 @@ function query_bm($id){
 	sparql_ns( "ecrm","http://erlangen-crm.org/current/" );
 	sparql_ns( "object","http://collection.britishmuseum.org/id/object/" );
 	
-	$sparql = "SELECT ?image ?weight ?axis ?diameter ?objectId WHERE {
-  OPTIONAL {object:OBJECT bmo:PX_has_main_representation ?image }
-  OPTIONAL { object:OBJECT ecrm:P43_has_dimension ?wDim .
+	$sparql = "SELECT ?image ?weight ?axis ?diameter ?objectId ?hoard WHERE {
+  OPTIONAL {<OBJECT> bmo:PX_has_main_representation ?image }
+  OPTIONAL { <OBJECT> ecrm:P43_has_dimension ?wDim .
            ?wDim ecrm:P2_has_type thesDimension:weight .
            ?wDim ecrm:P90_has_value ?weight}
   OPTIONAL {
-     object:OBJECT ecrm:P43_has_dimension ?wAxis .
+     <OBJECT> ecrm:P43_has_dimension ?wAxis .
            ?wAxis ecrm:P2_has_type thesDimension:die-axis .
            ?wAxis ecrm:P90_has_value ?axis
     }
   OPTIONAL {
-     object:OBJECT ecrm:P43_has_dimension ?wDiameter .
+     <OBJECT> ecrm:P43_has_dimension ?wDiameter .
            ?wDiameter ecrm:P2_has_type thesDimension:diameter .
            ?wDiameter ecrm:P90_has_value ?diameter
     }
   OPTIONAL {
-     object:OBJECT ecrm:P1_is_identified_by ?identifier.
+     <OBJECT> ecrm:P1_is_identified_by ?identifier.
      ?identifier ecrm:P2_has_type <http://collection.britishmuseum.org/id/thesauri/identifier/codexid> ;
         rdfs:label ?objectId
     }
+  OPTIONAL {
+     <OBJECT> bmo:PX_display_wrap ?hoard . FILTER regex(?hoard, 'IGCH')
+    }
   }";
 	
-	$result = sparql_query(str_replace('OBJECT',$id,$sparql));
+	$result = sparql_query(str_replace('OBJECT', $uri, $sparql));
 	if( !$result ) {
 		print sparql_errno() . ": " . sparql_error(). "\n"; exit;
 	}
 	
-	$xml = '';
 	$fields = sparql_field_array($result);
 	while( $row = sparql_fetch_array( $result ) )
 	{
 		foreach( $fields as $field )
 		{
 			if (strlen($row[$field]) > 0) {
-				switch ($field) {
-					case 'image':
-						$xml .= '<foaf:depiction rdf:resource="' . $row[$field] . '"/>';
-						break;
-					case 'objectId':
-						$xml .= '<foaf:homepage rdf:resource="http://www.britishmuseum.org/research/collection_online/collection_object_details.aspx?objectId=' . $row[$field] . '&amp;partId=1"/>';
-						break;
-					case 'axis':
-						$xml .= '<nmo:hasAxis rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">' . (int)$row[$field] . '</nmo:hasAxis>';
-						break;
-					case 'weight':
-						$xml .= '<nmo:hasWeight rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">' . $row[$field] . '</nmo:hasWeight>';
-						break;
-					case 'diameter':
-						$xml .= '<nmo:hasDiameter rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">' . $row[$field] . '</nmo:hasDiameter>';
-						break;
-				}
+				if ($field == 'hoard'){
+					preg_match('/IGCH\s([0-9]+)/', $row[$field], $matches);
+					if (isset($matches[1])){
+						$num = str_pad($matches[1], 4, "0", STR_PAD_LEFT);
+						$hoardURI = 'http://coinhoards.org/id/igch' . $num;
+						echo "Found hoard {$hoardURI}\n";
+						$writer->startElement('dcterms:isPartOf');
+							$writer->writeAttribute('rdf:resource', $hoardURI);
+						$writer->endElement();
+					}
+				} else {
+					switch ($field) {
+						case 'image':
+							$writer->startElement('foaf:depiction');
+								$writer->writeAttribute('rdf:resource', $row[$field]);
+							$writer->endElement();
+							break;
+						case 'objectId':
+							$writer->startElement('foaf:homepage');
+								$writer->writeAttribute('rdf:resource', "http://www.britishmuseum.org/research/collection_online/collection_object_details.aspx?objectId={$row[$field]}&partId=1");
+							$writer->endElement();
+							break;
+						case 'axis':
+							$writer->startElement('nmo:hasAxis');
+								$writer->writeAttribute('rdf:datatype', 'http://www.w3.org/2001/XMLSchema#integer');
+								$writer->text($row[$field]);
+							$writer->endElement();
+							break;
+						case 'weight':
+							$writer->startElement('nmo:hasWeight');
+								$writer->writeAttribute('rdf:datatype', 'http://www.w3.org/2001/XMLSchema#decimal');
+								$writer->text($row[$field]);
+							$writer->endElement();
+							break;
+						case 'diameter':
+							$writer->startElement('nmo:hasDiameter');
+								$writer->writeAttribute('rdf:datatype', 'http://www.w3.org/2001/XMLSchema#decimal');
+								$writer->text($row[$field]);
+							$writer->endElement();
+							break;
+					}
+				}				
 			}
 		}
 	}
-	return $xml;
 }
 
 

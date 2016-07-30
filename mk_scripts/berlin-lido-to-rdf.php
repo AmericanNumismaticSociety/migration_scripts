@@ -1,9 +1,18 @@
 <?php 
-
 //libxml timeout
 $options = ['http' => ['method' => 'GET','timeout' => '10']];
 $context = stream_context_create($options);
 libxml_set_streams_context($context);
+
+//load RIC 10 number, auth k=>v pairs
+$data = generate_json('ric10-pairs.csv');
+$pairs = array();
+foreach ($data as $row){
+	$pairs[$row['key']] = $row['val'];
+}
+
+//store successful hits
+$types = array();
 
 //load the collection metadata stored in a Google Spreadsheet
 $collections = generate_json('https://docs.google.com/spreadsheets/d/1I01Nva_udl0DHJnsjEQ_z-Q1XJaZ6uuAptLVoQSrNfU/pub?gid=0&single=true&output=csv');
@@ -127,19 +136,24 @@ function query_geonames($service){
 }
 
 function parseReference($xpath){
+	GLOBAL $types;
+	GLOBAL $pairs;
+	
 	$refNodes = $xpath->query("descendant::lido:relatedWorkSet[lido:relatedWorkRelType/lido:term='reference']/lido:relatedWork/lido:object/lido:objectNote");
 	if ($refNodes->length > 0){
 		$ref = $refNodes->item(0)->nodeValue;
 		//RIC
 		if (strpos($ref, 'RIC') !== FALSE){
+			$ref = str_replace(',', '', $ref);
 			$pieces = explode(' ', $ref);
+			$vol = $pieces[1];
 			
 			//assemble id
 			$nomismaId = array();
 			$nomismaId[] = 'ric';
 			
 			//volume
-			switch ($pieces[1]) {
+			switch ($vol) {
 				case 'I²':
 					$nomismaId[] = '1(2)';
 					break;
@@ -172,16 +186,16 @@ function parseReference($xpath){
 				case 'VIII':
 					$nomismaId[] = '8';
 					break;
-				//case 'X':
-				//	$nomismaId[] = '10';
-				//	break;
+				case 'X':
+					$nomismaId[] = '10';
+					break;
 				default:
-					$nomismaId[null];
+					$nomismaId[] = null;
 			}
 			
 			//normalize authority
 			$names = array_slice($pieces, 2, count($pieces) - 3);
-			$authority = str_replace(',', '', implode(' ', $names));
+			$authority = implode(' ', $names);
 			switch ($authority) {
 				case 'Augustus':
 					$nomismaId[] = 'aug';
@@ -438,26 +452,51 @@ function parseReference($xpath){
 			$num = ltrim($pieces[count($pieces) - 1], '0');
 			
 			//test which number matches in OCRE
-			if ($nomismaId[1] != null && $nomismaId[2] != null && strlen($num) > 0){
-				$url = 'http://numismatics.org/ocre/id/' . implode('.', $nomismaId) . '.' . strtoupper($num) . '.xml';
-				$file_headers = @get_headers($url);
-				if ($file_headers[0] == 'HTTP/1.1 200 OK'){
-					$nomismaId[] = strtoupper($num);
-				} else {
-					$url = 'http://numismatics.org/ocre/id/' . implode('.', $nomismaId) .  '.' . $num . '.xml';
-					$file_headers = @get_headers($url);
-					if ($file_headers[0] == 'HTTP/1.1 200 OK'){
-						$nomismaId[] = $num;
+			if (strlen($num) > 0){
+				if ($vol == 'X'){
+					echo "RIC 10:\n";					
+					// handle RIC 10 in a lookup table
+					if (array_key_exists($num, $pairs)){
+						$nomismaId[] = $pairs[$num];
+						$uri = 'http://numismatics.org/ocre/id/' . implode('.', $nomismaId) .  '.' . $num;
+								
+						if (in_array($uri, $types)){
+							return $uri;
+						} else {
+							$file_headers = @get_headers($uri . '.xml');
+							if ($file_headers[0] == 'HTTP/1.1 200 OK'){
+								$types[] = $uri;
+								return $uri;
+							}
+						}
 					}
-				}
-			
-				if (isset($nomismaId[3])){
-					$uri = 'http://numismatics.org/ocre/id/' . implode('.', $nomismaId);
-					return $uri;
-				} else {
-					return null;
-				}
-			}
+				} elseif ($nomismaId[1] != null && $nomismaId[2] != null){
+					$uri = 'http://numismatics.org/ocre/id/' . implode('.', $nomismaId) . '.' . strtoupper($num);
+					//see if the URI is already in the validated array
+					if (in_array($uri, $types)){
+						return $uri;
+					} else {
+						$file_headers = @get_headers($uri . '.xml');
+						if ($file_headers[0] == 'HTTP/1.1 200 OK'){
+							$types[] = $uri;
+							return $uri;
+						} else {
+							$uri = 'http://numismatics.org/ocre/id/' . implode('.', $nomismaId) .  '.' . $num;
+							 
+							//see if the URI is already in the validated array
+							if (in_array($uri, $types)){
+								return $uri;
+							} else {
+								$file_headers = @get_headers($uri . '.xml');
+								if ($file_headers[0] == 'HTTP/1.1 200 OK'){
+									$types[] = $uri;
+									return $uri;
+								}
+							}
+						}
+					}
+				} 
+			} 			 
 		} else if (strpos($ref, 'RRC') !== FALSE){
 			//RRC
 			$pieces = explode(',', $ref);
@@ -470,19 +509,19 @@ function parseReference($xpath){
 			}
 				
 			$id = 'rrc-' . implode('.', $frag);				
-			$url = 'http://numismatics.org/crro/id/' . $id . '.xml';
-			$file_headers = @get_headers($url);
-			if ($file_headers[0] == 'HTTP/1.1 200 OK'){
-				$uri = 'http://numismatics.org/crro/id/' . $id;
+			$uri = 'http://numismatics.org/crro/id/' . $id;
+			
+			//see if the URI is already in the validated array
+			if (in_array($uri, $types)){
 				return $uri;
 			} else {
-				return null;
-			}			
-		} else {
-			return null;
+				$file_headers = @get_headers($uri . '.xml');
+				if ($file_headers[0] == 'HTTP/1.1 200 OK'){
+					$types[] = $uri;
+					return $uri;
+				}
+			}						
 		}
-	} else {
-		return null;
 	}
 }
 

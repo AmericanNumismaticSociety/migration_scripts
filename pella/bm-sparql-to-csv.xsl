@@ -14,8 +14,6 @@
 		<xsl:text>","</xsl:text>
 		<xsl:value-of select="res:binding[@name='regno']/res:literal"/>
 		<xsl:text>","</xsl:text>
-		<xsl:value-of select="res:binding[@name='ref']/res:literal"/>
-		<xsl:text>","</xsl:text>
 		<xsl:value-of select="res:binding[@name='text']/res:literal"/>
 		<xsl:text>"&#xa;</xsl:text>
 	</xsl:template>
