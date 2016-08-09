@@ -586,7 +586,6 @@ function generateNumismaticObject($id, $typeURI, $collection, $xpath, $writer){
 				break;
 			case 'muenster':
 				$image_path = 'http://archaeologie.uni-muenster.de';
-				$image_id = 'n0/' . $image_id;
 				break;
 		}
 			
