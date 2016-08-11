@@ -11,10 +11,11 @@
 	-->
 
 
-<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xs="http://www.w3.org/2001/XMLSchema"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:openSearch="http://a9.com/-/spec/opensearchrss/1.0/" xmlns:eac="urn:isbn:1-931666-33-4"
-	xmlns:gsx="http://schemas.google.com/spreadsheets/2006/extended" xmlns:skos="http://www.w3.org/2004/02/skos/core#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
-	xmlns:mods="http://www.loc.gov/mods/v3" xmlns:schema="http://schema.org/" version="2.0" exclude-result-prefixes="#all">
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:xlink="http://www.w3.org/1999/xlink"
+	xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:atom="http://www.w3.org/2005/Atom"
+	xmlns:openSearch="http://a9.com/-/spec/opensearchrss/1.0/" xmlns:eac="urn:isbn:1-931666-33-4" xmlns:gsx="http://schemas.google.com/spreadsheets/2006/extended"
+	xmlns:skos="http://www.w3.org/2004/02/skos/core#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:mods="http://www.loc.gov/mods/v3"
+	xmlns:schema="http://schema.org/" version="2.0" exclude-result-prefixes="#all">
 
 	<xsl:output method="xml" encoding="UTF-8" indent="yes"/>
 	<xsl:strip-space elements="*"/>
@@ -24,12 +25,13 @@
 
 	<!-- get the EBook listing from Google Spreadsheets -->
 	<xsl:variable name="entry" as="node()*">
-		<xsl:copy-of select="document('https://spreadsheets.google.com/feeds/list/1mvZu1JUw9mwusMAsDOaZGbDGEmBpfb9xhbeyqn2-Uk4/od6/public/full')//atom:entry[gsx:filename=$filename]"/>
+		<xsl:copy-of
+			select="document('https://spreadsheets.google.com/feeds/list/1mvZu1JUw9mwusMAsDOaZGbDGEmBpfb9xhbeyqn2-Uk4/od6/public/full')//atom:entry[gsx:filename=$filename]"/>
 	</xsl:variable>
 
 	<!-- get MODS from Donum -->
 	<xsl:variable name="mods" as="node()*">
-		<xsl:copy-of select="document(concat('http://donum.numismatics.org/cgi-bin/koha/opac-export.pl?op=export&amp;bib=', $entry/gsx:donum, '&amp;format=mods'))"/>
+		<xsl:copy-of select="document(concat('http://donum.numismatics.org/cgi-bin/koha/opac-export.pl?op=export&amp;format=mods&amp;bib=', $entry/gsx:donum))"/>
 	</xsl:variable>
 
 	<xsl:template match="@*|*|comment()">
@@ -42,11 +44,23 @@
 		<xsl:element name="TEI" namespace="http://www.tei-c.org/ns/1.0">
 			<xsl:namespace name="xsi">http://www.w3.org/2001/XMLSchema-instance</xsl:namespace>
 			<xsl:attribute name="xsi:noNamespaceSchemaLocation">http://www.tei-c.org/release/xml/tei/custom/schema/xsd/tei_all.xsd</xsl:attribute>
-			<xsl:attribute name="xml:id" select="concat('nnan', $entry/gsx:donum)"/>
+			<xsl:attribute name="xml:id">
+				<xsl:choose>
+					<xsl:when test="$entry/gsx:filename = 'Hispanic1-Part1'">
+						<xsl:value-of select="concat('nnan', $entry/gsx:donum, '_1')"/>
+					</xsl:when>
+					<xsl:when test="$entry/gsx:filename = 'Hispanic1-Part2'">
+						<xsl:value-of select="concat('nnan', $entry/gsx:donum, '_2')"/>
+					</xsl:when>
+					<xsl:otherwise>
+						<xsl:value-of select="concat('nnan', $entry/gsx:donum)"/>
+					</xsl:otherwise>
+				</xsl:choose>
+			</xsl:attribute>
 			<xsl:apply-templates/>
 		</xsl:element>
 	</xsl:template>
-	
+
 	<xsl:template match="tei:teiHeader">
 		<teiHeader xmlns="http://www.tei-c.org/ns/1.0">
 			<xsl:apply-templates/>
@@ -56,52 +70,101 @@
 		</teiHeader>
 	</xsl:template>
 
+	<xsl:template match="tei:fileDesc">
+		<fileDesc xmlns="http://www.tei-c.org/ns/1.0">
+			<xsl:apply-templates select="tei:titleStmt|tei:publicationStmt"/>
+			<xsl:if test="contains($filename, 'COAC') or contains($filename, 'NS') or contains($filename, 'NNM')">
+				<seriesStmt>
+					<title>
+						<xsl:choose>
+							<xsl:when test="contains($filename, 'COAC')">Coinage of the Americas Conference</xsl:when>
+							<xsl:when test="contains($filename, 'NS')">Numismatic Studies</xsl:when>
+							<xsl:when test="contains($filename, 'NNM')">Numismatic Notes and Monographs</xsl:when>
+						</xsl:choose>
+					</title>
+					<biblScope unit="issue">
+						<xsl:analyze-string select="$filename" regex="[A-Z]+(\d+)">
+
+							<xsl:matching-substring>
+								<xsl:value-of select="regex-group(1)"/>
+							</xsl:matching-substring>
+						</xsl:analyze-string>
+					</biblScope>
+					<idno type="URI">
+						<xsl:choose>
+							<xsl:when test="contains($filename, 'COAC')">http://numismatics.org/library/195780</xsl:when>
+							<xsl:when test="contains($filename, 'NS')">http://numismatics.org/library/195779</xsl:when>
+							<xsl:when test="contains($filename, 'NNM')">http://numismatics.org/library/195778</xsl:when>
+						</xsl:choose>
+					</idno>
+				</seriesStmt>
+			</xsl:if>
+			<xsl:apply-templates select="tei:sourceDesc"/>
+		</fileDesc>
+	</xsl:template>
+
 	<!-- TEI header -->
 	<xsl:template match="tei:titleStmt">
 		<titleStmt xmlns="http://www.tei-c.org/ns/1.0">
 			<title>
 				<xsl:value-of select="$mods/mods:mods/mods:titleInfo/mods:title"/>
 			</title>
-			<xsl:for-each select="$entry/*[starts-with(local-name(), 'author')][matches(., 'https?://')]">
-				<author>
-					<name>
+			<xsl:for-each select="$entry/*[starts-with(local-name(), 'author')][matches(., 'https?://')]|$entry/*[starts-with(local-name(), 'editor')][matches(., 'https?://')]">
+
+				<xsl:element name="{substring(local-name(), 1, 6)}" namespace="http://www.tei-c.org/ns/1.0">
+					<xsl:element name="name">
 						<xsl:choose>
 							<xsl:when test="contains(., 'numismatics.org')">
 								<xsl:value-of select="document(concat(., '.xml'))//eac:nameEntry[1]/eac:part"/>
 							</xsl:when>
 							<xsl:when test="contains(., 'viaf.org')">
-								<xsl:value-of select="document(concat(., '/rdf'))//rdf:Description[skos:inScheme/@rdf:resource='http://viaf.org/authorityScheme/LC']/skos:prefLabel"/>
+								<xsl:variable name="rdf" as="element()*">
+									<xsl:copy-of select="document(concat(., '/rdf'))/*"/>
+								</xsl:variable>
+
+								<xsl:choose>
+									<xsl:when test="$rdf//rdf:Description[skos:inScheme/@rdf:resource='http://viaf.org/authorityScheme/LC']/skos:prefLabel">
+										<xsl:value-of select="$rdf//rdf:Description[skos:inScheme/@rdf:resource='http://viaf.org/authorityScheme/LC']/skos:prefLabel"/>
+									</xsl:when>
+									<xsl:otherwise>
+										<xsl:value-of select="normalize-space($mods/mods:mods/mods:name/mods:namePart)"/>
+									</xsl:otherwise>
+								</xsl:choose>
 							</xsl:when>
 						</xsl:choose>
-					</name>
-					<idno type="URI">
+					</xsl:element>
+					<xsl:element name="idno">
+						<xsl:attribute name="type">URI</xsl:attribute>
 						<xsl:value-of select="."/>
-					</idno>
-				</author>
+					</xsl:element>
+				</xsl:element>
 			</xsl:for-each>
 			<xsl:apply-templates select="tei:respStmt"/>
 		</titleStmt>
 	</xsl:template>
-	
+
 	<!-- create bibls for Donum, Worldcat and Worldcat Works URIs -->
 	<xsl:template match="tei:sourceDesc">
 		<xsl:element name="sourceDesc" namespace="http://www.tei-c.org/ns/1.0">
 			<xsl:element name="bibl" namespace="http://www.tei-c.org/ns/1.0">
+				<xsl:element name="title" namespace="http://www.tei-c.org/ns/1.0">Donum</xsl:element>
 				<xsl:element name="idno" namespace="http://www.tei-c.org/ns/1.0">
 					<xsl:attribute name="type">URI</xsl:attribute>
 					<xsl:value-of select="concat('http://numismatics.org/library/', $entry/gsx:donum)"/>
 				</xsl:element>
 			</xsl:element>
-			
+
 			<xsl:if test="string($entry/gsx:oclc)">
 				<xsl:element name="bibl" namespace="http://www.tei-c.org/ns/1.0">
+					<xsl:element name="title" namespace="http://www.tei-c.org/ns/1.0">Worldcat</xsl:element>
 					<xsl:element name="idno" namespace="http://www.tei-c.org/ns/1.0">
 						<xsl:attribute name="type">URI</xsl:attribute>
 						<xsl:value-of select="concat('http://www.worldcat.org/oclc/', $entry/gsx:oclc)"/>
 					</xsl:element>
 				</xsl:element>
-				
+
 				<xsl:element name="bibl" namespace="http://www.tei-c.org/ns/1.0">
+					<xsl:element name="title" namespace="http://www.tei-c.org/ns/1.0">Worldcat Works</xsl:element>
 					<xsl:element name="idno" namespace="http://www.tei-c.org/ns/1.0">
 						<xsl:attribute name="type">URI</xsl:attribute>
 						<xsl:value-of select="document(concat('http://experiment.worldcat.org/oclc/', $entry/gsx:oclc, '.rdf'))//schema:exampleOfWork/@rdf:resource"/>
@@ -122,9 +185,32 @@
 				<xsl:value-of select="tei:date"/>
 			</date>
 			<availability>
-				<licence target="http://creativecommons.org/licenses/by-nc/4.0/">This work is made available under a Creative Commons Attribution-NonCommercial 4.0 International license</licence>
+				<licence target="http://creativecommons.org/licenses/by-nc/4.0/">
+					<xsl:text>This work is made available under a Creative Commons Attribution-NonCommercial 4.0 International license</xsl:text>
+				</licence>
 			</availability>
 		</publicationStmt>
+	</xsl:template>
+
+	<xsl:template match="tei:profileDesc">
+		<profileDesc xmlns="http://www.tei-c.org/ns/1.0">
+			<xsl:apply-templates/>
+
+			<xsl:if test="string($entry/gsx:fieldofnumismatics)">
+				<textClass>
+					<keywords scheme="http://nomisma.org/">
+						<xsl:for-each select="tokenize($entry/gsx:fieldofnumismatics, '\|')">
+							<xsl:variable name="href" select="."/>
+
+							<term ref="{$href}">
+								<xsl:value-of select="document(concat($href, '.rdf'))//skos:prefLabel[@xml:lang='en']"/>
+							</term>
+						</xsl:for-each>
+					</keywords>
+				</textClass>
+			</xsl:if>
+
+		</profileDesc>
 	</xsl:template>
 
 	<!-- content -->
@@ -144,5 +230,11 @@
 
 	<xsl:template match="tei:note[@place='foot']" mode="move">
 		<xsl:copy-of select="self::node()"/>
+	</xsl:template>
+
+	<xsl:template match="tei:date/@value">
+		<xsl:attribute name="when">
+			<xsl:value-of select="."/>
+		</xsl:attribute>
 	</xsl:template>
 </xsl:stylesheet>
