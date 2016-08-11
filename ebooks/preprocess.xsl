@@ -41,24 +41,28 @@
 	</xsl:template>
 
 	<xsl:template match="tei:TEI">
-		<xsl:element name="TEI" namespace="http://www.tei-c.org/ns/1.0">
-			<xsl:namespace name="xsi">http://www.w3.org/2001/XMLSchema-instance</xsl:namespace>
-			<xsl:attribute name="xsi:noNamespaceSchemaLocation">http://www.tei-c.org/release/xml/tei/custom/schema/xsd/tei_all.xsd</xsl:attribute>
-			<xsl:attribute name="xml:id">
-				<xsl:choose>
-					<xsl:when test="$entry/gsx:filename = 'Hispanic1-Part1'">
-						<xsl:value-of select="concat('nnan', $entry/gsx:donum, '_1')"/>
-					</xsl:when>
-					<xsl:when test="$entry/gsx:filename = 'Hispanic1-Part2'">
-						<xsl:value-of select="concat('nnan', $entry/gsx:donum, '_2')"/>
-					</xsl:when>
-					<xsl:otherwise>
-						<xsl:value-of select="concat('nnan', $entry/gsx:donum)"/>
-					</xsl:otherwise>
-				</xsl:choose>
-			</xsl:attribute>
-			<xsl:apply-templates/>
-		</xsl:element>
+		<xsl:variable name="id">
+			<xsl:choose>
+				<xsl:when test="$entry/gsx:filename = 'Hispanic1-Part1'">
+					<xsl:value-of select="concat('nnan', $entry/gsx:donum, '_1')"/>
+				</xsl:when>
+				<xsl:when test="$entry/gsx:filename = 'Hispanic1-Part2'">
+					<xsl:value-of select="concat('nnan', $entry/gsx:donum, '_2')"/>
+				</xsl:when>
+				<xsl:otherwise>
+					<xsl:value-of select="concat('nnan', $entry/gsx:donum)"/>
+				</xsl:otherwise>
+			</xsl:choose>
+		</xsl:variable>		
+		
+		<xsl:result-document method="xml" href="final/{$id}.xml">
+			<xsl:element name="TEI" namespace="http://www.tei-c.org/ns/1.0">
+				<xsl:namespace name="xsi">http://www.w3.org/2001/XMLSchema-instance</xsl:namespace>
+				<xsl:attribute name="xsi:noNamespaceSchemaLocation">http://www.tei-c.org/release/xml/tei/custom/schema/xsd/tei_all.xsd</xsl:attribute>
+				<xsl:attribute name="xml:id" select="$id"/>
+				<xsl:apply-templates/>
+			</xsl:element>
+		</xsl:result-document> 
 	</xsl:template>
 
 	<xsl:template match="tei:teiHeader">
@@ -127,7 +131,7 @@
 										<xsl:value-of select="$rdf//rdf:Description[skos:inScheme/@rdf:resource='http://viaf.org/authorityScheme/LC']/skos:prefLabel"/>
 									</xsl:when>
 									<xsl:otherwise>
-										<xsl:value-of select="normalize-space($mods/mods:mods/mods:name/mods:namePart)"/>
+										<xsl:value-of select="$rdf//skos:prefLabel[1]"/>
 									</xsl:otherwise>
 								</xsl:choose>
 							</xsl:when>
@@ -163,13 +167,15 @@
 					</xsl:element>
 				</xsl:element>
 
-				<xsl:element name="bibl" namespace="http://www.tei-c.org/ns/1.0">
-					<xsl:element name="title" namespace="http://www.tei-c.org/ns/1.0">Worldcat Works</xsl:element>
-					<xsl:element name="idno" namespace="http://www.tei-c.org/ns/1.0">
-						<xsl:attribute name="type">URI</xsl:attribute>
-						<xsl:value-of select="document(concat('http://experiment.worldcat.org/oclc/', $entry/gsx:oclc, '.rdf'))//schema:exampleOfWork/@rdf:resource"/>
+				<xsl:if test="doc-available(concat('http://experiment.worldcat.org/oclc/', $entry/gsx:oclc, '.rdf'))">
+					<xsl:element name="bibl" namespace="http://www.tei-c.org/ns/1.0">
+						<xsl:element name="title" namespace="http://www.tei-c.org/ns/1.0">Worldcat Works</xsl:element>
+						<xsl:element name="idno" namespace="http://www.tei-c.org/ns/1.0">
+							<xsl:attribute name="type">URI</xsl:attribute>
+							<xsl:value-of select="document(concat('http://experiment.worldcat.org/oclc/', $entry/gsx:oclc, '.rdf'))//schema:exampleOfWork/@rdf:resource"/>
+						</xsl:element>
 					</xsl:element>
-				</xsl:element>
+				</xsl:if>
 			</xsl:if>
 		</xsl:element>
 	</xsl:template>
@@ -215,11 +221,13 @@
 
 	<!-- content -->
 	<xsl:template match="*[starts-with(local-name(), 'div')]">
+		<xsl:variable name="next-level" select="concat('div', string(number(substring(local-name(), 4, 1)) + 1))"/>
+		
 		<xsl:element name="{local-name()}" namespace="http://www.tei-c.org/ns/1.0">
 			<xsl:attribute name="xml:id" select="generate-id()"/>
 			<xsl:apply-templates select="@*[not(name()='xml:id')]|*"/>
 
-			<xsl:apply-templates select="child::tei:note[@place='foot']|descendant::tei:note[@place='foot']" mode="move">
+			<xsl:apply-templates select="child::tei:note[@place='foot']|descendant::tei:note[@place='foot'][not(ancestor::*[local-name()=$next-level])]" mode="move">
 				<xsl:sort select="substring-after(@xml:id, '-n')" data-type="number"/>
 			</xsl:apply-templates>
 		</xsl:element>
@@ -229,7 +237,11 @@
 	<xsl:template match="tei:note[@place='foot']"/>
 
 	<xsl:template match="tei:note[@place='foot']" mode="move">
-		<xsl:copy-of select="self::node()"/>
+		<xsl:element name="note" namespace="http://www.tei-c.org/ns/1.0">
+			<xsl:attribute name="place">end</xsl:attribute>
+			<xsl:attribute name="xml:id" select="@xml:id"/>
+			<xsl:apply-templates/>
+		</xsl:element>
 	</xsl:template>
 
 	<xsl:template match="tei:date/@value">
