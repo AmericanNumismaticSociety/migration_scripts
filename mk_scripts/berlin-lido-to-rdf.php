@@ -574,29 +574,21 @@ function generateNumismaticObject($id, $typeURI, $collection, $xpath, $writer){
 		}
 		
 	//images
-	$image_url = $xpath->query("descendant::lido:resourceRepresentation/lido:linkResource")->item(0)->nodeValue;
+	$image_url = $xpath->query("descendant::lido:resourceRepresentation[@lido:type='image_thumb']/lido:linkResource")->item(0)->nodeValue;
 	if (strlen($image_url) > 0){
 		$pieces = explode('/', $image_url);
-		$image_id = $pieces[5];
-
-		switch ($collection['project_id']){
-			case 'berlin':
-			case 'priene':
-				$image_path = 'http://ww2.smb.museum';
-				break;
-			case 'muenster':
-				$image_path = 'http://archaeologie.uni-muenster.de';
-				break;
-		}
+		$fname = array_pop($pieces);		
+		$image_path = implode('/', $pieces);
+		
 			
 		//obverse
 		$writer->startElement('nmo:hasObverse');
 			$writer->startElement('rdf:Description');
 				$writer->startElement('foaf:thumbnail');
-					$writer->writeAttribute('rdf:resource', "{$image_path}/mk_edit/images/{$image_id}/vs_thumb.jpg");
+					$writer->writeAttribute('rdf:resource', "{$image_path}/vs_thumb.jpg");
 				$writer->endElement();
 				$writer->startElement('foaf:depiction');
-					$writer->writeAttribute('rdf:resource', "{$image_path}/mk_edit/images/{$image_id}/vs_opt.jpg");
+					$writer->writeAttribute('rdf:resource', "{$image_path}/vs_opt.jpg");
 				$writer->endElement();
 			$writer->endElement();
 		$writer->endElement();
@@ -605,10 +597,10 @@ function generateNumismaticObject($id, $typeURI, $collection, $xpath, $writer){
 		$writer->startElement('nmo:hasReverse');
 			$writer->startElement('rdf:Description');
 				$writer->startElement('foaf:thumbnail');
-					$writer->writeAttribute('rdf:resource', "{$image_path}/mk_edit/images/{$image_id}/rs_thumb.jpg");
+					$writer->writeAttribute('rdf:resource', "{$image_path}/rs_thumb.jpg");
 				$writer->endElement();
 				$writer->startElement('foaf:depiction');
-					$writer->writeAttribute('rdf:resource', "{$image_path}/mk_edit/images/{$image_id}/rs_opt.jpg");
+					$writer->writeAttribute('rdf:resource', "{$image_path}/rs_opt.jpg");
 				$writer->endElement();
 			$writer->endElement();
 		$writer->endElement();
