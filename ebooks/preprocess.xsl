@@ -144,6 +144,8 @@
 				</xsl:element>
 			</xsl:for-each>
 			<xsl:apply-templates select="tei:respStmt"/>
+			
+			<xsl:element name="funder" namespace="http://www.tei-c.org/ns/1.0">The Andrew W. Mellon Foundation</xsl:element>
 		</titleStmt>
 	</xsl:template>
 
@@ -176,6 +178,16 @@
 						</xsl:element>
 					</xsl:element>
 				</xsl:if>
+			</xsl:if>
+			
+			<xsl:if test="string($entry/gsx:hathitrust)">
+				<xsl:element name="bibl" namespace="http://www.tei-c.org/ns/1.0">
+					<xsl:element name="title" namespace="http://www.tei-c.org/ns/1.0">HathiTrust</xsl:element>
+					<xsl:element name="idno" namespace="http://www.tei-c.org/ns/1.0">
+						<xsl:attribute name="type">URI</xsl:attribute>
+						<xsl:value-of select="$entry/gsx:hathitrust"/>
+					</xsl:element>
+				</xsl:element>
 			</xsl:if>
 		</xsl:element>
 	</xsl:template>
@@ -231,6 +243,34 @@
 				<xsl:sort select="substring-after(@xml:id, '-n')" data-type="number"/>
 			</xsl:apply-templates>
 		</xsl:element>
+	</xsl:template>
+	
+	<!-- restructure the TOC as a list into a table -->
+	<xsl:template match="tei:list[parent::tei:div1[@type='contents' or @type='toc']]">
+		<xsl:variable name="count" select="count(tei:item)"/>
+		<xsl:variable name="list" as="element()*">
+			<xsl:copy-of select="."/>
+		</xsl:variable>
+		
+		<xsl:element name="table" namespace="http://www.tei-c.org/ns/1.0">
+			<xsl:for-each select="1 to $count">
+				<xsl:variable name="position" select="position()"/>
+				<xsl:if test="$position mod 2 = 0">
+					<xsl:element name="row" namespace="http://www.tei-c.org/ns/1.0">
+						<xsl:element name="cell" namespace="http://www.tei-c.org/ns/1.0">
+							<xsl:apply-templates select="$list//tei:item[$position - 1]" mode="toc"/>
+						</xsl:element>
+						<xsl:element name="cell" namespace="http://www.tei-c.org/ns/1.0">
+							<xsl:apply-templates select="$list//tei:item[$position]" mode="toc"/>
+						</xsl:element>
+					</xsl:element>
+				</xsl:if>
+			</xsl:for-each>
+		</xsl:element>
+	</xsl:template>
+	
+	<xsl:template match="tei:item" mode="toc">
+		<xsl:apply-templates/>
 	</xsl:template>
 
 	<!-- suppress footnotes that are inside of paragraphs -->
