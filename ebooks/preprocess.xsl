@@ -181,13 +181,17 @@
 			</xsl:if>
 			
 			<xsl:if test="string($entry/gsx:hathitrust)">
-				<xsl:element name="bibl" namespace="http://www.tei-c.org/ns/1.0">
-					<xsl:element name="title" namespace="http://www.tei-c.org/ns/1.0">HathiTrust</xsl:element>
-					<xsl:element name="idno" namespace="http://www.tei-c.org/ns/1.0">
-						<xsl:attribute name="type">URI</xsl:attribute>
-						<xsl:value-of select="$entry/gsx:hathitrust"/>
+				<xsl:variable name="pieces" select="tokenize($entry/gsx:hathitrust, '\|')"/>
+				
+				<xsl:for-each select="$pieces">
+					<xsl:element name="bibl" namespace="http://www.tei-c.org/ns/1.0">
+						<xsl:element name="title" namespace="http://www.tei-c.org/ns/1.0">HathiTrust</xsl:element>
+						<xsl:element name="idno" namespace="http://www.tei-c.org/ns/1.0">
+							<xsl:attribute name="type">URI</xsl:attribute>
+							<xsl:value-of select="."/>
+						</xsl:element>
 					</xsl:element>
-				</xsl:element>
+				</xsl:for-each>				
 			</xsl:if>
 		</xsl:element>
 	</xsl:template>
