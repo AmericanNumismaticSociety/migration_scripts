@@ -377,6 +377,51 @@ function parseReference($xpath){
 				case 'Probus':
 					$nomismaId[] = 'pro';
 					break;
+				case 'Carus/Familie':
+					$nomismaId[] = 'car';
+					break;
+				case 'Tetrarchie (vorreform)':
+					$nomismaId[] = 'dio';
+					break;
+				case 'Postumus':
+					$nomismaId[] = 'post';
+					break;
+				case 'Laelianus':
+					$nomismaId[] = 'lae';
+					break;
+				case 'Marius':
+					$nomismaId[] = 'mar';
+					break;
+				case 'Victorinus':
+					$nomismaId[] = 'vict';
+					break;
+				case 'Tetrici':
+					$nomismaId[] = 'tet_i';
+					break;
+				case 'Carausius':
+					$nomismaId[] = 'cara';
+					break;
+				case 'Carausius, Diocletianus, Maximianus Herculius':
+					$nomismaId[] = 'cara-dio-max_her';
+					break;
+				case 'Allectus':
+					$nomismaId[] = 'all';
+					break;
+				case 'Macrianus':
+					$nomismaId[] = 'mac_ii';
+					break;
+				case 'Quietus':
+					$nomismaId[] = 'quit';
+					break;
+				case 'Regalianus':
+					$nomismaId[] = 'reg';
+					break;
+				case 'Dryantilla':
+					$nomismaId[] = 'dry';
+					break;
+				case 'Iulianus von Pannonien':
+					$nomismaId[] = 'jul_i';
+					break;
 				case 'Alexandria':
 					$nomismaId[]='alex';
 					break;
