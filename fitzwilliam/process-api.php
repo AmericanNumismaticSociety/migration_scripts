@@ -1,18 +1,31 @@
 <?php 
 
+/*****
+ * Author: Ethan Gruber
+ * Date: October 2016
+ * Function: This script uses a combination of the Cambridge University Fitzwilliam Museum API (to query for a list of responses) and
+ * screen scraping to parse coin type reference numbers and measurements in order to generate Nomisma-compliant RDF
+ *****/
+
 //set user agent
 ini_set('user_agent', 'Nomisma.org/PHP Harvesting');
 
+//array of queries
+$queries = array('crro'=>'coin AND "Roman Republic"','pella'=>'"Alexander III" AND coin');
+$project = 'pella';
+
 $api = 'http://data.fitzmuseum.cam.ac.uk/api/?';
-$params = array('query'=>'coin AND "Roman Republic"','size'=>100,'from'=>0);
+$params = array('query'=>$queries[$project],'size'=>100,'from'=>0);
 $records = array();
 $coinTypes = array();
 
 parse_response($api, $params);
 
+//var_dump($records);
+
 //after the API pages have been parsed, then process the resulting records array into Nomisma-conformant RDF
-generate_csv($records);
-generate_rdf($records);
+generate_csv($records, $project);
+generate_rdf($records, $project);
 
 function parse_response($api, $params){
 	GLOBAL $records;
@@ -81,7 +94,7 @@ function parse_response($api, $params){
 	
 	//if there are more pages to parse, curse function
 	$numFound = $data->total;
-	if ($params['from'] < $numFound){
+	if (($params['from'] + $params['size']) <= $numFound){
 		$params['from'] = $params['from'] + $params['size'];
 		
 		parse_response($api, $params);
@@ -124,6 +137,18 @@ function parse_html($url){
 				if ($typeValid == true){
 					$fields['coinType'] = $uri;
 				}
+			} else if (strpos($ref, 'price') !== FALSE){
+				echo "Parsing {$ref}\n";
+				$fields['reference'] = $ref;
+				$pieces = explode(' ', $ref);
+				$num = $pieces[1];
+				
+				$uri = "http://numismatics.org/pella/id/price.{$num}";
+				
+				$typeValid = check_uri($uri);
+				if ($typeValid == true){
+					$fields['coinType'] = $uri;
+				}
 			}
 		}
 	} else {
@@ -131,7 +156,7 @@ function parse_html($url){
 	}
 	
 	//parse measurements
-	$measurementsNode = $xpath->query("//p[@class='ttag'][contains(text(), 'Dimension(s)')]/following-sibling::p[1]");
+	$measurementsNode = $xpath->query("//p[@class='ttag'][contains(text(), 'Dimension')]/following-sibling::p[1]");
 	if ($measurementsNode->length > 0){
 		$text = $dom->saveHTML($measurementsNode->item(0));
 		$text = str_replace('<p class="vtag">', '', str_replace('</p>', '', $text));
@@ -198,11 +223,11 @@ function check_uri($uri){
 	return $valid;
 }
 
-function generate_rdf($records){
+function generate_rdf($records, $project){
 	//start RDF/XML file
 	//use XML writer to generate RDF
 	$writer = new XMLWriter();
-	$writer->openURI("fitzwilliam.rdf");
+	$writer->openURI("fitzwilliam-{$project}.rdf");
 	//$writer->openURI('php://output');
 	$writer->startDocument('1.0','UTF-8');
 	$writer->setIndent(true);
@@ -222,33 +247,33 @@ function generate_rdf($records){
 	foreach ($records as $record){
 		if (isset($record['cointype'])){
 			$writer->startElement('nmo:NumismaticObject');
-			$writer->writeAttribute('rdf:about', $record['uri']);
-			$writer->startElement('dcterms:title');
-			$writer->writeAttribute('xml:lang', 'en');
-			$writer->text($record['title']);
-			$writer->endElement();
-			$writer->writeElement('dcterms:identifier', $record['objectnumber']);
-			$writer->startElement('dcterms:publisher');
-			$writer->writeAttribute('rdf:resource', 'http://nomisma.org/id/fitzwilliam');
-			$writer->endElement();
-			$writer->startElement('nmo:hasCollection');
-			$writer->writeAttribute('rdf:resource', 'http://nomisma.org/id/fitzwilliam');
-			$writer->endElement();
-			$writer->startElement('nmo:hasTypeSeriesItem');
-			$writer->writeAttribute('rdf:resource', $record['cointype']);
-			$writer->endElement();
+				$writer->writeAttribute('rdf:about', $record['uri']);
+				$writer->startElement('dcterms:title');
+					$writer->writeAttribute('xml:lang', 'en');
+					$writer->text($record['title']);
+				$writer->endElement();
+				$writer->writeElement('dcterms:identifier', $record['objectnumber']);
+				$writer->startElement('dcterms:publisher');
+					$writer->writeAttribute('rdf:resource', 'http://nomisma.org/id/fitzwilliam');
+				$writer->endElement();
+				$writer->startElement('nmo:hasCollection');
+					$writer->writeAttribute('rdf:resource', 'http://nomisma.org/id/fitzwilliam');
+				$writer->endElement();
+				$writer->startElement('nmo:hasTypeSeriesItem');
+					$writer->writeAttribute('rdf:resource', $record['cointype']);
+				$writer->endElement();
 
 			//conditional measurement data
 			if (isset($record['weight'])){
 				$writer->startElement('nmo:hasWeight');
-				$writer->writeAttribute('rdf:datatype', 'http://www.w3.org/2001/XMLSchema#decimal');
-				$writer->text($record['weight']);
+					$writer->writeAttribute('rdf:datatype', 'http://www.w3.org/2001/XMLSchema#decimal');
+					$writer->text($record['weight']);
 				$writer->endElement();
 			}
 			if (isset($record['axis'])){
 				$writer->startElement('nmo:hasAxis');
-				$writer->writeAttribute('rdf:datatype', 'http://www.w3.org/2001/XMLSchema#integer');
-				$writer->text($record['axis']);
+					$writer->writeAttribute('rdf:datatype', 'http://www.w3.org/2001/XMLSchema#integer');
+					$writer->text($record['axis']);
 				$writer->endElement();
 			}
 
@@ -272,10 +297,10 @@ function generate_rdf($records){
 				$writer->endElement();
 			}
 
-			//void:inDataset
-			$writer->startElement('void:inDataset');
-			$writer->writeAttribute('rdf:resource', 'http://www.fitzmuseum.cam.ac.uk/');
-			$writer->endElement();
+				//void:inDataset
+				$writer->startElement('void:inDataset');
+					$writer->writeAttribute('rdf:resource', 'http://www.fitzmuseum.cam.ac.uk/');
+				$writer->endElement();
 
 			//end nmo:NumismaticObject
 			$writer->endElement();
@@ -288,14 +313,14 @@ function generate_rdf($records){
 }
 
 //generate csv
-function generate_csv($records){
+function generate_csv($records, $project){
 	$csv = '"objectnumber","title","uri","reference","type"' . "\n";
 
 	foreach ($records as $record){
 		$csv .= '"' . $record['objectnumber'] . '","' . $record['title'] . '","' . $record['uri'] . '","' . (isset($record['reference']) ? $record['reference'] : '') . '","' . (isset($record['cointype']) ? $record['cointype'] : '') . '"' . "\n";
 	}
 
-	file_put_contents('concordances.csv', $csv);
+	file_put_contents("concordances-{$project}.csv", $csv);
 }
 
 ?>
