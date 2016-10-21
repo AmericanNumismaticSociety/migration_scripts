@@ -186,6 +186,9 @@ function parseReference($xpath){
 				case 'VIII':
 					$nomismaId[] = '8';
 					break;
+				case 'IX':
+					$nomismaId[] = '9';
+					break;				
 				case 'X':
 					$nomismaId[] = '10';
 					break;
@@ -429,8 +432,6 @@ function parseReference($xpath){
 					$nomismaId[]='amb';
 					break;
 				case 'Antioch':
-					$nomismaId[]='anch';
-					break;
 				case 'Antiochia':
 					$nomismaId[]='anch';
 					break;
@@ -444,6 +445,7 @@ function parseReference($xpath){
 					$nomismaId[]='carth';
 					break;
 				case 'Constantinople':
+				case 'Constantinopolis':
 					$nomismaId[]='cnp';
 					break;
 				case 'Cyzicus':
