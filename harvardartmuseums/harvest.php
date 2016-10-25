@@ -1,7 +1,7 @@
 <?php 
 
 $page = 1;
-$apiKey = '';
+$apiKey = 'a864ed30-fccd-11e5-aaaa-2d4ec69062d0';
 $records = array();
 
 //parse each page of the API call
@@ -18,7 +18,10 @@ function parse_page($page, $apiKey){
 	GLOBAL $records;
 	
 	echo "Page {$page}\n";
-	$service = 'http://api.harvardartmuseums.org/object?size=100&classification=Coins&q=(standardreferencenumber:RRC+OR+standardreferencenumber:RIC+OR+standardreferencenumber:Price)+AND+department:"Department%20of%20Ancient%20and%20Byzantine%20Art%20%26%20Numismatics"&apikey=' . $apiKey . '&page=' . $page;
+	
+	$query = '(standardreferencenumber:RRC+OR+standardreferencenumber:RIC+OR+standardreferencenumber:Price)';
+	//$query = '"RIC+IX,+p.+235,+88b(1)"';
+	$service = 'http://api.harvardartmuseums.org/object?size=100&classification=Coins&q=' . $query . '+AND+department:"Department%20of%20Ancient%20and%20Byzantine%20Art%20%26%20Numismatics"&apikey=' . $apiKey . '&page=' . $page;
 	
 	$json = file_get_contents($service);
 	$data = json_decode($json);
@@ -69,55 +72,72 @@ function parse_page($page, $apiKey){
 			} elseif (preg_match('/RIC/', $reference)){
 				$originalReference = $reference;
 				
+				$pieces = explode(',', $reference);
+				$volNum = $pieces[0];
+				
+				
 				//1. get volume number and then strip from reference. 2. trim leading or trailing commas. 3. trim spaces
-				if (strpos($reference, 'RIC I 2') !== FALSE){
-					$parsedVolume = 'RIC I 2';					
-					$volume = 'ric.1(2)';					
-				} elseif (strpos($reference, 'RIC II.1 2') !== FALSE){
-					$parsedVolume = 'RIC II.1 2';
-					$volume = 'ric.2_1(2)';										
-				} elseif (strpos($reference, 'RIC II (2)') !== FALSE){
-					$parsedVolume = 'RIC II (2)';
-					$volume = 'ric.2_1(2)';					
-				} elseif (strpos($reference, 'RIC III') !== FALSE){
-					$parsedVolume = 'RIC III';
-					$volume = 'ric.3';					
-				} elseif (strpos($reference, 'RIC II') !== FALSE){
-					$parsedVolume = 'RIC II';
-					$volume = 'ric.2';					
-				} elseif (strpos($reference, 'RIC IV(B)') !== FALSE){
-					$parsedVolume = 'RIC IV(B)';
-					$volume = 'ric.4';					
-				} elseif (strpos($reference, 'RIC IV(C)') !== FALSE){
-					$parsedVolume = 'RIC IV(C)';
-					$volume = 'ric.4';					
-				} elseif (strpos($reference, 'RIC IV') !== FALSE){
-					$parsedVolume = 'RIC IV';
-					$volume = 'ric.4';					
-				}elseif (strpos($reference, 'RIC V(1)') !== FALSE){
-					$parsedVolume = 'RIC V(1)';
-					$volume = 'ric.5';					
-				} elseif (strpos($reference, 'RIC V(2)') !== FALSE){
-					$parsedVolume = 'RIC V(2)';
-					$volume = 'ric.5';
-				} elseif (strpos($reference, 'RIC VIII') !== FALSE){
-					$parsedVolume = 'RIC VIII';
-					$volume = 'ric.8';					
-				} elseif (strpos($reference, 'RIC VII') !== FALSE){
-					$parsedVolume = 'RIC VII';
-					$volume = 'ric.7';					
-				} elseif (strpos($reference, 'RIC VI') !== FALSE){
-					$parsedVolume = 'RIC VI';
-					$volume = 'ric.6';
-				} elseif (strpos($reference, 'RIC V') !== FALSE){
-					$parsedVolume = 'RIC V';
-					$volume = 'ric.5';					
-				} elseif (strpos($reference, 'RIC X') !== FALSE){					
-					$parsedVolume = 'RIC X';
-					$volume = 'ric.10';
-				} else {
-					$volume = null;
+				
+				switch($volNum){
+					case 'RIC I 2':
+						$parsedVolume = $volNum;
+						$volume = 'ric.1(2)';
+						break;
+					case 'RIC II':
+						$parsedVolume = $volNum;
+						$volume = 'ric.2';
+						break;
+					case 'RIC II.1 2':
+					case 'RIC II (2)':
+						$parsedVolume = $volNum;
+						$volume = 'ric.2_1(2)';
+						break;
+					case 'RIC III':
+						$parsedVolume = $volNum;
+						$volume = 'ric.3';
+						break;					
+					case 'RIC IV(B)':
+					case 'RIC IV(C)':
+					case 'RIC IV':
+					case 'RIC iv/1':
+					case 'RIC iv/2':
+					case 'RIC iv/3':
+						$parsedVolume = $volNum;
+						$volume = 'ric.4';
+						break;
+					case 'RIC V':
+					case 'RIC V(1)':
+					case 'RIC V(2)':
+					case 'RIC v/1':
+					case 'RIC v/2':					
+						$parsedVolume = $volNum;
+						$volume = 'ric.5';
+						break;
+					case 'RIC VI':
+						$parsedVolume = $volNum;
+						$volume = 'ric.6';
+						break;
+					case 'RIC VII':
+						$parsedVolume = $volNum;
+						$volume = 'ric.7';
+						break;
+					case 'RIC VIII':
+						$parsedVolume = $volNum;
+						$volume = 'ric.8';
+						break;
+					case 'RIC IX':
+						$parsedVolume = $volNum;
+						$volume = 'ric.9';
+						break;
+					case 'RIC X':
+						$parsedVolume = $volNum;
+						$volume = 'ric.10';
+						break;
+					default:
+						$volume = null;
 				}
+				
+				//echo "{$volume}\n";
 				
 				echo "{$originalReference}\n";
 					
@@ -146,7 +166,7 @@ function parse_page($page, $apiKey){
 							$id = trim(trim($item, ','));
 						}
 					}
-						
+					
 					if (strlen($id) > 0 && strlen($pageNumber) > 0){
 						//ignore uncertain coins
 						if (substr($id, -1) != '?'){
@@ -156,20 +176,46 @@ function parse_page($page, $apiKey){
 								//if $authority is properly resolved, try OCRE lookups
 								$prefix = "{$volume}.{$authority}.";
 								if (preg_match('/[a-zA-Z]/', $id)){
-									//try uppercase first
-									$upper = strtoupper($id);
-									$cointype = "http://numismatics.org/ocre/id/{$prefix}" . urlencode($upper);
-									$file_headers = @get_headers($cointype);
-									if ($file_headers[0] == 'HTTP/1.1 200 OK'){
-										echo "{$row['objectnumber']}: {$cointype}\n";
-										$row['cointype'] = $cointype;
+									//if it is volume 9, attempt to parse subtype numbers
+									if ($volume == 'ric.9' && strpos($id, '(') !== FALSE){
+										//strip space
+										$id = str_replace(' ', '', $id);
+										
+										preg_match('/([a-z0-9]+)\(([0-9a-z])\)/', $id, $matches);
+										
+										//first try to match on the subtype URI
+										if (isset($matches[1]) and isset($matches[2])){
+											$cointype = "http://numismatics.org/ocre/id/{$prefix}" . strtoupper($matches[1]) . '.' . $matches[2];
+											$file_headers = @get_headers($cointype);
+											if ($file_headers[0] == 'HTTP/1.1 200 OK'){
+												echo "{$row['objectnumber']}: {$cointype}\n";
+												$row['cointype'] = $cointype;
+											} else {
+												//if it can't find the subtype, just try to match on parent type
+												$cointype = "http://numismatics.org/ocre/id/{$prefix}" . strtoupper($matches[1]);
+												$file_headers = @get_headers($cointype);
+												if ($file_headers[0] == 'HTTP/1.1 200 OK'){
+													echo "{$row['objectnumber']}: {$cointype}\n";
+													$row['cointype'] = $cointype;
+												}
+											}
+										}									
 									} else {
-										//then try default
-										$cointype = "http://numismatics.org/ocre/id/{$prefix}" . urlencode($id);
+										//try uppercase first
+										$upper = strtoupper($id);
+										$cointype = "http://numismatics.org/ocre/id/{$prefix}" . urlencode($upper);
 										$file_headers = @get_headers($cointype);
-										if ($file_headers[0] == 'HTTP/1.1 200 OK'){												
+										if ($file_headers[0] == 'HTTP/1.1 200 OK'){
 											echo "{$row['objectnumber']}: {$cointype}\n";
 											$row['cointype'] = $cointype;
+										} else {
+											//then try default
+											$cointype = "http://numismatics.org/ocre/id/{$prefix}" . urlencode($id);
+											$file_headers = @get_headers($cointype);
+											if ($file_headers[0] == 'HTTP/1.1 200 OK'){
+												echo "{$row['objectnumber']}: {$cointype}\n";
+												$row['cointype'] = $cointype;
+											}
 										}
 									}
 								} else {
@@ -368,7 +414,7 @@ function get_authority($volume, $p){
 		} elseif ($p >= 366 && $p <= 443){
 			$authority = 'com';
 		}
-	} elseif ($volume == 'RIC IV'){
+	} elseif ($volume == 'RIC IV' || $volume == 'RIC iv/1'){
 		if ($p >= 7 && $p <= 12){
 			$authority = 'pert';
 		} elseif ($p >= 15 && $p <= 18){
@@ -384,7 +430,7 @@ function get_authority($volume, $p){
 		} elseif ($p >= 314 && $p <= 343){
 			$authority = 'ge';
 		}
-	} elseif ($volume == 'RIC IV(B)'){
+	} elseif ($volume == 'RIC IV(B)' || $volume == 'RIC iv/2'){
 		if ($p >= 5 && $p <= 22){
 			$authority = 'mcs';
 		} elseif ($p >= 28 && $p <= 61){
@@ -402,7 +448,7 @@ function get_authority($volume, $p){
 		} elseif ($p >= 173 && $p <= 177){
 			$authority = 'pup';
 		}
-	} elseif ($volume == 'RIC IV(C)'){
+	} elseif ($volume == 'RIC IV(C)' || $volume == 'RIC iv/3'){
 		if ($p >= 15 && $p <= 53){
 			$authority = 'gor_iii';
 		} elseif ($p >= 68 && $p <= 106){
@@ -418,7 +464,7 @@ function get_authority($volume, $p){
 		} elseif ($p >= 205 && $p <= 206){
 			$authority = 'uran_an';
 		}
-	} elseif ($volume == 'RIC V' || $volume == 'RIC V(1)'){
+	} elseif ($volume == 'RIC V' || $volume == 'RIC V(1)' || $volume == 'RIC v/1'){
 		if ($p >= 37 && $p <= 60){
 			$authority = 'val_i';
 		} else if ($p >= 61 && $p <= 62){
@@ -462,7 +508,7 @@ function get_authority($volume, $p){
 		} elseif ($p >= 350 && $p <= 360){
 			$authority = 'fl';
 		}
-	} elseif ($volume == 'RIC V(2)'){
+	} elseif ($volume == 'RIC V(2)' || $volume == 'RIC v/2'){
 		if ($p >= 20 && $p <= 121){
 			$authority = 'pro';
 		}
@@ -616,11 +662,60 @@ function get_authority($volume, $p){
 		elseif ($p >= 538 && $p <= 546){
 			$authority = 'alex';
 		}
+	} elseif ($volume == 'RIC IX'){ 
+		if ($p == 2){
+			$authority = 'lon';
+		}
+		elseif ($p >= 13 && $p <= 34){
+			$authority = 'tri';
+		}
+		elseif ($p >= 42 && $p <= 53){
+			$authority = 'lug';
+		}
+		elseif ($p >= 61 && $p <= 70){
+			$authority = 'ar';
+		}
+		elseif ($p >= 75 && $p <= 84){
+			$authority = 'med';
+		}
+		elseif ($p >= 94 && $p <= 107){
+			$authority = 'aq';
+		}
+		elseif ($p >= 116 && $p <= 136){
+			$authority = 'rom';
+		}
+		elseif ($p >= 145 && $p <= 155){
+			$authority = 'sis';
+		}
+		elseif ($p >= 158 && $p <= 162){
+			$authority = 'sir';
+		}
+		elseif ($p >= 173 && $p <= 188){
+			$authority = 'thes';
+		}
+		elseif ($p >= 191 && $p <= 199){
+			$authority = 'her';
+		}
+		elseif ($p >= 209 && $p <= 236){
+			$authority = 'cnp';
+		}
+		elseif ($p >= 239 && $p <= 247){
+			$authority = 'cyz';
+		}
+		elseif ($p >= 250 && $p <= 263){
+			$authority = 'nic';
+		}
+		elseif ($p >= 272 && $p <= 295){
+			$authority = 'anch';
+		}
+		elseif ($p >= 298 && $p <= 304){
+			$authority = 'alex';
+		}
 	} elseif ($volume == 'RIC X'){
 		if ($p >= 239 && $p <= 252){
 			$authority = 'arc_e';
-		}
-		if ($p >= 253 && $p <= 277){
+		} 
+		elseif ($p >= 253 && $p <= 277){
 			$authority = 'theo_ii_e';
 		}
 		elseif ($p >= 278 && $p <= 283){
