@@ -472,7 +472,7 @@ function get_authority($volume, $p){
 		} else if ($p == 63){
 			$authority = 'val_i-gall-val_ii-sala';
 		} else if ($p >= 64 && $p <= 65){
-			$authority = 'mar';
+			$authority = 'marin';
 		} else if ($p >= 66 && $p <= 104){
 			$authority = 'gall(1)';
 		} else if ($p == 105){

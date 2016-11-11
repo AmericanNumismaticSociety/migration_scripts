@@ -339,7 +339,7 @@ function parseReference($xpath){
 					$nomismaId[] = 'val_i';
 					break;
 				case 'Mariniana':
-					$nomismaId[] = 'mar';
+					$nomismaId[] = 'marin';
 					break;
 				case 'Gallienus Mitherrscher':
 					$nomismaId[] = 'gall(1)';
