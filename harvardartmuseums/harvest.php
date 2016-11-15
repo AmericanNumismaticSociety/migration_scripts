@@ -511,7 +511,51 @@ function get_authority($volume, $p){
 	} elseif ($volume == 'RIC V(2)' || $volume == 'RIC v/2'){
 		if ($p >= 20 && $p <= 121){
 			$authority = 'pro';
-		}
+		} elseif ($p >= 135 && $p <= 203){
+			$authority = 'car';
+		} elseif ($p >= 221 && $p <= 309){
+			$authority = 'dio';
+		} elseif ($p >= 336 && $p <= 368){
+			$authority = 'post';
+		} elseif ($p >= 372 && $p <= 373){
+			$authority = 'lae';
+		} elseif ($p >= 377 && $p <= 378){
+			$authority = 'mar';
+		} elseif ($p >= 387 && $p <= 398){
+			$authority = 'vict';
+		} elseif ($p >= 402 && $p <= 425){
+			$authority = 'tet_i';
+		} elseif ($p >= 463 && $p <= 549){
+			$authority = 'cara';
+		} elseif ($p >= 550 && $p <= 556){
+			$authority = 'cara-dio-max_her';
+		} elseif ($p >= 558 && $p <= 570){
+			$authority = 'all';
+		} elseif ($p >= 580 && $p <= 581){
+			$authority = 'mac_ii';
+		} elseif ($p >= 582 && $p <= 583){
+			$authority = 'quit';
+		} elseif ($p == 584){
+			$authority = 'zen';
+		} elseif ($p == 585){
+			$authority = 'vab';
+		} elseif ($p >= 586 && $p <= 587){
+			$authority = 'reg';
+		} elseif ($p == 588){
+			$authority = 'dry';
+		} elseif ($p == 589 ){
+			$authority = 'aurl';
+		} elseif ($p == 590 ){
+			$authority = 'dom_g';
+		} elseif ($p == 591){
+			$authority = 'sat';
+		} elseif ($p == 592){
+			$authority = 'bon';
+		} elseif ($p >= 593 && $p <= 594){
+			$authority = 'jul_i';
+		} elseif ($p == 595){
+			$authority = 'ama';
+		}		
 	} elseif ($volume == 'RIC VI'){
 		if ($p >= 123 && $p <= 140){
 			$authority = 'lon';
