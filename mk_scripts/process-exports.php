@@ -97,7 +97,11 @@ function process_row($file, $collection, $writer, $count){
 				$hoardURI = $term->nodeValue;
 				echo "Found {$hoardURI}\n";
 			} else {
-				$typeURI = $term->nodeValue;				
+				//ignore IKMK type references
+				$source = $term->getAttribute('lido:source');
+				if ($source == 'crro' || $source == 'ocre' || $source == 'pella'){
+					$typeURI = $term->nodeValue;
+				}								
 			} 
 		}
 		
