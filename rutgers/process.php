@@ -1,17 +1,47 @@
 <?php 
-$list = array('50413');
-$records = array();
+
+
 define("RUPREFIX", 'http://rucore.libraries.rutgers.edu/schemas/rulib/0.1/metadata.dtd');
+$records = array();
+$cointypes = array();
 
-foreach ($list as $id){
-	process_record($id);
-}
+//first iterate through all pages of the collection to generate a list of identifiers
+$setURL = 'https://rucore.libraries.rutgers.edu/api/search/query/?key=7Uf5Sx5Sh&view=identifiers&numresults=100&start=';
+$start = 1;
 
+//process the XML collection list
+process_set($setURL, $start);
+
+//generate RDF from $records array
 generate_rdf($records);
 
+
+
+/******** FUNCTIONS *********/
+function process_set($setURL, $start){
+	$dom = new DOMDocument('1.0', 'UTF-8');
+	if ($dom->load($setURL . $start) === FALSE){
+		echo "URL failed to load.\n";
+	} else {
+		$total = $dom->getElementsByTagName('results')->item(0)->getAttribute('total');
+		foreach ($dom->getElementsByTagName('result') as $result){
+			$num = $result->getAttribute('resultposition');
+			$id = str_replace('rutgers-lib:', '', $result->getAttribute('recordid'));
+			process_record($id);
+			//echo "{$num}\n";
+		}
+		//if there are still records to process, call function again
+		if ($num < $total){
+			$start += 100;
+			process_set($setURL, $start);
+		}	
+	}
+}
+
+//process the MODS and source XML documents
 function process_record($id){
 	GLOBAL $records;
-	
+	GLOBAL $cointypes;
 	
 	$file = "https://rucore.libraries.rutgers.edu/api/get/{$id}/mods/";
 	$dom = new DOMDocument('1.0', 'UTF-8');
@@ -58,36 +88,52 @@ function process_record($id){
 		$ref = $xpath->query("//mods:classification[@authority='Crawford']");
 	
 		if ($ref->length > 0){
-			$row['reference'] = $ref->item(0)->nodeValue;
-			$cointype = 'http://numismatics.org/crro/id/rrc-' . str_replace('/', '.', $ref->item(0)->nodeValue);
-				
-			$file_headers = @get_headers($cointype);
-			if ($file_headers[0] == 'HTTP/1.1 200 OK'){
-				//echo "{$row['objectnumber']}: {$cointype}\n";
-				$row['cointype'] = $cointype;
-			}
+			$row['id'] = $id;
 			$row['uri'] = 'http://dx.doi.org/' . $xpath->query('//mods:identifier[@type="doi"]')->item(0)->nodeValue;
 			$row['title'] = $xpath->query('//mods:titleInfo/mods:title')->item(0)->nodeValue;
+				
+			//images
+			$row['obvThumb'] = "https://rucore.libraries.rutgers.edu/api/iiif/image/2.0/rutgers-lib:{$id};PTIF-1/full/,120/0/default.jpg";
+			$row['revThumb'] = "https://rucore.libraries.rutgers.edu/api/iiif/image/2.0/rutgers-lib:{$id};PTIF-2/full/,120/0/default.jpg";
+			$row['obvRef'] = "https://rucore.libraries.rutgers.edu/api/iiif/image/2.0/rutgers-lib:{$id};PTIF-1/full/600,/0/default.jpg";
+			$row['revRef'] = "https://rucore.libraries.rutgers.edu/api/iiif/image/2.0/rutgers-lib:{$id};PTIF-2/full/600,/0/default.jpg";
+			
+			$row['reference'] = $ref->item(0)->nodeValue;
+			
+			if (preg_match('/\d+\/\d+[a-z]?$/', $ref->item(0)->nodeValue)){
+				$cointype = 'http://numismatics.org/crro/id/rrc-' . str_replace('/', '.', $ref->item(0)->nodeValue);
+					
+				//check to see if the coin type URI has already been validated
+				if (in_array($cointype, $cointypes)){
+					echo "Found match {$id}: {$row['title']} - {$cointype}\n";
+					$row['cointype'] = $cointype;
+				} else {
+					$file_headers = @get_headers($cointype);
+					if ($file_headers[0] == 'HTTP/1.1 200 OK'){
+						//echo "{$row['objectnumber']}: {$cointype}\n";
+						echo "Matching {$id}: {$row['title']} - {$cointype}\n";
+						$row['cointype'] = $cointype;
+						$cointypes[] = $cointype;
+					} else {
+						echo "Not found {$id}: {$row['title']} - {$row['reference']}\n";
+					}
+				}
+			} else {
+				echo "No match {$id}: {$row['title']} - {$row['reference']}\n";
+			}
 		}
-	
-		//images
-		$row['obvThumb'] = "https://rucore.libraries.rutgers.edu/api/iiif/image/2.0/rutgers-lib:{$id};PTIF-1/full/,120/0/default.jpg";
-		$row['revThumb'] = "https://rucore.libraries.rutgers.edu/api/iiif/image/2.0/rutgers-lib:{$id};PTIF-2/full/,120/0/default.jpg";
-		$row['obvRef'] = "https://rucore.libraries.rutgers.edu/api/iiif/image/2.0/rutgers-lib:{$id};PTIF-1/full/600,/0/default.jpg";
-		$row['revRef'] = "https://rucore.libraries.rutgers.edu/api/iiif/image/2.0/rutgers-lib:{$id};PTIF-2/full/600,/0/default.jpg";
-	
-		//var_dump($row);
 	
 		$records[] = $row;
 	}
 }
 
+//generate Nomisma-compliant RDF
 function generate_rdf($records){
 	//start RDF/XML file
 	//use XML writer to generate RDF
 	$writer = new XMLWriter();
-	//$writer->openURI("rutgers.rdf");
-	$writer->openURI('php://output');
+	$writer->openURI("rutgers.rdf");
+	//$writer->openURI('php://output');
 	$writer->startDocument('1.0','UTF-8');
 	$writer->setIndent(true);
 	//now we need to define our Indent string,which is basically how many blank spaces we want to have for the indent
@@ -102,7 +148,10 @@ function generate_rdf($records){
 	$writer->writeAttribute('xmlns:geo', "http://www.w3.org/2003/01/geo/wgs84_pos#");
 	$writer->writeAttribute('xmlns:rdf', "http://www.w3.org/1999/02/22-rdf-syntax-ns#");
 	$writer->writeAttribute('xmlns:void', "http://rdfs.org/ns/void#");
-
+	$writer->writeAttribute('xmlns:edm', "http://www.europeana.eu/schemas/edm/");
+	$writer->writeAttribute('xmlns:svcs', "http://rdfs.org/sioc/services#");
+	$writer->writeAttribute('xmlns:doap', "http://usefulinc.com/ns/doap#");
+	
 	foreach ($records as $record){
 		if (isset($record['cointype'])){
 			$writer->startElement('nmo:NumismaticObject');
@@ -133,15 +182,29 @@ function generate_rdf($records){
 				$writer->endElement();
 			}
 
-			//conditional images
-			/*if (isset($record['comRef'])){
-				$writer->startElement('foaf:thumbnail');
-				$writer->writeAttribute('rdf:resource', $record['comThumb']);
+			//obverse
+			$writer->startElement('nmo:hasObverse');
+				$writer->startElement('rdf:Description');
+					$writer->startElement('foaf:thumbnail');
+						$writer->writeAttribute('rdf:resource', $record['obvThumb']);
+					$writer->endElement();
+					$writer->startElement('foaf:depiction');
+						$writer->writeAttribute('rdf:resource', $record['obvRef']);
+					$writer->endElement();
 				$writer->endElement();
-				$writer->startElement('foaf:depiction');
-				$writer->writeAttribute('rdf:resource', $record['comRef']);
+			$writer->endElement();
+				
+			//reverse
+			$writer->startElement('nmo:hasReverse');
+				$writer->startElement('rdf:Description');
+					$writer->startElement('foaf:thumbnail');
+						$writer->writeAttribute('rdf:resource', $record['revThumb']);
+					$writer->endElement();
+					$writer->startElement('foaf:depiction');
+						$writer->writeAttribute('rdf:resource', $record['revRef']);
+					$writer->endElement();
 				$writer->endElement();
-			}*/
+			$writer->endElement();
 
 			//void:inDataset
 			$writer->startElement('void:inDataset');
@@ -149,6 +212,47 @@ function generate_rdf($records){
 			$writer->endElement();
 
 			//end nmo:NumismaticObject
+			$writer->endElement();
+			
+			//create WebResources for IIIF: obverse and reverse images specifically should reference the info.json for the image, not the entire manifest
+			$writer->startElement('edm:WebResource');
+				$writer->writeAttribute('rdf:about', $record['obvRef']);
+				$writer->startElement('svcs:has_service');
+					$writer->writeAttribute('rdf:resource', "https://rucore.libraries.rutgers.edu/api/iiif/image/2.0/rutgers-lib:{$record['id']};PTIF-1");
+				$writer->endElement();
+				$writer->startElement('dcterms:isReferencedBy');
+					$writer->writeAttribute('rdf:resource', "https://rucore.libraries.rutgers.edu/api/iiif/image/2.0/rutgers-lib:{$record['id']};PTIF-1/info.json");
+				$writer->endElement();
+			$writer->endElement();
+			
+			$writer->startElement('svcs:Service');
+				$writer->writeAttribute('rdf:about', "https://rucore.libraries.rutgers.edu/api/iiif/image/2.0/rutgers-lib:{$record['id']};PTIF-1");
+				$writer->startElement('dcterms:conformsTo');
+					$writer->writeAttribute('rdf:resource', 'http://iiif.io/api/image');
+				$writer->EndElement();
+				$writer->startElement('doap:implements');
+					$writer->writeAttribute('rdf:resource', 'http://iiif.io/api/image/2/level1.json');
+				$writer->endElement();
+			$writer->endElement();
+			
+			$writer->startElement('edm:WebResource');
+				$writer->writeAttribute('rdf:about', $record['obvRef']);
+					$writer->startElement('svcs:has_service');
+						$writer->writeAttribute('rdf:resource', "https://rucore.libraries.rutgers.edu/api/iiif/image/2.0/rutgers-lib:{$record['id']};PTIF-2");
+					$writer->endElement();
+					$writer->startElement('dcterms:isReferencedBy');
+						$writer->writeAttribute('rdf:resource', "https://rucore.libraries.rutgers.edu/api/iiif/image/2.0/rutgers-lib:{$record['id']};PTIF-2/info.json");
+					$writer->endElement();
+			$writer->endElement();
+				
+			$writer->startElement('svcs:Service');
+				$writer->writeAttribute('rdf:about', "https://rucore.libraries.rutgers.edu/api/iiif/image/2.0/rutgers-lib:{$record['id']};PTIF-2");
+					$writer->startElement('dcterms:conformsTo');
+						$writer->writeAttribute('rdf:resource', 'http://iiif.io/api/image');
+					$writer->EndElement();
+					$writer->startElement('doap:implements');
+						$writer->writeAttribute('rdf:resource', 'http://iiif.io/api/image/2/level1.json');
+					$writer->endElement();
 			$writer->endElement();
 		}
 	}

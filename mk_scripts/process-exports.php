@@ -582,14 +582,22 @@ function generateNumismaticObject($id, $typeURI, $collection, $xpath, $writer){
 		$title .= ', ' . $xpath->query("descendant::lido:eventDate/lido:displayDate")->item(0)->nodeValue;
 	}		
 	$measurements = $xpath->query("descendant::lido:measurementsSet");
+	$coinURI = $xpath->query("descendant::lido:recordInfoLink")->item(0)->nodeValue;
+	$workId = $xpath->query("descendant::lido:workID[@lido:type='inventory']");
+	
+	if ($workId->length > 0){
+		$identifier = $workId->item(0)->nodeValue;
+	} else {
+		$identifier = $id;
+	}
 	
 	$writer->startElement('nmo:NumismaticObject');
-		$writer->writeAttribute('rdf:about', $collection['uri_space'] . $id);
+		$writer->writeAttribute('rdf:about', $coinURI);
 		$writer->startElement('dcterms:title');
 			$writer->writeAttribute('xml:lang', 'de');
 			$writer->text($title);
 		$writer->endElement();
-		$writer->writeElement('dcterms:identifier', $id);
+		$writer->writeElement('dcterms:identifier', $identifier);
 		$writer->startElement('nmo:hasCollection');
 			$writer->writeAttribute('rdf:resource', $collection['collection_uri']);
 		$writer->endElement();
