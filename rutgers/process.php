@@ -100,7 +100,7 @@ function process_record($id){
 			
 			$row['reference'] = $ref->item(0)->nodeValue;
 			
-			if (preg_match('/\d+\/\d+[a-z]?$/', $ref->item(0)->nodeValue)){
+			if (preg_match('/\d+[A-Z]?\/\d+[a-z]?$/', $ref->item(0)->nodeValue)){
 				$cointype = 'http://numismatics.org/crro/id/rrc-' . str_replace('/', '.', $ref->item(0)->nodeValue);
 					
 				//check to see if the coin type URI has already been validated
@@ -236,7 +236,7 @@ function generate_rdf($records){
 			$writer->endElement();
 			
 			$writer->startElement('edm:WebResource');
-				$writer->writeAttribute('rdf:about', $record['obvRef']);
+				$writer->writeAttribute('rdf:about', $record['revRef']);
 					$writer->startElement('svcs:has_service');
 						$writer->writeAttribute('rdf:resource', "https://rucore.libraries.rutgers.edu/api/iiif/image/2.0/rutgers-lib:{$record['id']};PTIF-2");
 					$writer->endElement();
