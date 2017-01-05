@@ -27,6 +27,7 @@ function process_set($setURL, $start){
 		foreach ($dom->getElementsByTagName('result') as $result){
 			$num = $result->getAttribute('resultposition');
 			$id = str_replace('rutgers-lib:', '', $result->getAttribute('recordid'));
+			echo "{$num}: ";
 			process_record($id);
 			//echo "{$num}\n";
 		}
@@ -34,7 +35,7 @@ function process_set($setURL, $start){
 		if ($num < $total){
 			$start += 100;
 			process_set($setURL, $start);
-		}	
+		}
 	}
 }
 
@@ -91,12 +92,12 @@ function process_record($id){
 			$row['id'] = $id;
 			$row['uri'] = 'http://dx.doi.org/' . $xpath->query('//mods:identifier[@type="doi"]')->item(0)->nodeValue;
 			$row['title'] = $xpath->query('//mods:titleInfo/mods:title')->item(0)->nodeValue;
-				
-			//images
-			$row['obvThumb'] = "https://rucore.libraries.rutgers.edu/api/iiif/image/2.0/rutgers-lib:{$id};PTIF-1/full/,120/0/default.jpg";
-			$row['revThumb'] = "https://rucore.libraries.rutgers.edu/api/iiif/image/2.0/rutgers-lib:{$id};PTIF-2/full/,120/0/default.jpg";
-			$row['obvRef'] = "https://rucore.libraries.rutgers.edu/api/iiif/image/2.0/rutgers-lib:{$id};PTIF-1/full/600,/0/default.jpg";
-			$row['revRef'] = "https://rucore.libraries.rutgers.edu/api/iiif/image/2.0/rutgers-lib:{$id};PTIF-2/full/600,/0/default.jpg";
+						
+			//parse JSON-LD IIIF manifest to service services
+			$services = parse_manifest("https://rucore.libraries.rutgers.edu/api/iiif/presentation/2.0/rutgers-lib:{$id}/manifest");
+			$row['obvService'] = $services[0];
+			$row['revService'] = $services[1];
+			
 			
 			$row['reference'] = $ref->item(0)->nodeValue;
 			
@@ -125,6 +126,25 @@ function process_record($id){
 	
 		$records[] = $row;
 	}
+}
+
+//parse the JSON-LD IIIF manifest to dynamically extract the services and images
+function parse_manifest($url){
+	//create services array: canvas $position = 1 is the obverse, $position = 2 is the reverse. Cannot assume it is PTIF-2
+	$services = array();
+	
+	$contents = file_get_contents($url);	
+	$manifest = json_decode($contents);
+	
+	foreach ($manifest->sequences as $sequence){
+		foreach ($sequence->canvases as $canvas){
+			foreach ($canvas->images as $image){
+				$services[] = $image->resource->service->{'@id'};
+			}
+		}
+	}
+	
+	return $services;
 }
 
 //generate Nomisma-compliant RDF
@@ -186,10 +206,10 @@ function generate_rdf($records){
 			$writer->startElement('nmo:hasObverse');
 				$writer->startElement('rdf:Description');
 					$writer->startElement('foaf:thumbnail');
-						$writer->writeAttribute('rdf:resource', $record['obvThumb']);
+						$writer->writeAttribute('rdf:resource', "{$record['obvService']}/full/,120/0/default.jpg");
 					$writer->endElement();
 					$writer->startElement('foaf:depiction');
-						$writer->writeAttribute('rdf:resource', $record['obvRef']);
+						$writer->writeAttribute('rdf:resource', "{$record['obvService']}/full/600,/0/default.jpg");
 					$writer->endElement();
 				$writer->endElement();
 			$writer->endElement();
@@ -198,10 +218,10 @@ function generate_rdf($records){
 			$writer->startElement('nmo:hasReverse');
 				$writer->startElement('rdf:Description');
 					$writer->startElement('foaf:thumbnail');
-						$writer->writeAttribute('rdf:resource', $record['revThumb']);
+						$writer->writeAttribute('rdf:resource', "{$record['revService']}/full/,120/0/default.jpg");
 					$writer->endElement();
 					$writer->startElement('foaf:depiction');
-						$writer->writeAttribute('rdf:resource', $record['revRef']);
+						$writer->writeAttribute('rdf:resource', "{$record['revService']}/full/600,/0/default.jpg");
 					$writer->endElement();
 				$writer->endElement();
 			$writer->endElement();
@@ -216,17 +236,17 @@ function generate_rdf($records){
 			
 			//create WebResources for IIIF: obverse and reverse images specifically should reference the info.json for the image, not the entire manifest
 			$writer->startElement('edm:WebResource');
-				$writer->writeAttribute('rdf:about', $record['obvRef']);
+				$writer->writeAttribute('rdf:about', "{$record['obvService']}/full/600,/0/default.jpg");
 				$writer->startElement('svcs:has_service');
-					$writer->writeAttribute('rdf:resource', "https://rucore.libraries.rutgers.edu/api/iiif/image/2.0/rutgers-lib:{$record['id']};PTIF-1");
+					$writer->writeAttribute('rdf:resource', $record['obvService']);
 				$writer->endElement();
 				$writer->startElement('dcterms:isReferencedBy');
-					$writer->writeAttribute('rdf:resource', "https://rucore.libraries.rutgers.edu/api/iiif/image/2.0/rutgers-lib:{$record['id']};PTIF-1/info.json");
+					$writer->writeAttribute('rdf:resource', "{$record['obvService']}/info.json");
 				$writer->endElement();
 			$writer->endElement();
 			
 			$writer->startElement('svcs:Service');
-				$writer->writeAttribute('rdf:about', "https://rucore.libraries.rutgers.edu/api/iiif/image/2.0/rutgers-lib:{$record['id']};PTIF-1");
+				$writer->writeAttribute('rdf:about', $record['obvService']);
 				$writer->startElement('dcterms:conformsTo');
 					$writer->writeAttribute('rdf:resource', 'http://iiif.io/api/image');
 				$writer->EndElement();
@@ -236,17 +256,17 @@ function generate_rdf($records){
 			$writer->endElement();
 			
 			$writer->startElement('edm:WebResource');
-				$writer->writeAttribute('rdf:about', $record['revRef']);
+				$writer->writeAttribute('rdf:about', "{$record['revService']}/full/600,/0/default.jpg");
 					$writer->startElement('svcs:has_service');
-						$writer->writeAttribute('rdf:resource', "https://rucore.libraries.rutgers.edu/api/iiif/image/2.0/rutgers-lib:{$record['id']};PTIF-2");
+						$writer->writeAttribute('rdf:resource', $record['revService']);
 					$writer->endElement();
 					$writer->startElement('dcterms:isReferencedBy');
-						$writer->writeAttribute('rdf:resource', "https://rucore.libraries.rutgers.edu/api/iiif/image/2.0/rutgers-lib:{$record['id']};PTIF-2/info.json");
+						$writer->writeAttribute('rdf:resource', "{$record['revService']}/info.json");
 					$writer->endElement();
 			$writer->endElement();
 				
 			$writer->startElement('svcs:Service');
-				$writer->writeAttribute('rdf:about', "https://rucore.libraries.rutgers.edu/api/iiif/image/2.0/rutgers-lib:{$record['id']};PTIF-2");
+				$writer->writeAttribute('rdf:about', $record['revService']);
 					$writer->startElement('dcterms:conformsTo');
 						$writer->writeAttribute('rdf:resource', 'http://iiif.io/api/image');
 					$writer->EndElement();
