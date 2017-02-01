@@ -37,11 +37,9 @@ function parse_page($page, $apiKey){
 				//generate record metadata array
 				$row = construct_metadata($record);
 				$row['reference'] = $reference;
-				
 				//ignore uncertain coins
 				if (substr($num[1], -1) != '?'){
 					$cointype = 'http://numismatics.org/crro/id/rrc-' . str_replace('/', '.', $num[1]);
-				
 					$file_headers = @get_headers($cointype);
 					if ($file_headers[0] == 'HTTP/1.1 200 OK'){
 						echo "{$row['objectnumber']}: {$cointype}\n";
@@ -61,7 +59,7 @@ function parse_page($page, $apiKey){
 				//ignore uncertain coins
 				if (substr($num[1], -1) != '?'){
 					$cointype = 'http://numismatics.org/pella/id/price.' . $num[1];
-					$file_headers = @get_headers($cointype);
+					$file_headers = @get_headers($cointype);					
 					if ($file_headers[0] == 'HTTP/1.1 200 OK'){
 						echo "{$row['objectnumber']}: {$cointype}\n";
 						$row['cointype'] = $cointype;
@@ -247,14 +245,25 @@ function parse_page($page, $apiKey){
 function construct_metadata ($record){
 	$row = array();
 	
+	$row['id'] = $record->id;
 	$row['objectnumber'] = $record->objectnumber;
 	$row['title'] = str_replace('"', "'", $record->title);
-	$row['uri'] = $record->url;
+	$row['uri'] = $record->url;	
 	
 	//image
 	if (property_exists($record, 'primaryimageurl')){
 		$row['comThumb'] = str_replace('dlvr', 'dynmc', $record->primaryimageurl) . '?width=240';
 		$row['comRef'] = $record->primaryimageurl;
+	}
+	
+	//look for IIIF service
+	if (property_exists($record, 'images')){
+		foreach ($record->images as $image){
+			if (property_exists($image, 'iiifbaseuri')){
+				//echo "{$image->iiifbaseuri}\n";
+				$row['service'] = $image->iiifbaseuri;
+			}
+		}
 	}
 	
 	//physical attributes
@@ -302,6 +311,9 @@ function generate_rdf($records){
 	$writer->writeAttribute('xmlns:geo', "http://www.w3.org/2003/01/geo/wgs84_pos#");
 	$writer->writeAttribute('xmlns:rdf', "http://www.w3.org/1999/02/22-rdf-syntax-ns#");
 	$writer->writeAttribute('xmlns:void', "http://rdfs.org/ns/void#");
+	$writer->writeAttribute('xmlns:edm', "http://www.europeana.eu/schemas/edm/");
+	$writer->writeAttribute('xmlns:svcs', "http://rdfs.org/sioc/services#");
+	$writer->writeAttribute('xmlns:doap', "http://usefulinc.com/ns/doap#");
 	
 	foreach ($records as $record){
 		if (isset($record['cointype'])){
@@ -353,6 +365,29 @@ function generate_rdf($records){
 				
 			//end nmo:NumismaticObject
 			$writer->endElement();
+			
+			//expand reference image into edm:WebResource and svcs:Service for IIIF integration
+			if (isset($record['service'])){
+				$writer->startElement('edm:WebResource');
+					$writer->writeAttribute('rdf:about', $record['comRef']);
+					$writer->startElement('svcs:has_service');
+						$writer->writeAttribute('rdf:resource', $record['service']);
+					$writer->endElement();
+					$writer->startElement('dcterms:isReferencedBy');
+						$writer->writeAttribute('rdf:resource', "http://iiif.harvardartmuseums.org/manifests/object/{$record['id']}");
+					$writer->endElement();
+				$writer->endElement();
+					
+				$writer->startElement('svcs:Service');
+					$writer->writeAttribute('rdf:about', $record['service']);
+					$writer->startElement('dcterms:conformsTo');
+						$writer->writeAttribute('rdf:resource', 'http://iiif.io/api/image');
+					$writer->EndElement();
+					$writer->startElement('doap:implements');
+						$writer->writeAttribute('rdf:resource', 'http://iiif.io/api/image/2/level1.json');
+					$writer->endElement();
+				$writer->endElement();
+			}
 		}
 	}
 	
