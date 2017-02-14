@@ -612,22 +612,28 @@ function generateNumismaticObject($id, $typeURI, $collection, $xpath, $writer){
 				
 			switch ($type){
 				case 'diameter':
-					$writer->startElement('nmo:hasDiameter');
-						$writer->writeAttribute('rdf:datatype', 'http://www.w3.org/2001/XMLSchema#decimal');
-						$writer->text($value);
-					$writer->endElement();
+					if (is_numeric($value)){
+						$writer->startElement('nmo:hasDiameter');
+							$writer->writeAttribute('rdf:datatype', 'http://www.w3.org/2001/XMLSchema#decimal');
+							$writer->text($value);
+						$writer->endElement();
+					}					
 					break;
 				case 'weight':
-					$writer->startElement('nmo:hasWeight');
-						$writer->writeAttribute('rdf:datatype', 'http://www.w3.org/2001/XMLSchema#decimal');
-						$writer->text($value);
-					$writer->endElement();
+					if (is_numeric($value)){
+						$writer->startElement('nmo:hasWeight');
+							$writer->writeAttribute('rdf:datatype', 'http://www.w3.org/2001/XMLSchema#decimal');
+							$writer->text($value);
+						$writer->endElement();
+					}					
 					break;
 				case 'orientation':
-					$writer->startElement('nmo:hasAxis');
-						$writer->writeAttribute('rdf:datatype', 'http://www.w3.org/2001/XMLSchema#integer');
-						$writer->text($value);
-					$writer->endElement();
+					if (is_int($value)){
+						$writer->startElement('nmo:hasAxis');
+							$writer->writeAttribute('rdf:datatype', 'http://www.w3.org/2001/XMLSchema#integer');
+							$writer->text($value);
+						$writer->endElement();
+					}
 					break;
 			}
 		}
