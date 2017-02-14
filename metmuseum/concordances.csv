@@ -5,7 +5,7 @@ accnum,uri,era,ref
 99.35.138,http://numismatics.org/ocre/id/ric.1(2).cl.27,,RIC I (second edition) Claudius 27
 99.35.447,http://numismatics.org/ocre/id/ric.1(2).ner.312,,RIC I (second edition) Nero 312
 99.35.448,http://numismatics.org/ocre/id/ric.1(2).ga.37,,RIC I (second edition) Gaius/Caligula 37
-05.47,http://numismatics.org/ocre/id/ric.4.tr_g.112,,RIC IV Trebonianus Gallus 112
+5.47,http://numismatics.org/ocre/id/ric.4.tr_g.112,,RIC IV Trebonianus Gallus 112
 08.170.67,http://numismatics.org/crro/id/rrc-422.1a,,RRC 422/1a
 08.170.69,http://numismatics.org/crro/id/rrc-544.15,,RRC 544/15
 08.170.75,http://numismatics.org/crro/id/rrc-335.10a,,RRC 335/10a
@@ -40,22 +40,22 @@ accnum,uri,era,ref
 08.170.398,,,
 08.170.406,http://numismatics.org/ocre/id/ric.6.tic.84b,,
 08.170.411,http://numismatics.org/ocre/id/ric.6.aq.30a,,
-46.129.7,http://numismatics.org/crro/id/36.1,,
+46.129.7,http://numismatics.org/crro/id/rrc-36.1,,
 50.194.3,http://numismatics.org/ocre/id/ric.2_1(2).ves.102,,
 50.194.4,http://numismatics.org/ocre/id/ric.3.ant.1243A,,
 50.194.5,http://numismatics.org/ocre/id/ric.2_1(2).dom.794,,
-56.83,http://numismatics.org/crro/id/466.1,,
-67.265.33,http://numismatics.org/crro/id/466.1,,
-X.314.1,http://numismatics.org/crro/id/282.5,,
-X.314.2,http://numismatics.org/crro/id/344.1b,,
-X.314.3,http://numismatics.org/crro/id/364.1,,
-X.314.4,http://numismatics.org/crro/id/364.1,,
-X.314.5,http://numismatics.org/crro/id/443.1,,
-X.314.6,http://numismatics.org/crro/id/463.1,,
-X.314.7,http://numismatics.org/crro/id/463.2,,
-X.314.8,http://numismatics.org/crro/id/544.11,,
-X.314.9,http://numismatics.org/crro/id/544.35,,
-X.314.10,http://numismatics.org/crro/id/544.20,,
+56.83,http://numismatics.org/crro/id/rrc-466.1,,
+67.265.33,http://numismatics.org/crro/id/rrc-466.1,,
+X.314.1,http://numismatics.org/crro/id/rrc-282.5,,
+X.314.2,http://numismatics.org/crro/id/rrc-344.1b,,
+X.314.3,http://numismatics.org/crro/id/rrc-364.1,,
+X.314.4,http://numismatics.org/crro/id/rrc-364.1,,
+X.314.5,http://numismatics.org/crro/id/rrc-443.1,,
+X.314.6,http://numismatics.org/crro/id/rrc-463.1,,
+X.314.7,http://numismatics.org/crro/id/rrc-463.2,,
+X.314.8,http://numismatics.org/crro/id/rrc-544.11,,
+X.314.9,http://numismatics.org/crro/id/rrc-544.35,,
+X.314.10,http://numismatics.org/crro/id/rrc-544.20,,
 X.314.11,http://numismatics.org/ocre/id/ric.1(2).tib.81,,
 X.314.12,http://numismatics.org/ocre/id/ric.2_1(2).ves.703,,
 X.314.13,http://numismatics.org/ocre/id/ric.2_1(2).ves.818,,
