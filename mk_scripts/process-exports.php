@@ -551,15 +551,15 @@ function parseReference($xpath){
 		} else if (strpos($ref, 'RRC') !== FALSE){
 			//RRC
 			$pieces = explode(',', $ref);
-			$frag = array();
+			/*$frag = array();
 			$frag[] = ltrim(trim($pieces[1]), '0');
 			if (isset($pieces[2])) {
 				$frag[] = ltrim(trim($pieces[2]), '0');
 			} else {
 				$frag[] = '1';
-			}
+			}*/
 				
-			$id = 'rrc-' . implode('.', $frag);				
+			$id = 'rrc-' . str_replace('/', '.', ltrim(trim($pieces[1]), '0'));				
 			$uri = 'http://numismatics.org/crro/id/' . $id;
 			
 			//see if the URI is already in the validated array
