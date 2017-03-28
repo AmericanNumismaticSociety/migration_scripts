@@ -5,51 +5,54 @@ $records = array();
 
 foreach ($data as $row){
 	$record = array();
-	$record['uri'] = $row['Lien ark'];
-	$record['cointype'] = $row['018 $u'];
 	
-	echo "Processing {$record['uri']}\n";
-	$id = str_replace('http://gallica.bnf.fr/', '', $record['uri']);
-	$recordURL = 'http://oai.bnf.fr/oai2/OAIHandler?verb=GetRecord&metadataPrefix=oai_dc&identifier=oai:bnf.fr:gallica/' . $id;
-	
-	//IIIF services
-	$record['obvService'] = 'http://gallica.bnf.fr/iiif/' . $id . '/f1';
-	$record['revService'] = 'http://gallica.bnf.fr/iiif/' . $id . '/f2';
-	
-	//get measurement data from OAI-PMH
-	$doc = new DOMDocument();
-	if ($doc->load($recordURL) === FALSE){
-		return "FAIL";
-	} else {		
-		$xpath = new DOMXpath($doc);
-		$xpath->registerNamespace('oai', 'http://www.openarchives.org/OAI/2.0/');
-		$xpath->registerNamespace('dc', 'http://purl.org/dc/elements/1.1/');
+	if (strlen($row['Lien ark']) > 0){
+		$record['uri'] = $row['Lien ark'];
+		$record['cointype'] = $row['018 $u'];
 		
-		$record['title'] = $doc->getElementsByTagNameNS('http://purl.org/dc/elements/1.1/', 'title')->item(0)->nodeValue;
-		$record['identifier'] = trim(str_replace('Bibliothèque nationale de France, département Monnaies, médailles et antiques,', '', 
-				$doc->getElementsByTagNameNS('http://purl.org/dc/elements/1.1/', 'source')->item(0)->nodeValue));
+		echo "Processing {$record['uri']}\n";
+		$id = str_replace('http://gallica.bnf.fr/', '', $record['uri']);
+		$recordURL = 'http://oai.bnf.fr/oai2/OAIHandler?verb=GetRecord&metadataPrefix=oai_dc&identifier=oai:bnf.fr:gallica/' . $id;
 		
-		//get measurements
-		$formats= $xpath->query("descendant::dc:format");
-		foreach ($formats as $format){
-			preg_match('/(\d+)\smm/', $format->nodeValue, $matches);
-			if (isset($matches[1])){
-				$record['diameter'] = $matches[1];
-			}
-			unset($matches);
-			preg_match('/(\d+,\d+)\sg/', $format->nodeValue, $matches);
-			if (isset($matches[1])){
-				$weight = str_replace(',', '.', $matches[1]);
-				if (is_numeric($weight)){
-					$record['weight'] = $weight;
+		//IIIF services
+		$record['obvService'] = 'http://gallica.bnf.fr/iiif/' . $id . '/f1';
+		$record['revService'] = 'http://gallica.bnf.fr/iiif/' . $id . '/f2';
+		
+		//get measurement data from OAI-PMH
+		$doc = new DOMDocument();
+		if ($doc->load($recordURL) === FALSE){
+			return "FAIL";
+		} else {
+			$xpath = new DOMXpath($doc);
+			$xpath->registerNamespace('oai', 'http://www.openarchives.org/OAI/2.0/');
+			$xpath->registerNamespace('dc', 'http://purl.org/dc/elements/1.1/');
+			
+			$record['title'] = $doc->getElementsByTagNameNS('http://purl.org/dc/elements/1.1/', 'title')->item(0)->nodeValue;
+			$record['identifier'] = trim(str_replace('Bibliothèque nationale de France, département Monnaies, médailles et antiques,', '',
+					$doc->getElementsByTagNameNS('http://purl.org/dc/elements/1.1/', 'source')->item(0)->nodeValue));
+			
+			//get measurements
+			$formats= $xpath->query("descendant::dc:format");
+			foreach ($formats as $format){
+				preg_match('/(\d+)\smm/', $format->nodeValue, $matches);
+				if (isset($matches[1])){
+					$record['diameter'] = $matches[1];
 				}
+				unset($matches);
+				preg_match('/(\d+,\d+)\sg/', $format->nodeValue, $matches);
+				if (isset($matches[1])){
+					$weight = str_replace(',', '.', $matches[1]);
+					if (is_numeric($weight)){
+						$record['weight'] = $weight;
+					}
+				}
+				unset($matches);
 			}
-			unset($matches);
-		}		
-	}
-	
-	//var_dump($record);
-	$records[] = $record;
+		}
+		
+		//var_dump($record);
+		$records[] = $record;
+	}	
 }
 
 generate_rdf($records);
