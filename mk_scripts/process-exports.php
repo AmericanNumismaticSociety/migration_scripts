@@ -110,7 +110,7 @@ function process_row($file, $collection, $writer, $count){
 			echo "Processing #{$count}: {$id}, {$typeURI}\n";
 			generateNumismaticObject($id, $typeURI, $collection, $xpath, $writer);
 		} else {
-			$typeURI = parseReference($xpath);
+			$typeURI = parseReference($xpath, $collection);
 			
 			if (isset($typeURI)){
 				echo "Processing #{$count}: {$id}, {$typeURI}\n";
@@ -139,7 +139,7 @@ function query_geonames($service){
 	}
 }
 
-function parseReference($xpath){
+function parseReference($xpath, $collection){
 	GLOBAL $types;
 	GLOBAL $pairs;
 	
@@ -551,16 +551,22 @@ function parseReference($xpath){
 		} else if (strpos($ref, 'RRC') !== FALSE){
 			//RRC
 			$pieces = explode(',', $ref);
-			/*$frag = array();
-			$frag[] = ltrim(trim($pieces[1]), '0');
-			if (isset($pieces[2])) {
-				$frag[] = ltrim(trim($pieces[2]), '0');
+			
+			if ($collection == 'vienna'){
+				$id = 'rrc-' . str_replace('/', '.', ltrim(trim($pieces[1]), '0'));
+				$uri = 'http://numismatics.org/crro/id/' . $id;
 			} else {
-				$frag[] = '1';
-			}*/
+				$frag = array();
+				$frag[] = ltrim(trim($pieces[1]), '0');
+				if (isset($pieces[2])) {
+					$frag[] = ltrim(trim($pieces[2]), '0');
+				} else {
+					$frag[] = '1';
+				}
 				
-			$id = 'rrc-' . str_replace('/', '.', ltrim(trim($pieces[1]), '0'));				
-			$uri = 'http://numismatics.org/crro/id/' . $id;
+				$id = 'rrc-' . implode('.', $frag);
+				$uri = 'http://numismatics.org/crro/id/' . $id;
+			}
 			
 			//see if the URI is already in the validated array
 			if (in_array($uri, $types)){

@@ -4,7 +4,7 @@
 	<xsl:output encoding="UTF-8" method="text"/>
 	
 	<xsl:template match="/">
-		<xsl:text>"uri","regno","price","text"&#xa;</xsl:text>
+		<xsl:text>"uri","regno","ref",&#xa;</xsl:text>
 		<xsl:apply-templates select="descendant::res:result[contains(res:binding[@name='s']/res:uri, 'CGR')]"/>
 	</xsl:template>
 	
@@ -14,7 +14,7 @@
 		<xsl:text>","</xsl:text>
 		<xsl:value-of select="res:binding[@name='regno']/res:literal"/>
 		<xsl:text>","</xsl:text>
-		<xsl:value-of select="res:binding[@name='text']/res:literal"/>
+		<xsl:value-of select="res:binding[@name='ref']/res:literal"/>
 		<xsl:text>"&#xa;</xsl:text>
 	</xsl:template>
 	
