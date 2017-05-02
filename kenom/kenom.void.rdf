@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:void="http://rdfs.org/ns/void#" xmlns:foaf="http://xmlns.com/foaf/0.1/"
+    xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:oa="http://www.w3.org/ns/oa#"
+    xmlns:owl="http://www.w3.org/2002/07/owl#" xmlns:skos="http://www.w3.org/2004/02/skos/core#" xmlns:nm="http://nomisma.org/id/">
+    <void:Dataset rdf:about="http://www.kenom.de/">
+        <dcterms:title>KENOM</dcterms:title>
+        <dcterms:description>KENOM (Kooperative Erschließung und Nutzung der Objektdaten von Münzsammlungen) is a long time project of different numismatic
+            collections in Germany to bring their numismatic objects (coins, medals, paper money and also coin find-informations) together online. There are a
+            common internal database of the project for the data input and a portal of presentation of qualified data and images. Goals of KENOM are the
+            harmonisation of numismatic data of the partners, the integration of open linked norm data and the definition and use of a LIDO-based data exchange
+            format. 2012-2015 the project was funded by the Deutsche Forschungsgemeinschaft, now KENOM is operated jointly. The strong technical partner of the
+            project is the Gemeinsamer Bibliotheksverbund Göttingen. Today already 13 institutions present more than 33,000 numismatic objects together in the
+            portal &lt;http://www.kenom.de/&gt;.</dcterms:description>
+        <dcterms:publisher>KENOM</dcterms:publisher>
+        <dcterms:license rdf:resource="http://creativecommons.org/licenses/by-nc-nd/4.0/"/>
+        <void:dataDump rdf:resource="http://numismatics.org/rdf/kenom.rdf"/>
+    </void:Dataset>
+</rdf:RDF>
