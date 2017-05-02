@@ -68,7 +68,7 @@ function read_oai($url, $writer){
 				}
 			}
 			
-			$refNodes = $xpath->query("descendant::lido:relatedWorkSet[lido:relatedWork/lido:object/lido:objectNote='Literatur']/lido:relatedWork/lido:object/lido:objectWebResource");
+			$refNodes = $xpath->query("descendant::lido:relatedWorkSet[lido:relatedWork/lido:object/lido:objectNote='Literatur']/lido:relatedWork/lido:object/lido:objectWebResource", $node);
 			foreach ($refNodes as $reference){
 				if (strpos($reference->nodeValue, 'numismatics.org') !== FALSE){
 					$typeURI = $reference->nodeValue;
@@ -76,7 +76,8 @@ function read_oai($url, $writer){
 			}
 			
 			//if the $uri is parseable as handle.net, continue with the rest
-			if (strlen($coinURI) > 0 && isset($typeURI)){				
+			if (strlen($coinURI) > 0 && isset($typeURI)){	
+				echo "Match {$coinURI}: {$typeURI}\n";
 				$title = $xpath->query("descendant::lido:titleSet/lido:appellationValue", $node)->item(0)->nodeValue;
 				$identifier = $xpath->query("descendant::lido:recordID[@lido:type='http://terminology.lido-schema.org/identifier_type/local_identifier']", $node)->item(0)->nodeValue;
 				$collection = $xpath->query("descendant::lido:repositoryName/lido:legalBodyID", $node)->item(0)->nodeValue;
