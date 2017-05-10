@@ -82,6 +82,19 @@ function read_oai($url, $writer){
 				$identifier = $xpath->query("descendant::lido:recordID[@lido:type='http://terminology.lido-schema.org/identifier_type/local_identifier']", $node)->item(0)->nodeValue;
 				$collection = $xpath->query("descendant::lido:repositoryName/lido:legalBodyID", $node)->item(0)->nodeValue;
 				
+				//replace zdb URI with Nomisma URI
+				switch ($collection){
+					case 'http://ld.zdb-services.de/resource/organisations/DE-MUS-062622':
+						$nomisma_collection = 'http://nomisma.org/id/mk_goettingen';
+						break;
+					case 'http://ld.zdb-services.de/resource/organisations/DE-MUS-099114':
+						$nomisma_collection = 'http://nomisma.org/id/mk_munich';
+						break;
+					case 'http://ld.zdb-services.de/resource/organisations/DE-MUS-878719':
+						$nomisma_collection = 'http://nomisma.org/id/thuringia_museum';
+						break;
+				}
+				
 				$writer->startElement('nmo:NumismaticObject');
 					$writer->writeAttribute('rdf:about', $coinURI);
 					$writer->startElement('dcterms:title');
@@ -90,7 +103,7 @@ function read_oai($url, $writer){
 					$writer->endElement();
 					$writer->writeElement('dcterms:identifier', $identifier);
 					$writer->startElement('nmo:hasCollection');
-						$writer->writeAttribute('rdf:resource', $collection);
+						$writer->writeAttribute('rdf:resource', $nomisma_collection);
 					$writer->endElement();
 					$writer->startElement('nmo:hasTypeSeriesItem');
 						$writer->writeAttribute('rdf:resource', $typeURI);
