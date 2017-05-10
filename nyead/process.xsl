@@ -3,11 +3,6 @@
 	exclude-result-prefixes="xsl my" version="2.0">
 	<xsl:output encoding="UTF-8" method="xml" indent="yes"/>
 	<xsl:strip-space elements="*"/>
-
-	<xsl:variable name="agencyCode" select="tokenize(base-uri(), '/')[last()-1]"/>
-	<xsl:variable name="filename" select="substring-before(replace(tokenize(base-uri(), '/')[last()], '%20', '_'), '.xml')"/>
-	<xsl:variable name="eadid" select="if (string-length(normalize-space(descendant::*:eadid)) = 0 or not(descendant::*:eadid)) then $filename else replace(descendant::*:eadid, ' ', '_')"/>
-
 	<xsl:template match="@*|node()">
 		<xsl:copy>
 			<xsl:apply-templates select="@*|node()"/>
@@ -20,7 +15,7 @@
 	<!-- result document for matching eadid with filename -->
 	
 	<xsl:template match="*[local-name()='ead']">
-		<xsl:result-document href="{$agencyCode}/{$eadid}.xml">
+		<!--<xsl:result-document href="{$agencyCode}/{$eadid}.xml">
 			<xsl:element name="ead" namespace="urn:isbn:1-931666-22-9" xmlns:xlink="http://www.w3.org/1999/xlink">
 				<xsl:namespace name="xlink">http://www.w3.org/1999/xlink</xsl:namespace>
 				<xsl:choose>
@@ -33,34 +28,49 @@
 					</xsl:otherwise>
 				</xsl:choose>
 				
-				<!-- apply remaining templates -->
+				<!-\- apply remaining templates -\->
 				<xsl:apply-templates select="*"/>
 			</xsl:element>
-		</xsl:result-document>			
+		</xsl:result-document>-->		
+		<xsl:element name="ead" namespace="urn:isbn:1-931666-22-9" xmlns:xlink="http://www.w3.org/1999/xlink">
+			<xsl:namespace name="xlink">http://www.w3.org/1999/xlink</xsl:namespace>
+			<xsl:choose>
+				<xsl:when test="not(@xsi:noNamespaceSchemaLocation)">
+					<xsl:namespace name="xsi">http://www.w3.org/2001/XMLSchema-instance</xsl:namespace>
+					<xsl:attribute name="xsi:schemaLocation">urn:isbn:1-931666-22-9 http://www.loc.gov/ead/ead.xsd</xsl:attribute>
+				</xsl:when>
+				<xsl:otherwise>
+					<xsl:apply-templates select="@*"/>
+				</xsl:otherwise>
+			</xsl:choose>
+			
+			<!-- apply remaining templates -->
+			<xsl:apply-templates select="*"/>
+		</xsl:element>
 	</xsl:template>
 
 	<xsl:template match="*[local-name()='eadheader']">
 		<xsl:element name="eadheader" namespace="urn:isbn:1-931666-22-9">
 			<xsl:apply-templates select="@*"/>
 			<!-- handle eadid -->
-			<xsl:if test="not(child::*[local-name()='eadid'])">
+			<!--<xsl:if test="not(child::*[local-name()='eadid'])">
 				<xsl:element name="eadid" namespace="urn:isbn:1-931666-22-9">
 					<xsl:attribute name="mainagencycode" select="concat('US-', $agencyCode)"/>
 					<xsl:attribute name="url" select="base-uri()"/>
 					<xsl:value-of select="$eadid"/>
 				</xsl:element>
-			</xsl:if>
+			</xsl:if>-->
 			<xsl:apply-templates/>
 		</xsl:element>
 	</xsl:template>
 
-	<xsl:template match="*[local-name()='eadid']">
+	<!--<xsl:template match="*[local-name()='eadid']">
 		<xsl:element name="eadid" namespace="urn:isbn:1-931666-22-9">
 			<xsl:attribute name="mainagencycode" select="concat('US-', $agencyCode)"/>
 			<xsl:attribute name="url" select="base-uri()"/>
 			<xsl:value-of select="$eadid"/>
 		</xsl:element>
-	</xsl:template>
+	</xsl:template>-->
 	
 	<!-- remove unitdate from unittitle, move up a level -->
 	<xsl:template match="*[local-name()='unittitle']">
@@ -117,16 +127,16 @@
 			<xsl:when test="normalize-space(.)= ''"/>
 
 			<!-- UNCOMMENT the following line if mainagencycode can be verified to validate.  If it does not validate to the schema, it cannot be posted to eXist! -->
-			<xsl:when test="name(.) = 'mainagencycode'">
+			<!--<xsl:when test="name(.) = 'mainagencycode'">
 				<xsl:attribute name="{name(.)}">
 					<xsl:value-of select="concat('US-', $agencyCode)"/>
 				</xsl:attribute>
-			</xsl:when>
-			<xsl:when test="name(.) = 'repositorycode'">
+			</xsl:when>-->
+			<!--<xsl:when test="name(.) = 'repositorycode'">
 				<xsl:attribute name="{name(.)}">
 					<xsl:value-of select="concat('US-', $agencyCode)"/>
 				</xsl:attribute>
-			</xsl:when>
+			</xsl:when>-->
 			<xsl:when test="name() = 'countrycode'">
 				<xsl:attribute name="{name()}">US</xsl:attribute>
 			</xsl:when>
@@ -153,118 +163,6 @@
 		<xsl:value-of select="normalize-space(.)"/>
 	</xsl:template>
 
-	<!--========== XLINK ==========-->
-
-	<!-- arc-type elements-->
-	<xsl:template match="arc">
-		<xsl:element name="{name()}" namespace="urn:isbn:1-931666-22-9">
-			<xsl:attribute name="xlink:type">arc</xsl:attribute>
-			<xsl:call-template name="xlink_attrs"/>
-		</xsl:element>
-	</xsl:template>
-
-	<!-- extended-type elements-->
-	<xsl:template match="daogrp | linkgrp">
-		<xsl:element name="{name()}" namespace="urn:isbn:1-931666-22-9">
-			<xsl:attribute name="xlink:type">extended</xsl:attribute>
-			<xsl:call-template name="xlink_attrs"/>
-			<xsl:apply-templates/>
-		</xsl:element>
-	</xsl:template>
-
-	<!-- locator-type elements-->
-	<xsl:template match="daoloc | extptrloc | extrefloc | ptrloc | refloc">
-		<xsl:element name="{name()}" namespace="urn:isbn:1-931666-22-9">
-			<xsl:attribute name="xlink:type">locator</xsl:attribute>
-			<xsl:call-template name="xlink_attrs"/>
-			<xsl:call-template name="hrefHandler"/>
-		</xsl:element>
-	</xsl:template>
-
-	<!-- resource-type elements-->
-	<xsl:template match="resource">
-		<xsl:element name="{name()}" namespace="urn:isbn:1-931666-22-9">
-			<xsl:attribute name="xlink:type">resource</xsl:attribute>
-			<xsl:call-template name="xlink_attrs"/>
-		</xsl:element>
-	</xsl:template>
-
-	<!-- simple-type elements-->
-	<xsl:template match="archref | bibref | dao | extptr | extref | ptr | ref | title">
-		<xsl:element name="{name()}" namespace="urn:isbn:1-931666-22-9">
-			<xsl:attribute name="xlink:type">simple</xsl:attribute>
-			<xsl:call-template name="xlink_attrs"/>
-			<xsl:call-template name="hrefHandler"/>
-			<xsl:apply-templates/>
-		</xsl:element>
-	</xsl:template>
-
-	<!-- attribute handling -->
-	<xsl:template name="xlink_attrs">
-		<xsl:for-each select="@*">
-			<xsl:choose>
-				<xsl:when test="name()='actuate'">
-					<xsl:attribute name="xlink:actuate">
-						<xsl:choose>
-							<!--EAD's actuateother and actuatenone do not exist in xlink-->
-							<xsl:when test=".='onload'">onLoad</xsl:when>
-							<xsl:when test=".='onrequest'">onRequest</xsl:when>
-							<xsl:when test=".='actuateother'">other</xsl:when>
-							<xsl:when test=".='actuatenone'">none</xsl:when>
-						</xsl:choose>
-					</xsl:attribute>
-				</xsl:when>
-				<xsl:when test="name()='show'">
-					<xsl:attribute name="xlink:show">
-						<xsl:choose>
-							<!--EAD's showother and shownone do not exist in xlink-->
-							<xsl:when test=".='new'">new</xsl:when>
-							<xsl:when test=".='replace'">replace</xsl:when>
-							<xsl:when test=".='embed'">embed</xsl:when>
-							<xsl:when test=".='showother'">other</xsl:when>
-							<xsl:when test=".='shownone'">none</xsl:when>
-						</xsl:choose>
-					</xsl:attribute>
-				</xsl:when>
-				<xsl:when test="name()='arcrole' or name()='from' or       name()='label' or name()='role' or       name()='title' or name()='to'">
-					<xsl:attribute name="xlink:{name()}">
-						<xsl:value-of select="."/>
-					</xsl:attribute>
-				</xsl:when>
-				<xsl:when test="name()='linktype' or name()='href' or      name()='xpointer' or name()='entityref'"/>
-				<xsl:otherwise>
-					<xsl:apply-templates select="."/>
-				</xsl:otherwise>
-			</xsl:choose>
-		</xsl:for-each>
-	</xsl:template>
-
-	<xsl:template name="hrefHandler">
-		<xsl:attribute name="xlink:href">
-			<xsl:choose>
-				<xsl:when test="@entityref and not(@href)">
-					<!-- This will resolve the entity sysid as an absolute path. 
-						If the desired result is a relative path, then use XSLT
-						string functions to "reduce" the absolute path to a
-						relative path.
-					-->
-					<xsl:value-of select="unparsed-entity-uri(@entityref)"/>
-				</xsl:when>
-				<xsl:when test="@href and @entityref ">
-					<xsl:value-of select="@href"/>
-				</xsl:when>
-				<xsl:when test="@href and not(@entityref)">
-					<xsl:value-of select="@href"/>
-				</xsl:when>
-				<xsl:otherwise/>
-			</xsl:choose>
-			<xsl:value-of select="@xpointer"/>
-		</xsl:attribute>
-	</xsl:template>
-
-
-	<!--========== END XLINK ==========-->
-	
 	<!-- function for date validation -->
 	<xsl:function name="my:validateDate" as="xs:boolean">
 		<xsl:param name="date"/>

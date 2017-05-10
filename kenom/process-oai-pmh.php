@@ -147,10 +147,10 @@ function read_oai($url, $writer){
 						$writer->startElement($prop);
 							$writer->startElement('rdf:Description');
 								$writer->startElement('foaf:thumbnail');
-									$writer->writeAttribute('rdf:resource', str_replace('300', '120', $link));
+									$writer->writeAttribute('rdf:resource', str_replace('300,', '120,', $link));
 								$writer->endElement();
 								$writer->startElement('foaf:depiction');
-									$writer->writeAttribute('rdf:resource', str_replace('300', '600', $link));
+									$writer->writeAttribute('rdf:resource', str_replace('300,', '600,', $link));
 								$writer->endElement();
 							$writer->endElement();
 						$writer->endElement();
@@ -172,7 +172,7 @@ function read_oai($url, $writer){
 					$iiif_service = str_replace('/full/300,/0/default.jpg', '', $link);
 					
 					$writer->startElement('edm:WebResource');
-						$writer->writeAttribute('rdf:about', str_replace('300', '600', $link));
+						$writer->writeAttribute('rdf:about', str_replace('300,', '600,', $link));
 						$writer->startElement('svcs:has_service');
 							$writer->writeAttribute('rdf:resource', $iiif_service);
 						$writer->endElement();
