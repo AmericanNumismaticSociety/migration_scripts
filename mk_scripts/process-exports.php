@@ -110,7 +110,7 @@ function process_row($file, $collection, $writer, $count){
 			echo "Processing #{$count}: {$id}, {$typeURI}\n";
 			generateNumismaticObject($id, $typeURI, $collection, $xpath, $writer);
 		} else {
-			$typeURI = parseReference($xpath, $collection);
+			$typeURI = parseReference($xpath, $collection['project_id']);
 			
 			if (isset($typeURI)){
 				echo "Processing #{$count}: {$id}, {$typeURI}\n";
