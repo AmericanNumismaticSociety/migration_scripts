@@ -508,7 +508,8 @@ function parseReference($xpath, $collection){
 					echo "RIC 10:\n";					
 					// handle RIC 10 in a lookup table
 					if (array_key_exists($num, $pairs)){
-						$nomismaId[] = $pairs[$num];
+						//replace a null value for $nomismaId[2] with the new authority pair
+						$nomismaId[2] = $pairs[$num];
 						$uri = 'http://numismatics.org/ocre/id/' . implode('.', $nomismaId) .  '.' . $num;
 								
 						if (in_array($uri, $types)){
