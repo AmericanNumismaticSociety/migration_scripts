@@ -14,10 +14,14 @@ foreach ($data as $row){
 //store successful hits
 $types = array();
 
+//store total reference concordance
+$results = array();
+
 //load the collection metadata stored in a Google Spreadsheet
 $collections = generate_json('https://docs.google.com/spreadsheets/d/1I01Nva_udl0DHJnsjEQ_z-Q1XJaZ6uuAptLVoQSrNfU/pub?gid=0&single=true&output=csv');
 
 foreach ($collections as $collection){
+	
 	//if the $id is specified, only process that collection
 	if (isset($argv[1]) > 0){
 		$id = $argv[1];
@@ -27,14 +31,22 @@ foreach ($collections as $collection){
 			
 			//create void:Dataset
 			write_metadata($collection);
+			
+			//write concordance CSV
+			write_csv($collection['project_id'], $results);
 		}
 	} else {
 		//use XML writer to generate RDF for void:dataDump
-		write_dump($collection);
+		write_dump($collection, $results);
 		
 		//create void:Dataset
 		write_metadata($collection);
+		
+		//write concordance CSV
+		write_csv($collection['project_id'], $results);
 	}
+	
+	unset($results);
 }
 
 function write_dump($collection){
@@ -77,6 +89,8 @@ function write_dump($collection){
 }
 
 function process_row($file, $collection, $writer, $count){
+	GLOBAL $results;
+	
 	$fileArray = explode('/', $file);
 	$id = str_replace('.xml', '', $fileArray[count($fileArray) - 1]);
 	
@@ -109,8 +123,9 @@ function process_row($file, $collection, $writer, $count){
 		if (isset($typeURI)){
 			echo "Processing #{$count}: {$id}, {$typeURI}\n";
 			generateNumismaticObject($id, $typeURI, $collection, $xpath, $writer);
+			$results[] = array($id, $typeURI, '', 'yes');
 		} else {
-			$typeURI = parseReference($xpath, $collection['project_id']);
+			$typeURI = parseReference($xpath, $collection['project_id'], $id);
 			
 			if (isset($typeURI)){
 				echo "Processing #{$count}: {$id}, {$typeURI}\n";
@@ -139,448 +154,511 @@ function query_geonames($service){
 	}
 }
 
-function parseReference($xpath, $collection){
+function parseReference($xpath, $collection, $id){
 	GLOBAL $types;
 	GLOBAL $pairs;
+	GLOBAL $results;
 	
 	$refNodes = $xpath->query("descendant::lido:relatedWorkSet[lido:relatedWorkRelType/lido:term='reference']/lido:relatedWork/lido:object/lido:objectNote");
-	if ($refNodes->length > 0){
-		$ref = $refNodes->item(0)->nodeValue;
-		//RIC
-		if (strpos($ref, 'RIC') !== FALSE){
-			$ref = str_replace(',', '', $ref);
-			$pieces = explode(' ', $ref);
-			$vol = $pieces[1];
-			
-			//assemble id
-			$nomismaId = array();
-			$nomismaId[] = 'ric';
-			
-			//volume
-			switch ($vol) {
-				case 'I²':
-					$nomismaId[] = '1(2)';
-					break;
-				case 'II-1²':
-					$nomismaId[] = '2_1(2)';
-					break;
-				case 'II':
-					$nomismaId[] = '2';
-					break;
-				case 'III':
-					$nomismaId[] = '3';
-					break;
-				case 'IV-1':
-				case 'IV-2':
-				case 'IV-3':
-					$nomismaId[] = '4';
-					break;
-				case 'V-1':
-					$nomismaId[] = '5';
-					break;
-				case 'V-2':
-					$nomismaId[] = '5';
-					break;
-				case 'VI':
-					$nomismaId[] = '6';
-					break;
-				case 'VII':
-					$nomismaId[] = '7';
-					break;
-				case 'VIII':
-					$nomismaId[] = '8';
-					break;
-				case 'IX':
-					$nomismaId[] = '9';
-					break;				
-				case 'X':
-					$nomismaId[] = '10';
-					break;
-				default:
-					$nomismaId[] = null;
-			}
-			
-			//normalize authority
-			$names = array_slice($pieces, 2, count($pieces) - 3);
-			$authority = implode(' ', $names);
-			switch ($authority) {
-				case 'Augustus':
-					$nomismaId[] = 'aug';
-					break;
-				case 'Tiberius':
-					$nomismaId[] = 'tib';
-					break;
-				case 'Caligula':
-					$nomismaId[] = 'gai';
-					break;
-				case 'Claudius':
-					$nomismaId[] = 'cl';
-					break;
-				case 'Nero':
-					$nomismaId[] = 'ner';
-					break;
-				case 'Galba':
-					$nomismaId[] = 'gal';
-					break;
-				case 'Otho':
-					$nomismaId[] = 'ot';
-					break;
-				case 'Vitellius':
-					$nomismaId[] = 'vit';
-					break;
-				case 'Macer':
-					$nomismaId[] = 'clm';
-					break;
-				case 'Civil Wars':
-					$nomismaId[] = 'cw';
-					break;
-				case 'Vespasianus':
-					$nomismaId[] = 'ves';
-					break;
-				case 'Titus':
-					$nomismaId[] = 'tit';
-					break;
-				case 'Domitianus':
-					$nomismaId[] = 'dom';
-					break;
-				case 'Nerva':
-					$nomismaId[] = 'ner';
-					break;
-				case 'Traianus':
-					$nomismaId[] = 'tr';
-					break;
-				case 'Hadrianus':
-					$nomismaId[] = 'hdn';
-					break;
-				case 'Pius':
-					$nomismaId[] = 'ant';
-					break;
-				case 'Aurelius':
-					$nomismaId[] = 'm_aur';
-					break;
-				case 'Commodus':
-					$nomismaId[] = 'com';
-					break;
-				case 'Pertinax':
-					$nomismaId[] = 'pert';
-					break;
-				case 'Didius Iulianus':
-					$nomismaId[] = 'dj';
-					break;
-				case 'Niger':
-					$nomismaId[] = 'pn';
-					break;
-				case 'Clodius Albinus':
-					$nomismaId[] = 'ca';
-					break;
-				case 'Septimius Severus':
-					$nomismaId[] = 'ss';
-					break;
-				case 'Caracalla':
-					$nomismaId[] = 'crl';
-					break;
-				case 'Geta':
-					$nomismaId[] = 'ge';
-					break;
-				case 'Macrinus':
-					$nomismaId[] = 'mcs';
-					break;
-				case 'Elagabalus':
-					$nomismaId[] = 'el';
-					break;
-				case 'Severus Alexander':
-					$nomismaId[] = 'sa';
-					break;
-				case 'Maximinus Thrax':
-					$nomismaId[] = 'max_i';
-					break;
-				case 'Maximus':
-					$nomismaId[] = 'mxs';
-					break;
-				case 'Diva Paulina':
-					$nomismaId[] = 'pa';
-					break;
-				case 'Gordianus I.':
-					$nomismaId[] = 'gor_i';
-					break;
-				case 'Gordianus II.':
-					$nomismaId[] = 'gor_ii';
-					break;
-				case 'Pupienus':
-					$nomismaId[] = 'pup';
-					break;
-				case 'Balbinus':
-					$nomismaId[] = 'balb';
-					break;
-				case 'Gordianus III. Caesar':
-					$nomismaId[] = 'gor_iii_caes';
-					break;
-				case 'Gordianus III.':
-					$nomismaId[] = 'gor_iii';
-					break;
-				case 'Philippus I.':
-					$nomismaId[] = 'ph_i';
-					break;
-				case 'Pacatianus':
-					$nomismaId[] = 'pac';
-					break;
-				case 'Iotapianus':
-					$nomismaId[] = 'jot';
-					break;
-				case 'Decius':
-					$nomismaId[] = 'tr_d';
-					break;
-				case 'Trebonianus':
-					$nomismaId[] = 'tr_g';
-					break;
-				case 'Aemilianus':
-					$nomismaId[] = 'aem';
-					break;
-				case 'Uranus':
-					$nomismaId[] = 'uran_ant';
-					break;
-				case 'Valerianus':
-					$nomismaId[] = 'val_i';
-					break;
-				case 'Mariniana':
-					$nomismaId[] = 'marin';
-					break;
-				case 'Gallienus Mitherrscher':
-					$nomismaId[] = 'gall(1)';
-					break;
-				case 'Salonina Mitherrscher':
-					$nomismaId[] = 'sala(1)';
-					break;
-				case 'Saloninus':
-					$nomismaId[] = 'sals';
-					break;
-				case 'Valerianus II.':
-					$nomismaId[] = 'val_ii';
-					break;
-				case 'Gallienus':
-					$nomismaId[] = 'gall(2)';
-					break;
-				case 'Salonina':
-					$nomismaId[] = 'sala(2)';
-					break;
-				case 'Claudius Gothicus':
-					$nomismaId[] = 'cg';
-					break;
-				case 'Quintillus':
-					$nomismaId[] = 'qu';
-					break;
-				case 'Aurelianus':
-					$nomismaId[] = 'aur';
-					break;
-				case 'Severina':
-					$nomismaId[] = 'seva';
-					break;
-				case 'Tacitus':
-					$nomismaId[] = 'tac';
-					break;
-				case 'Florianus':
-					$nomismaId[] = 'fl';
-					break;
-				case 'Probus':
-					$nomismaId[] = 'pro';
-					break;
-				case 'Carus/Familie':
-					$nomismaId[] = 'car';
-					break;
-				case 'Tetrarchie (vorreform)':
-					$nomismaId[] = 'dio';
-					break;
-				case 'Postumus':
-					$nomismaId[] = 'post';
-					break;
-				case 'Laelianus':
-					$nomismaId[] = 'lae';
-					break;
-				case 'Marius':
-					$nomismaId[] = 'mar';
-					break;
-				case 'Victorinus':
-					$nomismaId[] = 'vict';
-					break;
-				case 'Tetrici':
-					$nomismaId[] = 'tet_i';
-					break;
-				case 'Carausius':
-					$nomismaId[] = 'cara';
-					break;
-				case 'Carausius, Diocletianus, Maximianus Herculius':
-					$nomismaId[] = 'cara-dio-max_her';
-					break;
-				case 'Allectus':
-					$nomismaId[] = 'all';
-					break;
-				case 'Macrianus':
-					$nomismaId[] = 'mac_ii';
-					break;
-				case 'Quietus':
-					$nomismaId[] = 'quit';
-					break;
-				case 'Regalianus':
-					$nomismaId[] = 'reg';
-					break;
-				case 'Dryantilla':
-					$nomismaId[] = 'dry';
-					break;
-				case 'Iulianus von Pannonien':
-					$nomismaId[] = 'jul_i';
-					break;
-				case 'Alexandria':
-					$nomismaId[]='alex';
-					break;
-				case 'Amiens':
-					$nomismaId[]='amb';
-					break;
-				case 'Antioch':
-				case 'Antiochia':
-					$nomismaId[]='anch';
-					break;
-				case 'Aquileia':
-					$nomismaId[]='aq';
-					break;
-				case 'Arles':
-					$nomismaId[]='ar';
-					break;
-				case 'Carthago':
-					$nomismaId[]='carth';
-					break;
-				case 'Constantinople':
-				case 'Constantinopolis':
-					$nomismaId[]='cnp';
-					break;
-				case 'Cyzicus':
-					$nomismaId[]='cyz';
-					break;
-				case 'Heraclea':
-					$nomismaId[]='her';
-					break;
-				case 'London':
-				case 'Londinium':
-					$nomismaId[]='lon';
-					break;
-				case 'Lugdunum':
-				case 'Lyons':
-					$nomismaId[]='lug';
-					break;
-				case 'Nicomedia':
-					$nomismaId[]='nic';
-					break;
-				case 'Ostia':
-					$nomismaId[]='ost';
-					break;
-				case 'Roma':
-				case 'Rome':
-					$nomismaId[]='rom';
-					break;
-				case 'Serdica':
-					$nomismaId[]='serd';
-					break;
-				case 'Sirmium':
-					$nomismaId[]='sir';
-					break;
-				case 'Siscia':
-					$nomismaId[]='sis';
-					break;
-				case 'Thessalonica':
-					$nomismaId[]='thes';
-					break;
-				case 'Ticinum':
-					$nomismaId[]='tic';
-					break;
-				case 'Treveri':
-				case 'Trier':
-					$nomismaId[]='tri';
-					break;
-				default:
-					$nomismaId[] = null;
-			}
-			
-			//add number
-			$num = ltrim($pieces[count($pieces) - 1], '0');
-			
-			//test which number matches in OCRE
-			if (strlen($num) > 0){
-				if ($vol == 'X'){
-					echo "RIC 10:\n";					
-					// handle RIC 10 in a lookup table
-					if (array_key_exists($num, $pairs)){
-						//replace a null value for $nomismaId[2] with the new authority pair
-						$nomismaId[2] = $pairs[$num];
-						$uri = 'http://numismatics.org/ocre/id/' . implode('.', $nomismaId) .  '.' . $num;
-								
-						if (in_array($uri, $types)){
-							return $uri;
-						} else {
-							$file_headers = @get_headers($uri . '.xml');
-							if ($file_headers[0] == 'HTTP/1.1 200 OK'){
-								$types[] = $uri;
-								return $uri;
-							}
-						}
-					}
-				} elseif ($nomismaId[1] != null && $nomismaId[2] != null){
-					$uri = 'http://numismatics.org/ocre/id/' . implode('.', $nomismaId) . '.' . strtoupper($num);
-					//see if the URI is already in the validated array
-					if (in_array($uri, $types)){
-						return $uri;
-					} else {
-						$file_headers = @get_headers($uri . '.xml');
-						if ($file_headers[0] == 'HTTP/1.1 200 OK'){
-							$types[] = $uri;
-							return $uri;
-						} else {
-							$uri = 'http://numismatics.org/ocre/id/' . implode('.', $nomismaId) .  '.' . $num;
-							 
-							//see if the URI is already in the validated array
-							if (in_array($uri, $types)){
-								return $uri;
-							} else {
-								$file_headers = @get_headers($uri . '.xml');
-								if ($file_headers[0] == 'HTTP/1.1 200 OK'){
-									$types[] = $uri;
-									return $uri;
-								}
-							}
-						}
-					}
-				} 
-			} 			 
-		} else if (strpos($ref, 'RRC') !== FALSE){
-			//RRC
-			$pieces = explode(',', $ref);
-			
-			if ($collection == 'vienna'){
-				$id = 'rrc-' . str_replace('/', '.', ltrim(trim($pieces[1]), '0'));
-				$uri = 'http://numismatics.org/crro/id/' . $id;
-			} else {
-				$frag = array();
-				$frag[] = ltrim(trim($pieces[1]), '0');
-				if (isset($pieces[2])) {
-					$frag[] = ltrim(trim($pieces[2]), '0');
+	$refs = array();
+	foreach ($refNodes as $refNode){
+		$refs[] = $refNode->nodeValue;
+	}
+	
+	$fullRef = implode('; ', $refs);
+	
+	foreach ($refNodes as $refNode){
+		$string = $refNode->nodeValue;
+		$bibs = explode(';', $string);
+		foreach ($bibs as $ref){
+			//RIC
+			$ref = trim($ref);
+			if (strpos($ref, 'RIC') !== FALSE){
+				if (strpos($ref, 'RIC X') !== FALSE){
+					preg_match('/^RIC\s(X),?\s(\d.*)$/', $ref, $pieces);
 				} else {
-					$frag[] = '1';
+					preg_match('/^RIC\s([^\s]+)\s([^\d]+)\s(\d.*)$/', $ref, $pieces);
 				}
 				
-				$id = 'rrc-' . implode('.', $frag);
-				$uri = 'http://numismatics.org/crro/id/' . $id;
-			}
-			
-			//see if the URI is already in the validated array
-			if (in_array($uri, $types)){
-				return $uri;
-			} else {
-				$file_headers = @get_headers($uri . '.xml');
-				if ($file_headers[0] == 'HTTP/1.1 200 OK'){
-					$types[] = $uri;
-					return $uri;
+				//var_dump($pieces);
+				
+				if (isset($pieces[1]) && isset($pieces[2])){
+					$vol = $pieces[1];
+					
+					if ($vol == 'X'){
+						$authority = '';
+						$nums = trim($pieces[2]);
+					} else {
+						$authority = trim(str_replace(',', '', $pieces[2]));
+						if (isset($pieces[3])){
+							$nums = $pieces[3];
+						} else {
+							$nums = '';
+						}
+					}
+					
+					
+					//assemble id
+					$nomismaId = array();
+					$nomismaId[] = 'ric';
+					
+					//volume
+					switch ($vol) {
+						case 'I²':
+							$nomismaId[] = '1(2)';
+							break;
+						case 'II-1²':
+							$nomismaId[] = '2_1(2)';
+							break;
+						case 'II':
+							$nomismaId[] = '2';
+							break;
+						case 'III':
+							$nomismaId[] = '3';
+							break;
+						case 'IV-1':
+						case 'IV-2':
+						case 'IV-3':
+							$nomismaId[] = '4';
+							break;
+						case 'V-1':
+							$nomismaId[] = '5';
+							break;
+						case 'V-2':
+							$nomismaId[] = '5';
+							break;
+						case 'VI':
+							$nomismaId[] = '6';
+							break;
+						case 'VII':
+							$nomismaId[] = '7';
+							break;
+						case 'VIII':
+							$nomismaId[] = '8';
+							break;
+						case 'IX':
+							$nomismaId[] = '9';
+							break;
+						case 'X':
+							$nomismaId[] = '10';
+							break;
+						default:
+							$nomismaId[] = null;
+					}
+					
+					//normalize authority
+					switch ($authority) {
+						case 'Augustus':
+							$nomismaId[] = 'aug';
+							break;
+						case 'Tiberius':
+							$nomismaId[] = 'tib';
+							break;
+						case 'Caligula':
+							$nomismaId[] = 'gai';
+							break;
+						case 'Claudius':
+							$nomismaId[] = 'cl';
+							break;
+						case 'Nero':
+							$nomismaId[] = 'ner';
+							break;
+						case 'Galba':
+							$nomismaId[] = 'gal';
+							break;
+						case 'Otho':
+							$nomismaId[] = 'ot';
+							break;
+						case 'Vitellius':
+							$nomismaId[] = 'vit';
+							break;
+						case 'Macer':
+							$nomismaId[] = 'clm';
+							break;
+						case 'Civil Wars':
+							$nomismaId[] = 'cw';
+							break;
+						case 'Vespasianus':
+							$nomismaId[] = 'ves';
+							break;
+						case 'Titus':
+							$nomismaId[] = 'tit';
+							break;
+						case 'Domitianus':
+							$nomismaId[] = 'dom';
+							break;
+						case 'Nerva':
+							$nomismaId[] = 'ner';
+							break;
+						case 'Traianus':
+							$nomismaId[] = 'tr';
+							break;
+						case 'Hadrianus':
+							$nomismaId[] = 'hdn';
+							break;
+						case 'Pius':
+							$nomismaId[] = 'ant';
+							break;
+						case 'Aurelius':
+							$nomismaId[] = 'm_aur';
+							break;
+						case 'Commodus':
+							$nomismaId[] = 'com';
+							break;
+						case 'Pertinax':
+							$nomismaId[] = 'pert';
+							break;
+						case 'Didius Iulianus':
+							$nomismaId[] = 'dj';
+							break;
+						case 'Niger':
+							$nomismaId[] = 'pn';
+							break;
+						case 'Clodius Albinus':
+							$nomismaId[] = 'ca';
+							break;
+						case 'Septimius Severus':
+							$nomismaId[] = 'ss';
+							break;
+						case 'Caracalla':
+							$nomismaId[] = 'crl';
+							break;
+						case 'Geta':
+							$nomismaId[] = 'ge';
+							break;
+						case 'Macrinus':
+							$nomismaId[] = 'mcs';
+							break;
+						case 'Elagabalus':
+							$nomismaId[] = 'el';
+							break;
+						case 'Severus Alexander':
+							$nomismaId[] = 'sa';
+							break;
+						case 'Maximinus Thrax':
+							$nomismaId[] = 'max_i';
+							break;
+						case 'Maximus':
+							$nomismaId[] = 'mxs';
+							break;
+						case 'Diva Paulina':
+							$nomismaId[] = 'pa';
+							break;
+						case 'Gordianus I.':
+							$nomismaId[] = 'gor_i';
+							break;
+						case 'Gordianus II.':
+							$nomismaId[] = 'gor_ii';
+							break;
+						case 'Pupienus':
+							$nomismaId[] = 'pup';
+							break;
+						case 'Balbinus':
+							$nomismaId[] = 'balb';
+							break;
+						case 'Gordianus III. Caesar':
+							$nomismaId[] = 'gor_iii_caes';
+							break;
+						case 'Gordianus III.':
+							$nomismaId[] = 'gor_iii';
+							break;
+						case 'Philippus I.':
+							$nomismaId[] = 'ph_i';
+							break;
+						case 'Pacatianus':
+							$nomismaId[] = 'pac';
+							break;
+						case 'Iotapianus':
+							$nomismaId[] = 'jot';
+							break;
+						case 'Decius':
+							$nomismaId[] = 'tr_d';
+							break;
+						case 'Trebonianus':
+							$nomismaId[] = 'tr_g';
+							break;
+						case 'Aemilianus':
+							$nomismaId[] = 'aem';
+							break;
+						case 'Uranus':
+							$nomismaId[] = 'uran_ant';
+							break;
+						case 'Valerianus':
+							$nomismaId[] = 'val_i';
+							break;
+						case 'Mariniana':
+							$nomismaId[] = 'marin';
+							break;
+						case 'Gallienus Mitherrscher':
+							$nomismaId[] = 'gall(1)';
+							break;
+						case 'Salonina Mitherrscher':
+							$nomismaId[] = 'sala(1)';
+							break;
+						case 'Saloninus':
+							$nomismaId[] = 'sals';
+							break;
+						case 'Valerianus II.':
+							$nomismaId[] = 'val_ii';
+							break;
+						case 'Gallienus':
+							$nomismaId[] = 'gall(2)';
+							break;
+						case 'Salonina':
+							$nomismaId[] = 'sala(2)';
+							break;
+						case 'Claudius Gothicus':
+							$nomismaId[] = 'cg';
+							break;
+						case 'Quintillus':
+							$nomismaId[] = 'qu';
+							break;
+						case 'Aurelianus':
+							$nomismaId[] = 'aur';
+							break;
+						case 'Severina':
+							$nomismaId[] = 'seva';
+							break;
+						case 'Tacitus':
+							$nomismaId[] = 'tac';
+							break;
+						case 'Florianus':
+							$nomismaId[] = 'fl';
+							break;
+						case 'Probus':
+							$nomismaId[] = 'pro';
+							break;
+						case 'Carus/Familie':
+							$nomismaId[] = 'car';
+							break;
+						case 'Tetrarchie (vorreform)':
+							$nomismaId[] = 'dio';
+							break;
+						case 'Postumus':
+							$nomismaId[] = 'post';
+							break;
+						case 'Laelianus':
+							$nomismaId[] = 'lae';
+							break;
+						case 'Marius':
+							$nomismaId[] = 'mar';
+							break;
+						case 'Victorinus':
+							$nomismaId[] = 'vict';
+							break;
+						case 'Tetrici':
+							$nomismaId[] = 'tet_i';
+							break;
+						case 'Carausius':
+							$nomismaId[] = 'cara';
+							break;
+						case 'Carausius, Diocletianus, Maximianus Herculius':
+							$nomismaId[] = 'cara-dio-max_her';
+							break;
+						case 'Allectus':
+							$nomismaId[] = 'all';
+							break;
+						case 'Macrianus':
+							$nomismaId[] = 'mac_ii';
+							break;
+						case 'Quietus':
+							$nomismaId[] = 'quit';
+							break;
+						case 'Regalianus':
+							$nomismaId[] = 'reg';
+							break;
+						case 'Dryantilla':
+							$nomismaId[] = 'dry';
+							break;
+						case 'Iulianus von Pannonien':
+							$nomismaId[] = 'jul_i';
+							break;
+						case 'Alexandria':
+							$nomismaId[]='alex';
+							break;
+						case 'Amiens':
+							$nomismaId[]='amb';
+							break;
+						case 'Antioch':
+						case 'Antiochia':
+							$nomismaId[]='anch';
+							break;
+						case 'Aquileia':
+							$nomismaId[]='aq';
+							break;
+						case 'Arles':
+							$nomismaId[]='ar';
+							break;
+						case 'Carthago':
+							$nomismaId[]='carth';
+							break;
+						case 'Constantinople':
+						case 'Constantinopolis':
+							$nomismaId[]='cnp';
+							break;
+						case 'Cyzicus':
+							$nomismaId[]='cyz';
+							break;
+						case 'Heraclea':
+							$nomismaId[]='her';
+							break;
+						case 'London':
+						case 'Londinium':
+							$nomismaId[]='lon';
+							break;
+						case 'Lugdunum':
+						case 'Lyons':
+							$nomismaId[]='lug';
+							break;
+						case 'Nicomedia':
+							$nomismaId[]='nic';
+							break;
+						case 'Ostia':
+							$nomismaId[]='ost';
+							break;
+						case 'Roma':
+						case 'Rome':
+							$nomismaId[]='rom';
+							break;
+						case 'Serdica':
+							$nomismaId[]='serd';
+							break;
+						case 'Sirmium':
+							$nomismaId[]='sir';
+							break;
+						case 'Siscia':
+							$nomismaId[]='sis';
+							break;
+						case 'Thessalonica':
+							$nomismaId[]='thes';
+							break;
+						case 'Ticinum':
+							$nomismaId[]='tic';
+							break;
+						case 'Treveri':
+						case 'Trier':
+							$nomismaId[]='tri';
+							break;
+						default:
+							$nomismaId[] = null;
+					}
+					
+					//add number:
+					//$num = ltrim($pieces[count($pieces) - 1], '0');
+					
+					//find numbers through regular expressions
+					preg_match_all('/(\d{1,4}[A-Za-z]{1,2}|\d{1,4})/', $nums, $numArray);
+					echo "Parsing {$ref}\n";
+					
+					if (isset($numArray[1])){
+						$matches = $numArray[1];
+						//only parse if there's one parseable RIC number
+						if (count($matches) == 1){
+							$num = ltrim($matches[0], '0');
+							if ($vol == 'X'){
+								//echo "RIC 10:\n";
+								// handle RIC 10 in a lookup table
+								if (array_key_exists($num, $pairs)){
+									//replace a null value for $nomismaId[2] with the new authority pair
+									$nomismaId[2] = $pairs[$num];
+									$uri = 'http://numismatics.org/ocre/id/' . implode('.', $nomismaId) .  '.' . $num;
+									
+									if (in_array($uri, $types)){
+										$results[] = array($id, $uri, $fullRef, 'no');
+										return $uri;
+									} else {
+										$file_headers = @get_headers($uri . '.xml');
+										if ($file_headers[0] == 'HTTP/1.1 200 OK'){
+											$types[] = $uri;
+											$results[] = array($id, $uri, $fullRef, 'no');
+											return $uri;
+										}
+									}
+								}
+							} elseif ($nomismaId[1] != null && $nomismaId[2] != null){
+								$uri = 'http://numismatics.org/ocre/id/' . implode('.', $nomismaId) . '.' . strtoupper($num);
+								//see if the URI is already in the validated array
+								if (in_array($uri, $types)){
+									$results[] = array($id, $uri, $fullRef, 'no');
+									return $uri;
+								} else {
+									$file_headers = @get_headers($uri . '.xml');
+									if ($file_headers[0] == 'HTTP/1.1 200 OK'){
+										$types[] = $uri;
+										$results[] = array($id, $uri, $fullRef, 'no');
+										return $uri;
+									} else {
+										$uri = 'http://numismatics.org/ocre/id/' . implode('.', $nomismaId) .  '.' . $num;
+										
+										//see if the URI is already in the validated array
+										if (in_array($uri, $types)){
+											$results[] = array($id, $uri, $fullRef, 'no');
+											return $uri;
+										} else {
+											$file_headers = @get_headers($uri . '.xml');
+											if ($file_headers[0] == 'HTTP/1.1 200 OK'){
+												$types[] = $uri;
+												$results[] = array($id, $uri, $fullRef, 'no');
+												return $uri;
+											}
+										}
+									}
+								}
+							}
+						} else {
+							//if there's more than one possible RIC ID, then add into $results array
+							$results[] = array($id, '', $fullRef, 'no');
+						}
+					} else {
+						//if no RIC numbers are parsed, then add into $results array
+						$results[] = array($id, '', $fullRef, 'no');
+					}
 				}
-			}						
+			} else if (strpos($ref, 'RRC') !== FALSE){
+				//RRC
+				$pieces = explode(',', $ref);
+				
+				if ($collection == 'vienna'){
+					$id = 'rrc-' . str_replace('/', '.', ltrim(trim($pieces[1]), '0'));
+					$uri = 'http://numismatics.org/crro/id/' . $id;
+				} else {
+					$frag = array();
+					$frag[] = ltrim(trim($pieces[1]), '0');
+					if (isset($pieces[2])) {
+						$frag[] = ltrim(trim($pieces[2]), '0');
+					} else {
+						$frag[] = '1';
+					}
+					
+					$id = 'rrc-' . implode('.', $frag);
+					$uri = 'http://numismatics.org/crro/id/' . $id;
+				}
+				
+				//see if the URI is already in the validated array
+				if (in_array($uri, $types)){
+					$results[] = array($id, $uri, $fullRef, 'no');
+					return $uri;
+				} else {
+					$file_headers = @get_headers($uri . '.xml');
+					if ($file_headers[0] == 'HTTP/1.1 200 OK'){
+						$types[] = $uri;
+						$results[] = array($id, $uri, $fullRef, 'no');
+						return $uri;
+					}
+				}
+			}
 		}
 	}
+	
+	//only process if there's only one reference
+	/*if ($refNodes->length == 1){
+		$ref = $refNodes->item(0)->nodeValue;
+		
+	} else {
+		//if 0 or more than 1, just output the ref
+		echo "Cannot parse {$fullRef}\n";
+		$results[] = array($id, '', $fullRef, 'no');
+	}*/
 }
 
 function generateNumismaticObject($id, $typeURI, $collection, $xpath, $writer){
@@ -806,6 +884,20 @@ function write_metadata($collection){
 	
 	$writer->endElement();
 	$writer->flush();
+}
+
+//generate a CSV file from a concordance list of IDs, URIs, and textual references in $results
+function write_csv($collection, $results){
+	$heading = array('id','coinType','ref','contains_uri');
+	
+	$file = fopen($collection . '.csv', 'w');
+	
+	fputcsv($file, $heading);
+	foreach ($results as $row) {
+		fputcsv($file, $row);
+	}
+	
+	fclose($file);
 }
 
 function generate_json($doc){
