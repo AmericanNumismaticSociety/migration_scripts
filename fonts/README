@@ -1,0 +1,18 @@
+Author: Ethan Gruber
+Date: June 2017
+
+This folder contains scripts and documentation to extract monograms from TTF files into multiple SVG files.
+
+Requirements: fontforge and inkscape
+
+`sudo apt-get install fontforge inkscape`
+
+1. Run 1.convert.sh on 1 or more TTF files (fontforge script)
+
+    ./1.convert.sh Alabanda.ttf
+
+2. Auto-crop only the useful area of the SVG (inkscape script)
+
+    ./2.crop.sh
+
+
