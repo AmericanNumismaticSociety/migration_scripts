@@ -1,6 +1,6 @@
 #!/bin/sh
 #First create backup
-PASSWORD=`cat password.txt`
+PASSWORD=`cat  /usr/local/projects/migration_scripts/backup-scripts/password.txt`
 COLLECTION=$1
 echo "Generating backup."
 cd /usr/local/projects/eXist-db
