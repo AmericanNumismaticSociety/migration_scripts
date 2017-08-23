@@ -10,11 +10,11 @@ java -jar start.jar backup -u admin -p $PASSWORD -b /db/$COLLECTION -d /data/bac
 echo "Creating .gz file."
 cd /data/backups/eXist-db/$COLLECTION
 NOW=`date +"%Y%m%d%H%M%S"`
-tar czvf $NOW.gz db
+tar czvf $NOW.tar.gz db
 
 #SCP backups to admin
 echo "Uploading to admin server."
-scp -P 4858 $NOW.gz admin.numismatics.org:/usr/local/projects/backups/data/$COLLECTION/$NOW.gz
+scp -P 4858 $NOW.tar.gz admin.numismatics.org:/usr/local/projects/backups/data/$COLLECTION/$NOW.tar.gz
 
 #delete directory
 
