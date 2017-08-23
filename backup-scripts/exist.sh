@@ -1,7 +1,7 @@
 #!/bin/sh
 #First create backup
 PASSWORD=`cat password.txt`
-COLLECTION=aod
+COLLECTION=$1
 echo "Generating backup."
 cd /usr/local/projects/eXist-db
 java -jar start.jar backup -u admin -p $PASSWORD -b /db/$COLLECTION -d /data/backups/eXist-db/$COLLECTION
