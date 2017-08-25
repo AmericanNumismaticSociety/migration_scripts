@@ -5,7 +5,7 @@ Library: jQuery
 Description: Rendering graphics based on hoard counts
  ************************************/
 $(document).ready(function () {
-    var service = 'http://admin.numismatics.org/loris/';
+    var service = 'http://app1.numismatics.org/loris/';
 
     var iiifImage = L.map('iiif-container', {
         center:[0, 0],
