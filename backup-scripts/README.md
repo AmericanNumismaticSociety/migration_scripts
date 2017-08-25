@@ -9,4 +9,18 @@ The exist.sh script is for backing up eXist-db XML collections. The script will 
 `sh exist.sh aod` will backup the Art of Devastation XML data.
 
 ## Cron jobs
-The shell scripts should be added as occasional cron jobs. Typically, monthly backups are sufficient.
+The shell scripts should be added as occasional cron jobs. Typically, monthly or quarterly backups are sufficient, depending on how often the data are edited.
+
+Below is the current crontab: 
+
+    # m h  dom mon dow   command
+    30 1 1 1,7 * sh /usr/local/projects/migration_scripts/backup-scripts/exist.sh aod >/dev/null 2>&1
+    0 2 1 1,7 * sh /usr/local/projects/migration_scripts/backup-scripts/exist.sh chrr >/dev/null 2>&1
+    30 2 1 1,7 * sh /usr/local/projects/migration_scripts/backup-scripts/exist.sh crro >/dev/null 2>&1
+    0 3 1 1,3,6,9 * sh /usr/local/projects/migration_scripts/backup-scripts/exist.sh xeac >/dev/null 2>&1
+    0 1 5 1,3,5,7,9,11 * sh /usr/local/projects/migration_scripts/backup-scripts/exist.sh eaditor >/dev/null 2>&1
+    0 1 7 1,3,5,7,9,11 * sh /usr/local/projects/migration_scripts/backup-scripts/exist.sh etdpub >/dev/null 2>&1
+    0 2 9 1,7 * sh /usr/local/projects/migration_scripts/backup-scripts/exist.sh egypt >/dev/null 2>&1
+    0 1 11 1,3,6,9 * sh /usr/local/projects/migration_scripts/backup-scripts/exist.sh pella >/dev/null 2>&1
+    
+Summary: Semiannual backups for Art of Devastation, CHRR, CRRO, and the Egyptian National Library. Quarterly backups for ANS Authorities (xEAC), PELLA. Bimonthly backups for Archer (EADitor) and the Digital Library (ETDPub). Monthly backup for OCRE, since corrections are common. The output is piped to /dev/null. 
