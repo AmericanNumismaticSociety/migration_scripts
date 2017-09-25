@@ -72,6 +72,9 @@ function write_dump($collection){
 	$writer->writeAttribute('xmlns:geo', "http://www.w3.org/2003/01/geo/wgs84_pos#");
 	$writer->writeAttribute('xmlns:rdf', "http://www.w3.org/1999/02/22-rdf-syntax-ns#");
 	$writer->writeAttribute('xmlns:void', "http://rdfs.org/ns/void#");
+	$writer->writeAttribute('xmlns:edm', "http://www.europeana.eu/schemas/edm/");
+	$writer->writeAttribute('xmlns:svcs', "http://rdfs.org/sioc/services#");
+	$writer->writeAttribute('xmlns:doap', "http://usefulinc.com/ns/doap#");
 	
 	//iterate through export sets
 	foreach (explode('|', $collection['sets']) as $set){
@@ -738,6 +741,17 @@ function generateNumismaticObject($id, $typeURI, $collection, $xpath, $writer){
 			}
 		}
 		
+	//add links to 3D models
+	if ($coinURI == 'http://www3.hhu.de/muenzkatalog/ikmk/object.php?id=ID4686'){
+		$writer->startElement('edm:isShownBy');
+			$writer->writeAttribute('rdf:resource', 'https://sketchfab.com/models/58f5c949894144b386103b6c3d039303');
+		$writer->endElement();
+	} elseif ($coinURI == 'http://www3.hhu.de/muenzkatalog/ikmk/object.php?id=ID2050'){
+		$writer->startElement('edm:isShownBy');
+			$writer->writeAttribute('rdf:resource', 'https://sketchfab.com/models/e84acd856ce44f97844a9d9f592aeb3f');
+		$writer->endElement();
+	}
+		
 	//images
 	$image_url = $xpath->query("descendant::lido:resourceRepresentation[@lido:type='image_thumb']/lido:linkResource")->item(0)->nodeValue;
 	if (strlen($image_url) > 0){
@@ -818,6 +832,25 @@ function generateNumismaticObject($id, $typeURI, $collection, $xpath, $writer){
 	
 	//end nmo:NumismaticObject
 	$writer->endElement();
+	
+	//add 3D metadata if applicable
+	if ($coinURI == 'http://www3.hhu.de/muenzkatalog/ikmk/object.php?id=ID4686'){
+		$writer->startElement('edm:WebResource');
+			$writer->writeAttribute('rdf:about', 'https://sketchfab.com/models/58f5c949894144b386103b6c3d039303');
+			$writer->startElement('dcterms:format');
+				$writer->writeAttribute('rdf:resource', 'http://vocab.getty.edu/aat/300053580');				
+			$writer->endElement();
+			$writer->writeElement('dcterms:publisher', 'NUMiD');
+		$writer->endElement();
+	} elseif ($coinURI == 'http://www3.hhu.de/muenzkatalog/ikmk/object.php?id=ID2050'){
+		$writer->startElement('edm:WebResource');
+			$writer->writeAttribute('rdf:about', 'https://sketchfab.com/models/e84acd856ce44f97844a9d9f592aeb3f');
+			$writer->startElement('dcterms:format');
+				$writer->writeAttribute('rdf:resource', 'http://vocab.getty.edu/aat/300053580');
+			$writer->endElement();
+			$writer->writeElement('dcterms:publisher', 'NUMiD');
+		$writer->endElement();
+	}
 }
 
 //generate all of the geo:SpatialThings from an array of geonames IDs. This reduces redundancy in the RDF output
