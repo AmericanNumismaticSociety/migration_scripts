@@ -15,7 +15,7 @@
 			<xsl:apply-templates/>
 			<xsl:element name="revisionDesc" namespace="http://www.tei-c.org/ns/1.0">
 				<xsl:element name="change" namespace="http://www.tei-c.org/ns/1.0">
-					<xsl:attribute name="when" select="current-date()"></xsl:attribute>
+					<xsl:attribute name="when" select="substring(string(current-date()), 1, 10)"></xsl:attribute>
 					<xsl:text>Reprocessed TEI for IIIF compliance on service URI and annotation coordinates.</xsl:text>
 				</xsl:element>
 			</xsl:element>
@@ -56,7 +56,9 @@
 
 		<xsl:element name="media" namespace="http://www.tei-c.org/ns/1.0">
 			<xsl:attribute name="url" select="concat('http://images.numismatics.org/archivesimages%2Farchive%2F', @url, '.jpg')"/>
-			<xsl:attribute name="n" select="@n"/>
+			<xsl:if test="string(@n)">
+				<xsl:attribute name="n" select="@n"/>
+			</xsl:if>			
 			<xsl:attribute name="mimeType">image/jpeg</xsl:attribute>
 			<xsl:attribute name="type">IIIFService</xsl:attribute>
 			<xsl:attribute name="height" select="concat($height, 'px')"/>
