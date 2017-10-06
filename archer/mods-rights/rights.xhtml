@@ -1,0 +1,99 @@
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:xi="http://www.w3.org/2001/XInclude"
+	xmlns:xforms="http://www.w3.org/2002/xforms" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:ev="http://www.w3.org/2001/xml-events"
+	xmlns:xxforms="http://orbeon.org/oxf/xml/xforms" xmlns:fr="http://orbeon.org/oxf/xml/form-runner">
+	<head>
+		<title>Rights</title>
+		<link rel="stylesheet" href="/fr/style/bootstrap/css/bootstrap.css" type="text/css" />
+		<link rel="stylesheet" href="/fr/style/form-runner-bootstrap-override.css" type="text/css" />
+
+		<link rel="stylesheet" href="http://netdna.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" />
+		<script type="text/javascript" src="http://netdna.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
+		<link rel="shortcut icon" href="/ops/images/orbeon-icon-16.ico" />
+		<link rel="icon" href="/ops/images/orbeon-icon-16.png" type="image/png" />
+		<link rel="stylesheet" href="/apps/rights/css/xforms.css" />
+
+		<!-- model -->
+		<xforms:model>
+			<xforms:instance id="control-instance" xxforms:exclude-result-prefixes="#all">
+				<controls xmlns="">
+					<status></status>
+				</controls>
+			</xforms:instance>
+
+			<xforms:instance id="photos" xxforms:exclude-result-prefixes="#all">
+				<xi:include href="photos.xml"/>
+			</xforms:instance>
+
+			<!-- REST responses -->
+			<xforms:instance id="rightsstatements" xxforms:exclude-result-prefixes="#all">
+				<response xmlns=""></response>
+			</xforms:instance>
+
+
+			<!-- **************** BINDINGS ********************** -->
+			<xforms:bind nodeset="instance('photos')">
+				<xforms:bind nodeset="rights" required="true()"/>
+			</xforms:bind>
+		</xforms:model>
+	</head>
+
+	<body>
+		<div class="container-fluid">
+			<div class="row">
+				<div class="col-md-12" id="form">
+					<xforms:group ref=".[string-length(instance('control-instance')/status) &gt; 0]">
+						<div class="bg-info alert-box">
+							<span class="glyphicon glyphicon-info-sign"></span>
+							<strong>Status:</strong>
+							<xforms:output ref="instance('control-instance')/status"/>
+						</div>
+					</xforms:group>
+					<h1>Rights</h1>
+
+					<xforms:group ref="instance('photos')">
+						<table class="table">
+							<thead>
+								<tr>
+									<th>URL</th>
+									<th>Title</th>
+									<th>ID</th>
+									<th>Rights</th>
+								</tr>
+							</thead>
+							<tbody>
+								<xforms:repeat nodeset="file">
+									<tr>
+										<td>
+											<xforms:trigger appearance="minimal">
+												<xforms:label value="@id"/>
+												<xforms:action ev:event="DOMActivate">
+													<xforms:load show="new" resource="http://numismatics.org/archives/id/{@id}"/>
+												</xforms:action>
+											</xforms:trigger></td>
+										<td><xforms:output ref="title"/></td>
+										<td><xforms:output ref="id"/></td>
+										<td>
+											<xforms:select1>
+												<xforms:alert>Required</xforms:alert>
+												<xforms:item>
+													<xforms:label>Select...</xforms:label>
+													<xforms:value/>
+												</xforms:item>
+												<xforms:itemset nodeset="instance('rightsstatements')/statement">
+													<xforms:label ref="."/>
+													<xforms:value ref="@uri"/>
+												</xforms:itemset>
+											</xforms:select1>
+										</td>
+									</tr>
+								</xforms:repeat>
+							</tbody>
+						</table>
+
+					</xforms:group>
+				</div>
+			</div>
+		</div>
+		<fr:xforms-inspector/>
+	</body>
+</html>
