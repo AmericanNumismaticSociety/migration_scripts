@@ -20,6 +20,9 @@
 			<title>
 				<xsl:value-of select="mods:titleInfo/mods:title"/>
 			</title>
+			<date>
+				<xsl:value-of select="mods:originInfo/mods:dateCreated"/>
+			</date>
 			<id>
 				<xsl:value-of select="mods:identifier"/>
 			</id>

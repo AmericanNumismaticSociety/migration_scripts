@@ -26,7 +26,13 @@
 
 			<!-- REST responses -->
 			<xforms:instance id="rightsstatements" xxforms:exclude-result-prefixes="#all">
-				<response xmlns=""></response>
+				<rights xmlns="">
+					<statement uri="http://rightsstatements.org/vocab/InC-NC/1.0/">In Copyright - Non Commercial Use Permitted (public)</statement>
+					<statement uri="http://rightsstatements.org/vocab/NoC-US/1.0/">No Copyright - United States (public)</statement>
+					<statement uri="http://rightsstatements.org/vocab/InC/1.0/">In Copyright (not public)</statement>
+					<statement uri="http://rightsstatements.org/vocab/NoC-CR/1.0/">No Copyright - Contractual Restrictions (not public)</statement>
+					<statement uri="http://rightsstatements.org/vocab/UND/1.0/">Copyright Undetermined (not public)</statement>
+				</rights>
 			</xforms:instance>
 
 
@@ -54,26 +60,27 @@
 						<table class="table">
 							<thead>
 								<tr>
-									<th>URL</th>
-									<th>Title</th>
+									<th style="width:200px">Thumbnail</th>
 									<th>ID</th>
 									<th>Rights</th>
+									<th>Metadata</th>
+
+
 								</tr>
 							</thead>
 							<tbody>
 								<xforms:repeat nodeset="file">
 									<tr>
 										<td>
-											<xforms:trigger appearance="minimal">
-												<xforms:label value="@id"/>
-												<xforms:action ev:event="DOMActivate">
-													<xforms:load show="new" resource="http://numismatics.org/archives/id/{@id}"/>
-												</xforms:action>
-											</xforms:trigger></td>
-										<td><xforms:output ref="title"/></td>
+											<a href="http://numismatics.org/archives/id/{@id}" target="_blank">
+												<img src="{thumbnail}" alt="not on server" />
+											</a>
+											<br />
+											<xforms:output ref="@id"/>
+										</td>
 										<td><xforms:output ref="id"/></td>
 										<td>
-											<xforms:select1>
+											<xforms:select1 ref="rights">
 												<xforms:alert>Required</xforms:alert>
 												<xforms:item>
 													<xforms:label>Select...</xforms:label>
@@ -84,6 +91,18 @@
 													<xforms:value ref="@uri"/>
 												</xforms:itemset>
 											</xforms:select1>
+										</td>
+										<td>
+											<div>
+												<xforms:output ref="title">
+													<xforms:label>Title</xforms:label>
+												</xforms:output>
+											</div>
+											<div>
+												<xforms:output ref="date">
+													<xforms:label>Date</xforms:label>
+												</xforms:output>
+											</div>
 										</td>
 									</tr>
 								</xforms:repeat>
