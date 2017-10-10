@@ -126,8 +126,8 @@
 												<!-- serialize file to disk on change -->
 												<xforms:action ev:event="xforms-value-changed">
 													<xforms:insert nodeset="instance('dump')"
-														origin="xxforms:call-xpl('oxf:/apps/rights/save-id.xpl', ('photos', 'configuration'), (instance('photos'), instance('save-config')), 'data')"/>
-													<xforms:setvalue ref="instance('control-instance')/status">Rights file updated</xforms:setvalue>
+														origin="xxforms:call-xpl('oxf:/apps/rights/save-id.xpl', ('doc', 'configuration'), (instance('photos'), instance('save-config')), 'data')"/>
+													<xforms:setvalue ref="instance('control-instance')/status">Rights file updated</xforms:setvalue>													
 												</xforms:action>
 											</xforms:select1>
 										</td>
