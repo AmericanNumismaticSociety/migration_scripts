@@ -82,14 +82,14 @@
 					</xforms:group>
 					<h1>Rights</h1>
 	
-					<xforms:trigger>
+					<!--<xforms:trigger>
 						<xforms:label>Save</xforms:label>
 						<xforms:action ev:event="DOMActivate">
 							<xforms:insert nodeset="instance('dump')"
 								origin="xxforms:call-xpl('oxf:/apps/rights/save-id.xpl', ('doc', 'configuration'), (instance('photos'), instance('save-config')), 'data')"/>
 							<xforms:setvalue ref="instance('control-instance')/status">Rights file updated</xforms:setvalue>
 						</xforms:action>
-					</xforms:trigger>
+					</xforms:trigger>-->
 
 					<xforms:group ref="instance('photos')">
 						<table class="table">
@@ -124,11 +124,11 @@
 													<xforms:value ref="@uri"/>
 												</xforms:itemset>
 												<!-- serialize file to disk on change -->
-												<!--<xforms:action ev:event="xforms-value-changed">
+												<xforms:action ev:event="xforms-value-changed">
 													<xforms:insert nodeset="instance('dump')"
 														origin="xxforms:call-xpl('oxf:/apps/rights/save-id.xpl', ('photos', 'configuration'), (instance('photos'), instance('save-config')), 'data')"/>
 													<xforms:setvalue ref="instance('control-instance')/status">Rights file updated</xforms:setvalue>
-												</xforms:action>-->
+												</xforms:action>
 											</xforms:select1>
 										</td>
 										<td>
@@ -152,6 +152,6 @@
 				</div>
 			</div>
 		</div>
-		<fr:xforms-inspector/>
+		<!--<fr:xforms-inspector/>-->
 	</body>
 </html>
