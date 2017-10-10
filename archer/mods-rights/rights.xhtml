@@ -21,7 +21,24 @@
 			</xforms:instance>
 
 			<xforms:instance id="photos" xxforms:exclude-result-prefixes="#all">
-				<xi:include href="photos.xml"/>
+				<files xmlns=""></files>
+			</xforms:instance>
+
+			<xforms:instance id="save-config">
+				<config xmlns="">
+					<url>oxf:/apps/rights/data/photos.xml</url>
+					<content-type>text/plain</content-type>
+					<make-directories>false</make-directories>
+					<append>false</append>
+				</config>
+			</xforms:instance>
+
+			<xforms:instance id="load-config">
+				<config xmlns="">
+					<url>oxf:/apps/rights/data/photos.xml</url>
+					<content-type>application/xml</content-type>
+					<mode>xml</mode>
+				</config>
 			</xforms:instance>
 
 			<!-- REST responses -->
@@ -34,12 +51,21 @@
 					<statement uri="http://rightsstatements.org/vocab/UND/1.0/">Copyright Undetermined (not public)</statement>
 				</rights>
 			</xforms:instance>
-
+			
+			<xforms:instance id="dump">
+				<dump xmlns=""></dump>
+			</xforms:instance>
 
 			<!-- **************** BINDINGS ********************** -->
 			<xforms:bind nodeset="instance('photos')">
-				<xforms:bind nodeset="rights" required="true()"/>
+				<xforms:bind nodeset="file">
+					<xforms:bind nodeset="rights" required="true()"/>
+				</xforms:bind>
 			</xforms:bind>
+
+			<!-- ************ MODEL CONSTRUCT DONE **************-->
+			<xforms:insert ev:event="xforms-model-construct-done" nodeset="instance('photos')"
+				origin="xxforms:call-xpl('oxf:/apps/rights/load-id.xpl', 'file', instance('load-config'), 'data')"/>
 		</xforms:model>
 	</head>
 
@@ -55,6 +81,15 @@
 						</div>
 					</xforms:group>
 					<h1>Rights</h1>
+	
+					<xforms:trigger>
+						<xforms:label>Save</xforms:label>
+						<xforms:action ev:event="DOMActivate">
+							<xforms:insert nodeset="instance('dump')"
+								origin="xxforms:call-xpl('oxf:/apps/rights/save-id.xpl', ('doc', 'configuration'), (instance('photos'), instance('save-config')), 'data')"/>
+							<xforms:setvalue ref="instance('control-instance')/status">Rights file updated</xforms:setvalue>
+						</xforms:action>
+					</xforms:trigger>
 
 					<xforms:group ref="instance('photos')">
 						<table class="table">
@@ -62,10 +97,8 @@
 								<tr>
 									<th style="width:200px">Thumbnail</th>
 									<th>ID</th>
-									<th>Rights</th>
+									<th style="width:300px">Rights</th>
 									<th>Metadata</th>
-
-
 								</tr>
 							</thead>
 							<tbody>
@@ -90,6 +123,12 @@
 													<xforms:label ref="."/>
 													<xforms:value ref="@uri"/>
 												</xforms:itemset>
+												<!-- serialize file to disk on change -->
+												<!--<xforms:action ev:event="xforms-value-changed">
+													<xforms:insert nodeset="instance('dump')"
+														origin="xxforms:call-xpl('oxf:/apps/rights/save-id.xpl', ('photos', 'configuration'), (instance('photos'), instance('save-config')), 'data')"/>
+													<xforms:setvalue ref="instance('control-instance')/status">Rights file updated</xforms:setvalue>
+												</xforms:action>-->
 											</xforms:select1>
 										</td>
 										<td>

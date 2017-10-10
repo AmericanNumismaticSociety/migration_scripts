@@ -27,7 +27,8 @@
 				<xsl:value-of select="mods:identifier"/>
 			</id>
 			<thumbnail>
-				<xsl:value-of select="mods:location/mods:url[@access = 'preview']"/>
+				<xsl:variable name="filename" select="tokenize(mods:location/mods:url[@access = 'preview'], '/')[last()]"/>
+				<xsl:value-of select="concat('http://numismatics.org/archivesimages/thumbnail/', $filename)"/>
 			</thumbnail>
 			<rights/>
 		</file>
