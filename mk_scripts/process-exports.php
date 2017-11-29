@@ -113,7 +113,7 @@ function process_row($file, $collection, $writer, $count){
 		$xpath->registerNamespace("lido", "http://www.lido-schema.org");
 		
 		//look for the URI
-		$terms = $xpath->query("descendant::lido:term[@lido:label='typereference']");
+		$terms = $xpath->query("descendant::lido:*[@lido:label='typereference']");
 		$hoardURI = null;
 		$typeURI = null;
 		
