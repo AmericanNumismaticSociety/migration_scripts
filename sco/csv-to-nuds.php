@@ -9,6 +9,7 @@
 
 $data = generate_json('sco.csv');
 $deities = generate_json('https://docs.google.com/spreadsheet/pub?hl=en_US&hl=en_US&key=0Avp6BVZhfwHAdHk2ZXBuX0RYMEZzUlNJUkZOLXRUTmc&single=true&gid=0&output=csv');
+$stylesheet = generate_json('https://docs.google.com/spreadsheets/d/e/2PACX-1vQRCPbdTLG7EIXIt7jo4rz-Ruy565RQS9x9aj2vBwvsbZdC_NBXZweyJVunU3WylvvbcoOAzBJI0OFS/pub?gid=1882169178&single=true&output=csv');
 
 $nomismaUris = array();
 //$records = array();
@@ -21,6 +22,7 @@ foreach($data as $row){
 //functions
 function generate_nuds($row, $recordIdKey, $mode){
 	GLOBAL $deities;
+	GLOBAL $stylesheet;
 	
 	$recordId = trim($row[$recordIdKey]);
 	
@@ -430,34 +432,35 @@ function generate_nuds($row, $recordIdKey, $mode){
 				}
 				
 				//obverse
-				if (strlen($row['O (en)']) > 0){
-					//$key = trim($row['O']);
-					//$type = '';
-					$type = trim($row['O (en)']);
+				if (strlen($row['O']) > 0){
+					$key = trim($row['O']);
+					$type = '';
 					
-					$doc->startElement('obverse');
-						/*$doc->startElement('type');
-						foreach ($stylesheet as $desc){
-							if ($desc['Abbreviation'] == $key){
-								$type = $desc['en'];
-								foreach ($desc as $k=>$v){
-									if ($k != 'Abbreviation'){
-										$doc->startElement('description');
-										$doc->writeAttribute('xml:lang', $k);
-										$doc->text(trim($v));
-										$doc->endElement();
-									}
-								}
-								break;
-							}
-						}
-						$doc->endElement();*/
+					$doc->startElement('obverse');					
+						//multilingual type descriptions
 						$doc->startElement('type');
+							foreach ($stylesheet as $desc){
+								if ($desc['Abbreviation'] == $key){
+									$type = $desc['en'];
+									foreach ($desc as $k=>$v){
+										if ($k != 'Abbreviation'){
+											$doc->startElement('description');
+												$doc->writeAttribute('xml:lang', $k);
+												$doc->text(trim($v));
+											$doc->endElement();
+										}
+									}
+									break;
+								}
+							}
+						$doc->endElement();
+						
+						/*$doc->startElement('type');
 							$doc->startElement('description');
 								$doc->writeAttribute('xml:lang', 'en');
 								$doc->text(trim($row['O (en)']));
 							$doc->endElement();
-						$doc->endElement();
+						$doc->endElement();*/
 						
 						//deity
 						foreach($deities as $deity){
@@ -500,32 +503,34 @@ function generate_nuds($row, $recordIdKey, $mode){
 					
 					//end obverse
 					$doc->endElement();
+				} else {
+					echo "Error: no obverse code for {$recordId}/\n";
 				}
 				
 				//reverse
-				if (strlen($row['R (en)']) > 0){
-					//$key = trim($row['O']);
-					//$type = '';
-					$type = trim($row['R (en)']);
+				if (strlen($row['R']) > 0){
+					$key = trim($row['R']);
+					$type = '';
 					
 					$doc->startElement('reverse');
-					/*$doc->startElement('type');
-					 foreach ($stylesheet as $desc){
-					 if ($desc['Abbreviation'] == $key){
-					 $type = $desc['en'];
-					 foreach ($desc as $k=>$v){
-					 if ($k != 'Abbreviation'){
-					 $doc->startElement('description');
-					 $doc->writeAttribute('xml:lang', $k);
-					 $doc->text(trim($v));
-					 $doc->endElement();
-					 }
-					 }
-					 break;
-					 }
-					 }
-					 $doc->endElement();*/
-					
+						//multilingual type descriptions
+						$doc->startElement('type');
+						 foreach ($stylesheet as $desc){
+							 if ($desc['Abbreviation'] == $key){
+								 $type = $desc['en'];
+								 foreach ($desc as $k=>$v){
+									 if ($k != 'Abbreviation'){
+									 $doc->startElement('description');
+										 $doc->writeAttribute('xml:lang', $k);
+										 $doc->text(trim($v));
+									 $doc->endElement();
+									 }
+								 }
+								 break;
+							 }
+						 }
+						 $doc->endElement();
+						
 						//legend
 						if (strlen(trim($row['R Legend'])) > 0){
 							$legend = trim($row['R Legend']);
@@ -545,10 +550,10 @@ function generate_nuds($row, $recordIdKey, $mode){
 							//evaluate legibility
 							if ($legend == 'Illegible'){
 								$doc->startElement('tei:div');
-								$doc->writeAttribute('type', 'edition');
-								$doc->startElement('tei:gap');
-								$doc->writeAttribute('reason', 'illegible');
-								$doc->endElement();
+									$doc->writeAttribute('type', 'edition');
+									$doc->startElement('tei:gap');
+										$doc->writeAttribute('reason', 'illegible');
+									$doc->endElement();
 								$doc->endElement();
 							} else {
 								$doc->text(trim($row['R Legend']));
@@ -634,8 +639,8 @@ function generate_nuds($row, $recordIdKey, $mode){
 		$doc->endElement();
 		
 		//close file
-		$writer->endDocument();
-		$writer->flush();
+		$doc->endDocument();
+		$doc->flush();
 	}	
 }
 
