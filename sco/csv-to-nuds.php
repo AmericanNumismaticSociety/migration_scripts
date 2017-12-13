@@ -444,23 +444,18 @@ function generate_nuds($row, $recordIdKey, $mode){
 									$type = $desc['en'];
 									foreach ($desc as $k=>$v){
 										if ($k != 'Abbreviation'){
-											$doc->startElement('description');
-												$doc->writeAttribute('xml:lang', $k);
-												$doc->text(trim($v));
-											$doc->endElement();
+											if (strlen($v) > 0){
+												$doc->startElement('description');
+													$doc->writeAttribute('xml:lang', $k);
+													$doc->text(trim($v));
+												$doc->endElement();
+											}
 										}
 									}
 									break;
 								}
 							}
 						$doc->endElement();
-						
-						/*$doc->startElement('type');
-							$doc->startElement('description');
-								$doc->writeAttribute('xml:lang', 'en');
-								$doc->text(trim($row['O (en)']));
-							$doc->endElement();
-						$doc->endElement();*/
 						
 						//deity
 						foreach($deities as $deity){
@@ -551,10 +546,12 @@ function generate_nuds($row, $recordIdKey, $mode){
 								 $type = $desc['en'];
 								 foreach ($desc as $k=>$v){
 									 if ($k != 'Abbreviation'){
-									 $doc->startElement('description');
-										 $doc->writeAttribute('xml:lang', $k);
-										 $doc->text(trim($v));
-									 $doc->endElement();
+									 	if (strlen($v) > 0){
+									 		$doc->startElement('description');
+										 		$doc->writeAttribute('xml:lang', $k);
+										 		$doc->text(trim($v));
+									 		$doc->endElement();
+									 	}
 									 }
 								 }
 								 break;
