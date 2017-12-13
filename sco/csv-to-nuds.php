@@ -513,24 +513,7 @@ function generate_nuds($row, $recordIdKey, $mode){
 					$type = '';
 					
 					$doc->startElement('reverse');
-						//multilingual type descriptions
-						$doc->startElement('type');
-						 foreach ($stylesheet as $desc){
-							 if ($desc['Abbreviation'] == $key){
-								 $type = $desc['en'];
-								 foreach ($desc as $k=>$v){
-									 if ($k != 'Abbreviation'){
-									 $doc->startElement('description');
-										 $doc->writeAttribute('xml:lang', $k);
-										 $doc->text(trim($v));
-									 $doc->endElement();
-									 }
-								 }
-								 break;
-							 }
-						 }
-						 $doc->endElement();
-						
+					
 						//legend
 						if (strlen(trim($row['R Legend'])) > 0){
 							$legend = trim($row['R Legend']);
@@ -559,15 +542,26 @@ function generate_nuds($row, $recordIdKey, $mode){
 								$doc->text(trim($row['R Legend']));
 							}
 							$doc->endElement();
-						}	
-						
+						}
+					
+						//multilingual type descriptions
 						$doc->startElement('type');
-							$doc->startElement('description');
-								$doc->writeAttribute('xml:lang', 'en');
-								$doc->text($type);
-							$doc->endElement();
-						$doc->endElement();
-						
+						 foreach ($stylesheet as $desc){
+							 if ($desc['Abbreviation'] == $key){
+								 $type = $desc['en'];
+								 foreach ($desc as $k=>$v){
+									 if ($k != 'Abbreviation'){
+									 $doc->startElement('description');
+										 $doc->writeAttribute('xml:lang', $k);
+										 $doc->text(trim($v));
+									 $doc->endElement();
+									 }
+								 }
+								 break;
+							 }
+						 }
+						 $doc->endElement();
+						 
 						//symbols
 						foreach ($row as $k=>$v){
 							//reverse symbols are preceded with R:
