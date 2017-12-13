@@ -9,12 +9,29 @@ $data = generate_json('https://docs.google.com/spreadsheets/d/e/2PACX-1vTbTLFJIR
 $mints = generate_json('https://docs.google.com/spreadsheets/d/e/2PACX-1vTGSGNVsQntMzGBx-wcdjVL5ms9OoLsPwwwV5KhaGLAziiMCTzekp1B2T9TNAtAYV4wsqzC5606_8i7/pub?output=csv');
 $people = generate_json('https://docs.google.com/spreadsheets/d/e/2PACX-1vR7KBemh_HVyjEgSNdtArcgY0FyHAh3LtFGbVyKMcL4WafBrRfxpY_ur9B1mxNzkxDpOK2JHHcZmHB7/pub?output=csv');
 $denominations = generate_json('https://docs.google.com/spreadsheets/d/e/2PACX-1vQ8OIT64tKd65I_5UqFGLsrckQCd0QA3TJ4GH-GlMagrgmHf3JaQiUmbmpANxCzuj9BPs7cQc4gyKI9/pub?output=csv');
+$stylesheet = generate_json('https://docs.google.com/spreadsheets/d/e/2PACX-1vQRCPbdTLG7EIXIt7jo4rz-Ruy565RQS9x9aj2vBwvsbZdC_NBXZweyJVunU3WylvvbcoOAzBJI0OFS/pub?output=csv');
+
+
+
+//reprocess $stylesheet into a key->value array
+$descriptions = array();
+foreach ($stylesheet as $desc){
+	$key = $desc['Abbreviation'];
+	if (!array_key_exists($key, $descriptions)){
+		$descriptions[$key] = $desc['en'];
+	} else {
+		echo "Error: {$key} appears multiple times\n";
+	}
+}
 
 //aggregate all records
 $records = array();
 
+//missing codes in stylesheet
+$missing_codes = array();
+
 //generate the CSV stylesheet for multilingual obverse and reverse type descriptions
-$stylesheet = array();
+//$stylesheet = array();
 
 foreach ($data as $row){
 	$record = array();
@@ -124,23 +141,40 @@ foreach ($data as $row){
 				}
 			}
 		} elseif ($k == 'O' || $k == 'R'){
-			//add to record
 			if (strlen($v) > 0){
-				$record[$k] = $v;
-			}
-			
-			//add description if it doesn't already exist
-			$desc =  $row[$k . ' (en)'];
-			if (array_key_exists($v, $stylesheet)){
-				if (!in_array($desc, $stylesheet[$v])){
-					$stylesheet[$v][] = $desc;
+				$code = $v;
+				
+				if (array_key_exists($code, $descriptions)){
+					$record[$k . ' (en)'] = str_replace('l.', 'left', str_replace('r.', 'right', $descriptions[$code]));
+				} else {
+					//the key in the spreadsheet doesn't exist
+					echo "Error: Key {$code} non-existent in stylesheet\n";
+					if (!in_array($code, $missing_codes)){
+						$missing_codes[] = $code;
+					}
 				}
+				
+				/*foreach ($descriptions as $desc){
+					//pull official description from stylesheet spreadsheet
+					if ($code == $desc['Abbreviation']){						
+						$record[$k . ' (en)'] = str_replace('l.', 'left', str_replace('r.', 'right', $desc['en']));
+					}
+				}*/
+				
+				$record[$k] = $v;
 			} else {
-				$stylesheet[$v] = array();
-				array_push($stylesheet[$v], $desc);
+				//error if there's no code
+				echo "Error: {$record['ID']} has no description code\n.";
+				
 			}
-			
 		}
+		elseif ($k == 'O (en)' || $k == 'R (en)'){
+			//suppress output (extracted from stylesheet spreadsheet, above)
+			
+			//replace r., l.
+			//$desc = str_replace('l.', 'left', str_replace('r.', 'right', $v));
+			//$record[$k] = $desc;
+		}	
 		//for everything else
 		else {
 			if (strlen($v) > 0){
@@ -168,6 +202,11 @@ foreach ($data as $row){
 	unset($statedAuthorities);
 }
 
+asort($missing_codes);
+foreach ($missing_codes as $code){
+	echo "{$code}\n";
+}
+
 write_csv($records);
 
 //var_dump($stylesheet);
@@ -176,7 +215,7 @@ write_csv($records);
 
 //output CSV
 function write_csv ($records){
-	$header = array('SC seq.','ID','SC no.','Authority URI','Stated Authority URI','Mint URI','Mint Note','Region URI','Issuer URI','SE Date','Aradian Era date','Start Date','End Date','OBV','Left field','Right field','Outer left field','Outer right field','Inner left field','between Seleucus II and Nike','between Apollo and tripod','between Nike and trophy','Inner right field','on throne','Under throne','Left wing','Right wing','Above','Below','Exergue','between pilei','Between legs','On prow','On omphalos','On haunch','Material URI','Denomination URI','Mint Original','Series','O','R','O (en)','R (en)','R Legend');
+	$header = array('SC seq.','ID','SC no.','Authority URI','Stated Authority URI','Mint URI','Mint Note','Region URI','Issuer URI','SE Date','Aradian Era date','Start Date','End Date','OBV','R: leftField','R: rightField','R: outerLeftField','R: outerRightField','R: innerLeftField','R: betweenSeleucusIIAndNike','R: betweenApolloAndTripod','R: betweenNikeAndTrophy','R: innerRightField','R: onThrone','R: underThrone','R: leftWing','R: rightWing','R: above','R: below','R: exergue','R: betweenPilei','R: betweenLegs','R: onProw','R: onOmphalos','R: onHaunch','Material URI','Denomination URI','Mint Original','Series','O','R','O (en)','R (en)','R Legend','R Script');
 	$csv = implode(',', $header) . "\n";
 	
 	//iterate through each record and evaluate whether the array key is set
