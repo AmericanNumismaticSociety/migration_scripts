@@ -19,7 +19,7 @@ function parse_page($page, $apiKey){
 	
 	echo "Page {$page}\n";
 	
-	$query = '(standardreferencenumber:RRC+OR+standardreferencenumber:RIC+OR+standardreferencenumber:Price)';
+	$query = '(standardreferencenumber:RRC+OR+standardreferencenumber:RIC+OR+standardreferencenumber:Price+OR+standardreferencenumber:SC)';
 	//$query = '"RIC+IX,+p.+235,+88b(1)"';
 	$service = 'http://api.harvardartmuseums.org/object?size=100&classification=Coins&q=' . $query . '+AND+department:"Department%20of%20Ancient%20and%20Byzantine%20Art%20%26%20Numismatics"&apikey=' . $apiKey . '&page=' . $page;
 	
@@ -67,6 +67,76 @@ function parse_page($page, $apiKey){
 				}
 				$records[] = $row;
 				//end PELLA processing				
+			} elseif (preg_match('/SC/', $reference)){
+				$refs = explode(',', $reference);
+				
+				foreach ($refs as $ref){
+					$ref = trim($ref);
+					if (preg_match('/^SC[^\d]+(\d+\.?[0-9a-zA-Z]?$)/', $ref, $matches)){
+						//only proceed if the SC number is matchable
+						if (isset($matches[1])){
+							//generate record metadata array
+							$row = construct_metadata($record);
+							$row['reference'] = $ref;
+							$num = $matches[1];
+							
+							//ignore uncertain coins
+							if (substr($matches[1], -1) != '?'){
+								$uri = 'http://numismatics.org/sco/id/sc.1.' . $num;
+								$file_headers = @get_headers($uri . '.rdf');
+								if ($file_headers[0] == 'HTTP/1.1 200 OK'){
+									//get current URI from RDF
+									$xmlDoc = new DOMDocument();
+									$xmlDoc->load($uri. '.rdf');
+									$xpath = new DOMXpath($xmlDoc);
+									$xpath->registerNamespace('dcterms', 'http://purl.org/dc/terms/');
+									$xpath->registerNamespace('rdf', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#');
+									$match = $xpath->query("descendant::dcterms:isReplacedBy")->item(0)->getAttribute('rdf:resource');
+									
+									echo "{$row['objectnumber']}: {$match}\n";
+									$row['cointype'] = $match;
+								} else {									
+									//append .1 if it's an integer
+									if (is_integer((int)$num)){										
+										$uri = 'http://numismatics.org/sco/id/sc.1.' . $num . '.1';
+										echo "Trying {$uri}\n";
+										$file_headers = @get_headers($uri . '.rdf');
+										if ($file_headers[0] == 'HTTP/1.1 200 OK'){
+											//get current URI from RDF
+											$xmlDoc = new DOMDocument();
+											$xmlDoc->load($uri . '.rdf');
+											$xpath = new DOMXpath($xmlDoc);
+											$xpath->registerNamespace('dcterms', 'http://purl.org/dc/terms/');
+											$xpath->registerNamespace('rdf', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#');
+											$match = $xpath->query("descendant::dcterms:isReplacedBy")->item(0)->getAttribute('rdf:resource');
+											
+											echo "{$row['objectnumber']}: {$match}\n";
+											$row['cointype'] = $match;
+										} else {
+											$uri = 'http://numismatics.org/sco/id/sc.1.' . $num . '.1a';
+											echo "Trying {$uri}\n";
+											$file_headers = @get_headers($uri . '.rdf');
+											if ($file_headers[0] == 'HTTP/1.1 200 OK'){
+												//get current URI from RDF
+												$xmlDoc = new DOMDocument();
+												$xmlDoc->load($uri . '.rdf');
+												$xpath = new DOMXpath($xmlDoc);
+												$xpath->registerNamespace('dcterms', 'http://purl.org/dc/terms/');
+												$xpath->registerNamespace('rdf', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#');
+												$match = $xpath->query("descendant::dcterms:isReplacedBy")->item(0)->getAttribute('rdf:resource');
+												
+												echo "{$row['objectnumber']}: {$match}\n";
+												$row['cointype'] = $match;
+											}
+										}
+									}
+								}
+							}
+							$records[] = $row;
+						}
+					 //var_dump($matches);
+					}
+				}				
 			} elseif (preg_match('/RIC/', $reference)){
 				$originalReference = $reference;
 				

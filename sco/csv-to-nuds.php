@@ -7,7 +7,7 @@
  * 2. SC version 1 that points to the new URI
  *****/
 
-$data = generate_json('sco.csv');
+$data = generate_json('https://docs.google.com/spreadsheets/d/e/2PACX-1vQLdeurX2qJZ6zN-uWLJex2DylQOx3wav5ZCMgAidsy6yilV4j8cco9WEuvXckxEJhuSnBTmJaF4zPj/pub?gid=998961995&single=true&output=csv');
 $deities = generate_json('https://docs.google.com/spreadsheet/pub?hl=en_US&hl=en_US&key=0Avp6BVZhfwHAdHk2ZXBuX0RYMEZzUlNJUkZOLXRUTmc&single=true&gid=0&output=csv');
 $stylesheet = generate_json('https://docs.google.com/spreadsheets/d/e/2PACX-1vQRCPbdTLG7EIXIt7jo4rz-Ruy565RQS9x9aj2vBwvsbZdC_NBXZweyJVunU3WylvvbcoOAzBJI0OFS/pub?gid=1882169178&single=true&output=csv');
 
@@ -17,6 +17,8 @@ $nomismaUris = array();
 foreach($data as $row){
 	//call generate_nuds twice to generate two sets of NUDS records
 	generate_nuds($row, $recordIdKey='ID', $mode='new');
+	
+	generate_nuds($row, $recordIdKey='SC no.', $mode='old');
 }
 
 //functions
@@ -24,9 +26,13 @@ function generate_nuds($row, $recordIdKey, $mode){
 	GLOBAL $deities;
 	GLOBAL $stylesheet;
 	
+	$uri_space = 'http://numismatics.org/sco/id/';
+	
 	$recordId = trim($row[$recordIdKey]);
 	
+	
 	if (strlen($recordId) > 0){
+		echo "Processing {$recordId}\n";
 		$doc = new XMLWriter();
 		
 		//$doc->openUri('php://output');
@@ -55,7 +61,11 @@ function generate_nuds($row, $recordIdKey, $mode){
 					if (strlen($row['SC no.']) > 0){
 						$doc->startElement('otherRecordId');
 							$doc->writeAttribute('semantic', 'dcterms:replaces');
-							$doc->text($row['SC no.']);
+							$doc->text(trim($row['SC no.']));
+						$doc->endElement();
+						$doc->startElement('otherRecordId');
+							$doc->writeAttribute('semantic', 'skos:exactMatch');
+							$doc->text($uri_space . trim($row['SC no.']));
 						$doc->endElement();
 					}
 					$doc->writeElement('publicationStatus', 'approved');
@@ -67,10 +77,14 @@ function generate_nuds($row, $recordIdKey, $mode){
 					if (strlen($row['SC no.']) > 0){
 						$doc->startElement('otherRecordId');						
 							$doc->writeAttribute('semantic', 'dcterms:isReplacedBy');
-							$doc->text($row['ID']);
+							$doc->text(trim($row['ID']));
+						$doc->endElement();
+						$doc->startElement('otherRecordId');
+							$doc->writeAttribute('semantic', 'skos:exactMatch');
+							$doc->text($uri_space . trim($row['ID']));
 						$doc->endElement();
 					}
-					$doc->writeElement('publicationStatus', 'inProcess');					
+					$doc->writeElement('publicationStatus', 'deprecatedType');					
 					$doc->writeElement('maintenanceStatus', 'cancelledReplaced');
 					$doc->startElement('maintenanceAgency');
 						$doc->writeElement('agencyName', 'American Numismatic Society');
@@ -110,6 +124,11 @@ function generate_nuds($row, $recordIdKey, $mode){
 					$doc->writeElement('prefix', 'nmo');
 					$doc->writeElement('namespace', 'http://nomisma.org/ontology#');
 				$doc->endElement();
+				
+				$doc->startElement('semanticDeclaration');
+					$doc->writeElement('prefix', 'skos');
+					$doc->writeElement('namespace', 'http://www.w3.org/2004/02/skos/core#');
+				$doc->endElement();
 			//end control
 			$doc->endElement();
 		
@@ -130,12 +149,20 @@ function generate_nuds($row, $recordIdKey, $mode){
 			}
 			
 			/***** NOTES *****/
-			if (strlen(trim($row['Mint Note'])) > 0){
+			if (strlen(trim($row['Mint Note'])) > 0 || strlen(trim($row['Note'])) > 0){
 				$doc->startElement('noteSet');
+				if (strlen(trim($row['Mint Note'])) > 0){
 					$doc->startElement('note');
 						$doc->writeAttribute('xml:lang', 'en');
 						$doc->text(trim($row['Mint Note']));
 					$doc->endElement();
+				}
+				if (strlen(trim($row['Note'])) > 0){
+					$doc->startElement('note');
+						$doc->writeAttribute('xml:lang', 'en');
+						$doc->text(trim($row['Note']));
+					$doc->endElement();
+				}
 				$doc->endElement();
 			}
 			
@@ -250,12 +277,21 @@ function generate_nuds($row, $recordIdKey, $mode){
 					}
 				}
 				
-				//manufacture
-				$doc->startElement('manufacture');
-					$doc->writeAttribute('xlink:type', 'simple');
-					$doc->writeAttribute('xlink:href', 'http://nomisma.org/id/struck');
-					$doc->text('Struck');
-				$doc->endElement();
+				//manufacture: if the SC no. includes P, it is plated, otherwise struck
+				if (strpos($row['SC no.'], 'P') !== FALSE){
+					$doc->startElement('manufacture');
+						$doc->writeAttribute('xlink:type', 'simple');
+						$doc->writeAttribute('xlink:href', 'http://nomisma.org/id/plated');
+						$doc->text('Plated');
+					$doc->endElement();
+				} else {
+					$doc->startElement('manufacture');
+						$doc->writeAttribute('xlink:type', 'simple');
+						$doc->writeAttribute('xlink:href', 'http://nomisma.org/id/struck');
+						$doc->text('Struck');
+					$doc->endElement();
+				}
+				
 				
 				if (strlen($row['Material URI']) > 0){
 					$vals = explode('|', $row['Material URI']);
@@ -624,6 +660,42 @@ function generate_nuds($row, $recordIdKey, $mode){
 				
 				//end typeDesc
 				$doc->endElement();
+				
+				/***** REFDESC *****/				
+				if ($mode == 'new'){
+					if (strlen(trim($row['SC no.'])) > 0){
+						$doc->startElement('refDesc');
+							$doc->startElement('reference');
+								$doc->writeAttribute('xlink:type', 'simple');
+								$doc->writeAttribute('xlink:href', $uri_space . $row['SC no.']);
+								$doc->startElement('tei:title');
+									$doc->writeAttribute('key', 'http://nomisma.org/id/seleucid_coins');
+									$doc->text('Seleucid Coins (part 1)');
+								$doc->endElement();
+								$doc->startElement('tei:idno');
+									$doc->text(str_replace('sc.1.', '', $row['SC no.']));
+								$doc->endElement();
+							$doc->endElement();
+						$doc->endElement();
+					}					
+				} else {
+					if (strlen(trim($row['ID'])) > 0){
+						$doc->startElement('refDesc');
+							$doc->startElement('reference');
+								$doc->writeAttribute('xlink:type', 'simple');
+								$doc->writeAttribute('xlink:href', $uri_space . $row['ID']);
+								$doc->startElement('tei:title');
+									$doc->writeAttribute('key', 'http://nomisma.org/id/seleucid_coins_online');
+									$doc->text('Seleucid Coins (v2)');
+								$doc->endElement();
+								$doc->startElement('tei:idno');
+									$doc->text(str_replace('sc.2.', '', $row['ID']));
+								$doc->endElement();
+							$doc->endElement();
+						$doc->endElement();
+					}
+				}				
+				
 			//end descMeta
 			$doc->endElement();		
 		//close NUDS
@@ -632,7 +704,9 @@ function generate_nuds($row, $recordIdKey, $mode){
 		//close file
 		$doc->endDocument();
 		$doc->flush();
-	}	
+	} else {
+		echo "No SC number for {$row['ID']}.\n";
+	}
 }
 
 

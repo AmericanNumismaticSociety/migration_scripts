@@ -28,24 +28,11 @@ foreach ($collections as $collection){
 	if (isset($argv[1]) > 0){
 		$id = $argv[1];
 		if ($collection['project_id'] == $id){
-			//use XML writer to generate RDF for void:dataDump
-			write_dump($collection);
-			
-			//create void:Dataset
-			write_metadata($collection);
-			
-			//write concordance CSV
-			write_csv($collection['project_id'], $results);
+			//parse all exports into a $records array
+			parse_dump($collection);
 		}
 	} else {
-		//use XML writer to generate RDF for void:dataDump
-		write_dump($collection);
-		
-		//create void:Dataset
-		write_metadata($collection);
-		
-		//write concordance CSV
-		write_csv($collection['project_id'], $results);
+		parse_dump($collection);
 	}
 	unset($geonames);
 	$geonames = array();
@@ -53,7 +40,213 @@ foreach ($collections as $collection){
 	$results = array();
 }
 
-function write_dump($collection){
+function parse_dump($collection){
+	$records = array();
+	
+	//iterate through export sets
+	foreach (explode('|', $collection['sets']) as $set){
+		$list = file_get_contents(trim($set));
+		$files = explode(PHP_EOL, $list);
+		
+		echo "Parsing set {$set}\n";
+		
+		$count = 1;
+		foreach ($files as $file){
+			if (strlen($file) > 0){
+				$fileArray = explode('/', $file);
+				$id = str_replace('.xml', '', $fileArray[count($fileArray) - 1]);
+				
+				//only insert the record into the records array only if it's unique
+				$record = parse_lido($file, $collection, $count);
+				
+				if (!array_key_exists($id, $records)){
+					$records[$id] = $record;
+				} else {
+					echo "{$id} has already been processed, and therefore not added to final RDF output.\n";
+				}
+				$count++;
+			}
+		}
+	}
+	
+	//use XML writer to generate RDF for void:dataDump, using the $records array
+	write_dump($collection, $records);
+	
+	//create void:Dataset
+	write_metadata($collection);
+	
+	//write concordance CSV
+	//write_csv($collection['project_id'], $results);
+}
+
+function parse_lido($file, $collection, $count){
+	$fileArray = explode('/', $file);
+	$id = str_replace('.xml', '', $fileArray[count($fileArray) - 1]);
+	
+	$dom = new DOMDocument('1.0', 'UTF-8');
+	if ($dom->load($file) === FALSE){
+		echo "{$file} failed to load.\n";
+	} else {		
+		$xpath = new DOMXpath($dom);
+		$xpath->registerNamespace("lido", "http://www.lido-schema.org");
+		
+		//look for the URI
+		$terms = $xpath->query("descendant::lido:*[@lido:label='typereference']");
+		$hoardURI = null;
+		$typeURI = null;
+		
+		foreach ($terms as $term){
+			if (preg_match('/coinhoards\.org/', $term->nodeValue)){
+				$hoardURI = $term->nodeValue;
+				echo "Found {$hoardURI}\n";
+			} else {
+				//ignore IKMK type references
+				$source = $term->getAttribute('lido:source');
+				if ($source == 'crro' || $source == 'ocre' || $source == 'pella'){
+					$typeURI = array($term->nodeValue);
+					
+					//look for additional SCO refs when there's also already a PELLA URI
+					$SCORefs = $xpath->query("descendant::lido:relatedWorkSet[lido:relatedWorkRelType/lido:term='reference']/lido:relatedWork/lido:object/lido:objectNote[contains(., 'Seleucid Coins')]");
+					if ($SCORefs->length > 0){
+						$SCOUri = parseReference($xpath, $collection['project_id'], $id);
+						if (strlen(trim($SCOUri)) > 0){
+							$typeURI[] = $SCOUri;
+						}
+					}
+				}
+			}
+		}
+		
+		//if the type URI can be assertained from the typereference LIDO field
+		if (isset($typeURI)){
+			if (is_array($typeURI)){
+				$out = implode(',', $typeURI);
+				echo "Processing #{$count}: {$id}, {$out}\n";
+			} else {
+				echo "Processing #{$count}: {$id}, {$typeURI}\n";
+			}
+			return extract_metadata($id, $typeURI, $hoardURI, $collection, $xpath);
+			
+			//$results[] = array($id, $typeURI, '', 'yes');
+		} else {		
+			$ref = parseReference($xpath, $collection['project_id'], $id);
+			
+			if (isset($ref)){
+				$typeURI = array($ref);
+				$out = implode(',', $typeURI);
+				echo "Processing #{$count}: {$id}, {$out}\n";
+				
+				return extract_metadata($id, $typeURI, $hoardURI, $collection, $xpath);
+			}
+		}
+	}	
+}
+
+//extract metadata from LIDO XML file and return an array
+function extract_metadata ($id, $typeURI, $hoardURI, $collection, $xpath) {
+	GLOBAL $geonames;
+	$record = array();
+	
+	//insert metadata into $record array
+	$title = $xpath->query("descendant::lido:titleSet/lido:appellationValue")->item(0)->nodeValue;
+	if (strlen($xpath->query("descendant::lido:displayDate")->item(0)->nodeValue) > 0){
+		$title .= ', ' . $xpath->query("descendant::lido:eventDate/lido:displayDate")->item(0)->nodeValue;
+	}
+	$measurements = $xpath->query("descendant::lido:measurementsSet");
+	$workId = $xpath->query("descendant::lido:workID[@lido:type='inventory']");
+	
+	if ($workId->length > 0){
+		$identifier = $workId->item(0)->nodeValue;
+	} else {
+		$identifier = $id;
+	}
+	
+	$record['title'] = $title;
+	$record['coinURI'] = $xpath->query("descendant::lido:recordInfoLink")->item(0)->nodeValue;
+	$record['identifier'] = $identifier;
+	$record['collection'] = $collection['collection_uri'];	
+	$record['coinType'] = $typeURI;
+	
+	//measurements
+	foreach($measurements as $measurement){
+		$type = $measurement->getElementsByTagNameNS('http://www.lido-schema.org', 'measurementType')->item(0)->nodeValue;
+		$value = str_replace(',', '.', $measurement->getElementsByTagNameNS('http://www.lido-schema.org', 'measurementValue')->item(0)->nodeValue);
+		
+		switch ($type){
+			case 'diameter':
+				if (is_numeric($value)){
+					$record['diameter'] = $value;
+				}
+				break;
+			case 'weight':
+				if (is_numeric($value)){
+					$record['weight'] = $value;
+				}
+				break;
+			case 'orientation':
+				if (is_int((int)$value)){
+					$record['axis'] = $value;
+				}
+				break;
+		}
+	}
+	
+	//images
+	$image_url = $xpath->query("descendant::lido:resourceRepresentation[@lido:type='image_thumb']/lido:linkResource")->item(0)->nodeValue;
+	if (strlen($image_url) > 0){
+		$pieces = explode('/', $image_url);
+		$fname = array_pop($pieces);
+		$image_path = implode('/', $pieces);
+		
+		$record['obvThumb'] = $image_path . '/vs_thumb.jpg';
+		$record['obvRef'] = $image_path . '/vs_opt.jpg';
+		$record['revThumb'] = $image_path . '/rs_thumb.jpg';
+		$record['revRef'] = $image_path . '/rs_opt.jpg';
+	}
+	
+	//if the $hoardURI is set, then use the hoard URI in dcterms:isPartOf; otherwise, use nmo:hasFindspot for finding_place URI
+	if (isset($hoardURI)) {
+		$record['hoard'] = $hoardURI;
+	} else {
+		$places = $xpath->query("descendant::lido:place");
+		foreach ($places as $place){
+			$attr = $place->getAttribute('lido:politicalEntity');
+			
+			if ($attr == 'finding_place'){
+				$findspots = $place->getElementsByTagNameNS('http://www.lido-schema.org', 'placeID');
+				
+				foreach ($findspots as $findspot){
+					$findspotUri = $findspot->nodeValue;
+					if (strstr($findspotUri, 'geonames') != FALSE) {
+						$ffrags = explode('/', $findspotUri);
+						$geonameId = $ffrags[3];
+						
+						//if the id is valid
+						if ($geonameId != '0'){
+							//add the id into the $geonames array
+							if (!in_array($geonameId, $geonames)){
+								$geonames[] = $geonameId;
+							}
+							$record['findspot'] = $findspotUri;
+							break;
+						}
+					} elseif (strstr($findspotUri, 'nomisma') !== FALSE){
+						$record['findspot'] = $findspotUri . '#this';
+					}
+				}
+			}
+		}
+	}
+	
+	//void:inDataset
+	$record['dataset'] = $collection['database_homepage'];
+	
+	//var_dump($record);
+	return $record;	
+}
+
+//generate RDF for all of the numismatic objects in a collection, from the $records array
+function write_dump($collection, $records){
 	
 	$writer = new XMLWriter();
 	$writer->openURI("{$collection['project_id']}.rdf");
@@ -76,74 +269,253 @@ function write_dump($collection){
 	$writer->writeAttribute('xmlns:svcs', "http://rdfs.org/sioc/services#");
 	$writer->writeAttribute('xmlns:doap', "http://usefulinc.com/ns/doap#");
 	
-	//iterate through export sets
-	foreach (explode('|', $collection['sets']) as $set){
-		$list = file_get_contents(trim($set));
-		$files = explode(PHP_EOL, $list);
+	//iterate through records
+	foreach ($records as $record){
+		generateNumismaticObject($record, $writer);
+	}
 	
-		echo "Parsing set {$set}\n";
+	//insert geo:SpatialThings
+	write_spatial_things($writer);
 	
-		$count = 1;
-		foreach ($files as $file){
-			if (strlen($file) > 0){
-				process_row($file, $collection, $writer, $count);
-				$count++;
-				}
-			}
-		}
-	
-		//insert geo:SpatialThings
-		write_spatial_things($writer);
-		
-		$writer->endElement();
-		$writer->flush();
+	$writer->endElement();
+	$writer->flush();
 }
 
-function process_row($file, $collection, $writer, $count){
-	GLOBAL $results;
+
+
+function generateNumismaticObject($record, $writer){
+	GLOBAL $geonames;
 	
-	$fileArray = explode('/', $file);
-	$id = str_replace('.xml', '', $fileArray[count($fileArray) - 1]);
+	//only write the NumismaticObject if it has a valid coin type URI
+	if (count($record['coinType']) > 0){
+		
+	$writer->startElement('nmo:NumismaticObject');
+		$writer->writeAttribute('rdf:about', $record['coinURI']);
+		$writer->startElement('dcterms:title');
+			$writer->writeAttribute('xml:lang', 'de');
+			$writer->text($record['title']);
+		$writer->endElement();
+		$writer->writeElement('dcterms:identifier', $record['identifier']);
+		$writer->startElement('nmo:hasCollection');
+			$writer->writeAttribute('rdf:resource', $record['collection']);
+		$writer->endElement();
+		
+		foreach ($record['coinType'] as $uri){
+			$writer->startElement('nmo:hasTypeSeriesItem');
+				$writer->writeAttribute('rdf:resource', $uri);
+			$writer->endElement();
+		}
 	
+		//measurements
+		if (isset($record['diameter'])){
+			$writer->startElement('nmo:hasDiameter');
+				$writer->writeAttribute('rdf:datatype', 'http://www.w3.org/2001/XMLSchema#decimal');
+				$writer->text($record['diameter']);
+			$writer->endElement();
+		}	
+		if (isset($record['weight'])){
+			$writer->startElement('nmo:hasWeight');
+				$writer->writeAttribute('rdf:datatype', 'http://www.w3.org/2001/XMLSchema#decimal');
+				$writer->text($record['weight']);
+			$writer->endElement();
+		}		
+		if (isset($record['axis'])){
+			$writer->startElement('nmo:hasAxis');
+				$writer->writeAttribute('rdf:datatype', 'http://www.w3.org/2001/XMLSchema#integer');
+				$writer->text($record['axis']);
+			$writer->endElement();
+		}
+		
+		
+		//add links to 3D models
+		if ($record['coinURI']== 'http://www3.hhu.de/muenzkatalog/ikmk/object.php?id=ID4686'){
+			$writer->startElement('edm:isShownBy');
+				$writer->writeAttribute('rdf:resource', 'https://sketchfab.com/models/58f5c949894144b386103b6c3d039303');
+			$writer->endElement();
+		} elseif ($record['coinURI']== 'http://www3.hhu.de/muenzkatalog/ikmk/object.php?id=ID2050'){
+			$writer->startElement('edm:isShownBy');
+				$writer->writeAttribute('rdf:resource', 'https://sketchfab.com/models/e84acd856ce44f97844a9d9f592aeb3f');
+			$writer->endElement();
+		}
+		
+		//images
+		//obverse
+		if (isset($record['obvThumb']) && isset($record['obvRef'])){
+			$writer->startElement('nmo:hasObverse');
+				$writer->startElement('rdf:Description');
+					$writer->startElement('foaf:thumbnail');
+						$writer->writeAttribute('rdf:resource', $record['obvThumb']);
+					$writer->endElement();
+					$writer->startElement('foaf:depiction');
+						$writer->writeAttribute('rdf:resource', $record['obvRef']);
+					$writer->endElement();
+				$writer->endElement();
+			$writer->endElement();
+		}
+		
+		//reverse
+		if (isset($record['revThumb']) && isset($record['revRef'])){
+			$writer->startElement('nmo:hasReverse');
+				$writer->startElement('rdf:Description');
+					$writer->startElement('foaf:thumbnail');
+						$writer->writeAttribute('rdf:resource', $record['revThumb']);
+					$writer->endElement();
+					$writer->startElement('foaf:depiction');
+						$writer->writeAttribute('rdf:resource', $record['revRef']);
+					$writer->endElement();
+				$writer->endElement();
+			$writer->endElement();
+		}
+		
+		//if the $hoardURI is set, then use the hoard URI in dcterms:isPartOf; otherwise, use nmo:hasFindspot for finding_place URI
+		if (isset($record['hoard'])) {
+			$writer->startElement('dcterms:isPartOf');
+				$writer->writeAttribute('rdf:resource', $record['hoard']);
+			$writer->endElement();
+		}
+	
+		if (isset($record['findspot'])){
+			$writer->startElement('nmo:hasFindspot');
+				$writer->writeAttribute('rdf:resource', $record['findspot']);
+			$writer->endElement();
+		}			
+	
+		//void:inDataset
+		$writer->startElement('void:inDataset');
+			$writer->writeAttribute('rdf:resource', $record['dataset']);
+		$writer->endElement();
+		
+		//end nmo:NumismaticObject
+		$writer->endElement();
+		
+		//add 3D metadata if applicable
+		if ($record['coinURI'] == 'http://www3.hhu.de/muenzkatalog/ikmk/object.php?id=ID4686'){
+			$writer->startElement('edm:WebResource');
+				$writer->writeAttribute('rdf:about', 'https://sketchfab.com/models/58f5c949894144b386103b6c3d039303');
+				$writer->startElement('dcterms:format');
+					$writer->writeAttribute('rdf:resource', 'http://vocab.getty.edu/aat/300053580');				
+				$writer->endElement();
+				$writer->writeElement('dcterms:publisher', 'NUMiD');
+			$writer->endElement();
+		} elseif ($record['coinURI'] == 'http://www3.hhu.de/muenzkatalog/ikmk/object.php?id=ID2050'){
+			$writer->startElement('edm:WebResource');
+				$writer->writeAttribute('rdf:about', 'https://sketchfab.com/models/e84acd856ce44f97844a9d9f592aeb3f');
+				$writer->startElement('dcterms:format');
+					$writer->writeAttribute('rdf:resource', 'http://vocab.getty.edu/aat/300053580');
+				$writer->endElement();
+				$writer->writeElement('dcterms:publisher', 'NUMiD');
+			$writer->endElement();
+		}
+	}	
+}
+
+//generate all of the geo:SpatialThings from an array of geonames IDs. This reduces redundancy in the RDF output
+function write_spatial_things($writer){
+	GLOBAL $geonames;	
+	
+	if (count($geonames) > 0){
+		foreach ($geonames as $geonameId){
+			$findspotUri = 'http://www.geonames.org/' . $geonameId;
+			echo "Generating geo:SpatialThing for {$findspotUri}\n";
+			
+			$service = 'http://api.geonames.org/get?geonameId=' . $geonameId . '&username=anscoins&style=full';
+			$coords = query_geonames($service);
+			
+			$writer->startElement('geo:SpatialThing');
+				$writer->writeAttribute('rdf:about', $findspotUri);
+				$writer->writeElement('foaf:name', $coords['name']);
+				$writer->startElement('geo:lat');
+					$writer->writeAttribute('rdf:datatype', 'http://www.w3.org/2001/XMLSchema#decimal');
+					$writer->text($coords['lat']);
+				$writer->endElement();
+				$writer->startElement('geo:long');
+					$writer->writeAttribute('rdf:datatype', 'http://www.w3.org/2001/XMLSchema#decimal');
+					$writer->text($coords['long']);
+				$writer->endElement();
+			$writer->endElement();
+		}	
+	}
+}
+
+function query_geonames($service){
 	$dom = new DOMDocument('1.0', 'UTF-8');
-	if ($dom->load($file) === FALSE){
-		echo "{$file} failed to load.\n";
+	if ($dom->load($service) === FALSE){
+		echo "{$service} failed to load.\n";
 	} else {
 		$xpath = new DOMXpath($dom);
-		$xpath->registerNamespace("lido", "http://www.lido-schema.org");
 		
-		//look for the URI
-		$terms = $xpath->query("descendant::lido:*[@lido:label='typereference']");
-		$hoardURI = null;
-		$typeURI = null;
+		$coords = array();
+		//generate AACR2-compliant place name
+		$name = $xpath->query('descendant::name')->item(0)->nodeValue . ' (' . $xpath->query('descendant::countryName')->item(0)->nodeValue . ')';
+		$coords['name'] = $name;
+		$coords['lat'] = $xpath->query('descendant::lat')->item(0)->nodeValue;
+		$coords['long'] = $xpath->query('descendant::lng')->item(0)->nodeValue;
 		
-		foreach ($terms as $term){
-			if (preg_match('/coinhoards\.org/', $term->nodeValue)){
-				$hoardURI = $term->nodeValue;
-				echo "Found {$hoardURI}\n";
-			} else {
-				//ignore IKMK type references
-				$source = $term->getAttribute('lido:source');
-				if ($source == 'crro' || $source == 'ocre' || $source == 'pella'){
-					$typeURI = $term->nodeValue;
-				}								
-			} 
+		return $coords;
+	}
+}
+
+//generate the VoID RDF document
+function write_metadata($collection){
+	$writer = new XMLWriter();
+	$writer->openURI("{$collection['project_id']}.void.rdf");
+	//$writer->openURI('php://output');
+	$writer->startDocument('1.0','UTF-8');
+	$writer->setIndent(true);
+	//now we need to define our Indent string,which is basically how many blank spaces we want to have for the indent
+	$writer->setIndentString("    ");
+	
+	$writer->startElement('rdf:RDF');
+	$writer->writeAttribute('xmlns:xsd', 'http://www.w3.org/2001/XMLSchema#');
+	$writer->writeAttribute('xmlns:nm', "http://nomisma.org/id/");
+	$writer->writeAttribute('xmlns:nmo', "http://nomisma.org/ontology#");
+	$writer->writeAttribute('xmlns:dcterms', "http://purl.org/dc/terms/");
+	$writer->writeAttribute('xmlns:foaf', "http://xmlns.com/foaf/0.1/");
+	$writer->writeAttribute('xmlns:geo', "http://www.w3.org/2003/01/geo/wgs84_pos#");
+	$writer->writeAttribute('xmlns:rdf', "http://www.w3.org/1999/02/22-rdf-syntax-ns#");
+	$writer->writeAttribute('xmlns:void', "http://rdfs.org/ns/void#");
+	
+	$writer->startElement('void:Dataset');
+		$writer->writeAttribute('rdf:about', $collection['database_homepage']);
+		
+		//titles
+		if (strlen($collection['title_en']) > 0){
+			$writer->startElement('dcterms:title');
+				$writer->writeAttribute('xml:lang', 'en');
+				$writer->text(trim($collection['title_en']));
+			$writer->endElement();
 		}
+		if (strlen($collection['title_de']) > 0){
+			$writer->startElement('dcterms:title');
+				$writer->writeAttribute('xml:lang', 'de');
+				$writer->text(trim($collection['title_de']));
+			$writer->endElement();
+		}	
 		
-		//if the type URI can be assertained from the typereference LIDO field
-		if (isset($typeURI)){
-			echo "Processing #{$count}: {$id}, {$typeURI}\n";
-			generateNumismaticObject($id, $typeURI, $collection, $xpath, $writer);
-			$results[] = array($id, $typeURI, '', 'yes');
-		} else {
-			$typeURI = parseReference($xpath, $collection['project_id'], $id);
-			
-			if (isset($typeURI)){
-				echo "Processing #{$count}: {$id}, {$typeURI}\n";
-				generateNumismaticObject($id, $typeURI, $collection, $xpath, $writer);
-			}
+		//descriptions
+		if (strlen($collection['description_en']) > 0){
+			$writer->startElement('dcterms:description');
+				$writer->writeAttribute('xml:lang', 'en');
+				$writer->text(trim($collection['description_en']));
+			$writer->endElement();
 		}
-	}			
+		if (strlen($collection['description_de']) > 0){
+			$writer->startElement('dcterms:description');
+				$writer->writeAttribute('xml:lang', 'de');
+				$writer->text(trim($collection['description_de']));
+			$writer->endElement();
+		}	
+		$writer->writeElement('dcterms:publisher', $collection['publisher']);
+		$writer->startElement('dcterms:license');
+			$writer->writeAttribute('rdf:resource', $collection['license']);
+		$writer->endElement();
+		$writer->startElement('void:dataDump');
+			$writer->writeAttribute('rdf:resource', 'http://numismatics.org/rdf/' . $collection['project_id'] . '.rdf');
+		$writer->endElement();
+	$writer->endElement();
+	
+	$writer->endElement();
+	$writer->flush();
 }
 
 function parseReference($xpath, $collection, $id){
@@ -559,17 +931,17 @@ function parseReference($xpath, $collection, $id){
 											$uri = 'http://numismatics.org/ocre/id/' . implode('.', $nomismaId) .  '.' . $num;
 											
 											if (in_array($uri, $types)){
-												$results[] = array($id, $uri, $fullRef, 'no');
+												//$results[] = array($id, $uri, $fullRef, 'no');
 												return $uri;
 											} else {
 												$file_headers = @get_headers($uri . '.xml');
 												if ($file_headers[0] == 'HTTP/1.1 200 OK'){
 													$types[] = $uri;
-													$results[] = array($id, $uri, $fullRef, 'no');
+													//$results[] = array($id, $uri, $fullRef, 'no');
 													return $uri;
 												} else {
 													echo "{$id}: unable to match '{$fullRef}'.\n";
-													$results[] = array($id, '', $fullRef, 'no');
+													//$results[] = array($id, '', $fullRef, 'no');
 												}
 											}
 										}
@@ -577,30 +949,30 @@ function parseReference($xpath, $collection, $id){
 										$uri = 'http://numismatics.org/ocre/id/' . implode('.', $nomismaId) . '.' . strtoupper($num);
 										//see if the URI is already in the validated array
 										if (in_array($uri, $types)){
-											$results[] = array($id, $uri, $fullRef, 'no');
+											//$results[] = array($id, $uri, $fullRef, 'no');
 											return $uri;
 										} else {
 											$file_headers = @get_headers($uri . '.xml');
 											if ($file_headers[0] == 'HTTP/1.1 200 OK'){
 												$types[] = $uri;
-												$results[] = array($id, $uri, $fullRef, 'no');
+												//$results[] = array($id, $uri, $fullRef, 'no');
 												return $uri;
 											} else {
 												$uri = 'http://numismatics.org/ocre/id/' . implode('.', $nomismaId) .  '.' . $num;
 												
 												//see if the URI is already in the validated array
 												if (in_array($uri, $types)){
-													$results[] = array($id, $uri, $fullRef, 'no');
+													//$results[] = array($id, $uri, $fullRef, 'no');
 													return $uri;
 												} else {
 													$file_headers = @get_headers($uri . '.xml');
 													if ($file_headers[0] == 'HTTP/1.1 200 OK'){
 														$types[] = $uri;
-														$results[] = array($id, $uri, $fullRef, 'no');
+														//$results[] = array($id, $uri, $fullRef, 'no');
 														return $uri;
 													} else {
 														echo "{$id}: unable to match '{$fullRef}'.\n";
-														$results[] = array($id, '', $fullRef, 'no');
+														//$results[] = array($id, '', $fullRef, 'no');
 													}
 												}
 											}
@@ -609,18 +981,18 @@ function parseReference($xpath, $collection, $id){
 								} else {
 									//if there's more than one possible RIC ID, then add into $results array
 									echo "{$id}: unable to match '{$fullRef}'.\n";
-									$results[] = array($id, '', $fullRef, 'no');
+									//$results[] = array($id, '', $fullRef, 'no');
 								}
 							} else {
 								//if no RIC numbers are parsed, then add into $results array
 								echo "{$id}: unable to match '{$fullRef}'.\n";
-								$results[] = array($id, '', $fullRef, 'no');
+								//$results[] = array($id, '', $fullRef, 'no');
 							}
 						}
 					} else {
 						//if c.f., or similar uncertain attribution, add into $results array
 						echo "{$id}: unable to match '{$fullRef}'.\n";
-						$results[] = array($id, '', $fullRef, 'no');
+						//$results[] = array($id, '', $fullRef, 'no');
 					}
 				} else if (strpos($ref, 'RRC') !== FALSE){
 					//RRC
@@ -644,17 +1016,47 @@ function parseReference($xpath, $collection, $id){
 					
 					//see if the URI is already in the validated array
 					if (in_array($uri, $types)){
-						$results[] = array($id, $uri, $fullRef, 'no');
+						//$results[] = array($id, $uri, $fullRef, 'no');
 						return $uri;
 					} else {
 						$file_headers = @get_headers($uri . '.xml');
 						if ($file_headers[0] == 'HTTP/1.1 200 OK'){
 							$types[] = $uri;
-							$results[] = array($id, $uri, $fullRef, 'no');
+							//$results[] = array($id, $uri, $fullRef, 'no');
 							return $uri;
 						} else {
-							$results[] = array($id, '', $fullRef, 'no');
+							//$results[] = array($id, '', $fullRef, 'no');
 						}
+					}
+				} else if (strpos($ref, 'Seleucid Coins') !== FALSE){
+					//SC
+					$pieces = explode(',', $ref);
+					
+					$frag = array();
+					$frag[] = ltrim(trim($pieces[1]), '0');
+					if (isset($pieces[2])) {
+						$frag[] = ltrim(trim($pieces[2]), '0');
+					}
+					
+					$id = 'sc.1.' . implode('.', $frag);
+					$uri = 'http://numismatics.org/sco/id/' . $id;
+					
+					//always look it up
+					$file_headers = @get_headers($uri . '.rdf');
+					if ($file_headers[0] == 'HTTP/1.1 200 OK'){
+						//get current URI from RDF
+						$xmlDoc = new DOMDocument();
+						$xmlDoc->load($uri . '.rdf');
+						$xpath = new DOMXpath($xmlDoc);
+						$xpath->registerNamespace('dcterms', 'http://purl.org/dc/terms/');
+						$xpath->registerNamespace('rdf', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#');
+						$match = $xpath->query("descendant::dcterms:isReplacedBy")->item(0)->getAttribute('rdf:resource');
+						
+						$types[] = $match;
+						//$results[] = array($id, $match, $fullRef, 'no');
+						return $match;
+					} else {
+						//$results[] = array($id, '', $fullRef, 'no');
 					}
 				}
 			}
@@ -662,304 +1064,19 @@ function parseReference($xpath, $collection, $id){
 	} else {
 		//if 0 or more than 1, just output the ref
 		echo "No reference\n";
-		$results[] = array($id, '', '', 'no');
+		//$results[] = array($id, '', '', 'no');
 	}
 	
 	
 	//only process if there's only one reference
 	/*if ($refNodes->length == 1){
-		$ref = $refNodes->item(0)->nodeValue;
-		
-	} else {
-		//if 0 or more than 1, just output the ref
-		echo "Cannot parse {$fullRef}\n";
-		$results[] = array($id, '', $fullRef, 'no');
-	}*/
-}
-
-function generateNumismaticObject($id, $typeURI, $collection, $xpath, $writer){
-	GLOBAL $geonames;
-	
-	$title = $xpath->query("descendant::lido:titleSet/lido:appellationValue")->item(0)->nodeValue;
-	if (strlen($xpath->query("descendant::lido:displayDate")->item(0)->nodeValue) > 0){
-		$title .= ', ' . $xpath->query("descendant::lido:eventDate/lido:displayDate")->item(0)->nodeValue;
-	}		
-	$measurements = $xpath->query("descendant::lido:measurementsSet");
-	$coinURI = $xpath->query("descendant::lido:recordInfoLink")->item(0)->nodeValue;
-	$workId = $xpath->query("descendant::lido:workID[@lido:type='inventory']");
-	
-	if ($workId->length > 0){
-		$identifier = $workId->item(0)->nodeValue;
-	} else {
-		$identifier = $id;
-	}
-	
-	$writer->startElement('nmo:NumismaticObject');
-		$writer->writeAttribute('rdf:about', $coinURI);
-		$writer->startElement('dcterms:title');
-			$writer->writeAttribute('xml:lang', 'de');
-			$writer->text($title);
-		$writer->endElement();
-		$writer->writeElement('dcterms:identifier', $identifier);
-		$writer->startElement('nmo:hasCollection');
-			$writer->writeAttribute('rdf:resource', $collection['collection_uri']);
-		$writer->endElement();
-		$writer->startElement('nmo:hasTypeSeriesItem');
-			$writer->writeAttribute('rdf:resource', $typeURI);
-		$writer->endElement();
-	
-		//measurements
-		foreach($measurements as $measurement){
-			$type = $measurement->getElementsByTagNameNS('http://www.lido-schema.org', 'measurementType')->item(0)->nodeValue;
-			$value = str_replace(',', '.', $measurement->getElementsByTagNameNS('http://www.lido-schema.org', 'measurementValue')->item(0)->nodeValue);
-				
-			switch ($type){
-				case 'diameter':
-					if (is_numeric($value)){
-						$writer->startElement('nmo:hasDiameter');
-							$writer->writeAttribute('rdf:datatype', 'http://www.w3.org/2001/XMLSchema#decimal');
-							$writer->text($value);
-						$writer->endElement();
-					}					
-					break;
-				case 'weight':
-					if (is_numeric($value)){
-						$writer->startElement('nmo:hasWeight');
-							$writer->writeAttribute('rdf:datatype', 'http://www.w3.org/2001/XMLSchema#decimal');
-							$writer->text($value);
-						$writer->endElement();
-					}					
-					break;
-				case 'orientation':
-					if (is_int((int)$value)){
-						$writer->startElement('nmo:hasAxis');
-							$writer->writeAttribute('rdf:datatype', 'http://www.w3.org/2001/XMLSchema#integer');
-							$writer->text($value);
-						$writer->endElement();
-					}
-					break;
-			}
-		}
-		
-	//add links to 3D models
-	if ($coinURI == 'http://www3.hhu.de/muenzkatalog/ikmk/object.php?id=ID4686'){
-		$writer->startElement('edm:isShownBy');
-			$writer->writeAttribute('rdf:resource', 'https://sketchfab.com/models/58f5c949894144b386103b6c3d039303');
-		$writer->endElement();
-	} elseif ($coinURI == 'http://www3.hhu.de/muenzkatalog/ikmk/object.php?id=ID2050'){
-		$writer->startElement('edm:isShownBy');
-			$writer->writeAttribute('rdf:resource', 'https://sketchfab.com/models/e84acd856ce44f97844a9d9f592aeb3f');
-		$writer->endElement();
-	}
-		
-	//images
-	$image_url = $xpath->query("descendant::lido:resourceRepresentation[@lido:type='image_thumb']/lido:linkResource")->item(0)->nodeValue;
-	if (strlen($image_url) > 0){
-		$pieces = explode('/', $image_url);
-		$fname = array_pop($pieces);		
-		$image_path = implode('/', $pieces);
-		
-			
-		//obverse
-		$writer->startElement('nmo:hasObverse');
-			$writer->startElement('rdf:Description');
-				$writer->startElement('foaf:thumbnail');
-					$writer->writeAttribute('rdf:resource', "{$image_path}/vs_thumb.jpg");
-				$writer->endElement();
-				$writer->startElement('foaf:depiction');
-					$writer->writeAttribute('rdf:resource', "{$image_path}/vs_opt.jpg");
-				$writer->endElement();
-			$writer->endElement();
-		$writer->endElement();
-			
-		//reverse
-		$writer->startElement('nmo:hasReverse');
-			$writer->startElement('rdf:Description');
-				$writer->startElement('foaf:thumbnail');
-					$writer->writeAttribute('rdf:resource', "{$image_path}/rs_thumb.jpg");
-				$writer->endElement();
-				$writer->startElement('foaf:depiction');
-					$writer->writeAttribute('rdf:resource', "{$image_path}/rs_opt.jpg");
-				$writer->endElement();
-			$writer->endElement();
-		$writer->endElement();
-	}				
-	
-	//if the $hoardURI is set, then use the hoard URI in dcterms:isPartOf; otherwise, use nmo:hasFindspot for finding_place URI
-	if (isset($hoardURI)) {
-		$writer->startElement('dcterms:isPartOf');
-			$writer->writeAttribute('rdf:resource', $hoardURI);
-		$writer->endElement();
-	} else {				
-		$places = $xpath->query("descendant::lido:place");
-		foreach ($places as $place){
-			$attr = $place->getAttribute('lido:politicalEntity');
-			
-			if ($attr == 'finding_place'){						
-				$findspots = $place->getElementsByTagNameNS('http://www.lido-schema.org', 'placeID');
-				
-				foreach ($findspots as $findspot){
-					$findspotUri = $findspot->nodeValue;
-					if (strstr($findspotUri, 'geonames') != FALSE) {
-						$ffrags = explode('/', $findspotUri);
-						$geonameId = $ffrags[3];
-							
-						//if the id is valid
-						if ($geonameId != '0'){
-							//add the id into the $geonames array
-							if (!in_array($geonameId, $geonames)){
-								$geonames[] = $geonameId;
-							}
-							$writer->startElement('nmo:hasFindspot');
-								$writer->writeAttribute('rdf:resource', $findspotUri);
-							$writer->endElement();
-							break;
-						}
-					} elseif (strstr($findspotUri, 'nomisma') !== FALSE){
-						$writer->startElement('nmo:hasFindspot');
-							$writer->writeAttribute('rdf:resource', $findspotUri . '#this');
-						$writer->endElement();
-					}
-				}
-			}					
-		}
-	}				
-	
-	//void:inDataset
-	$writer->startElement('void:inDataset');
-		$writer->writeAttribute('rdf:resource', $collection['database_homepage']);
-	$writer->endElement();
-	
-	//end nmo:NumismaticObject
-	$writer->endElement();
-	
-	//add 3D metadata if applicable
-	if ($coinURI == 'http://www3.hhu.de/muenzkatalog/ikmk/object.php?id=ID4686'){
-		$writer->startElement('edm:WebResource');
-			$writer->writeAttribute('rdf:about', 'https://sketchfab.com/models/58f5c949894144b386103b6c3d039303');
-			$writer->startElement('dcterms:format');
-				$writer->writeAttribute('rdf:resource', 'http://vocab.getty.edu/aat/300053580');				
-			$writer->endElement();
-			$writer->writeElement('dcterms:publisher', 'NUMiD');
-		$writer->endElement();
-	} elseif ($coinURI == 'http://www3.hhu.de/muenzkatalog/ikmk/object.php?id=ID2050'){
-		$writer->startElement('edm:WebResource');
-			$writer->writeAttribute('rdf:about', 'https://sketchfab.com/models/e84acd856ce44f97844a9d9f592aeb3f');
-			$writer->startElement('dcterms:format');
-				$writer->writeAttribute('rdf:resource', 'http://vocab.getty.edu/aat/300053580');
-			$writer->endElement();
-			$writer->writeElement('dcterms:publisher', 'NUMiD');
-		$writer->endElement();
-	}
-}
-
-//generate all of the geo:SpatialThings from an array of geonames IDs. This reduces redundancy in the RDF output
-function write_spatial_things($writer){
-	GLOBAL $geonames;	
-	
-	if (count($geonames) > 0){
-		foreach ($geonames as $geonameId){
-			$findspotUri = 'http://www.geonames.org/' . $geonameId;
-			echo "Generating geo:SpatialThing for {$findspotUri}\n";
-			
-			$service = 'http://api.geonames.org/get?geonameId=' . $geonameId . '&username=anscoins&style=full';
-			$coords = query_geonames($service);
-			
-			$writer->startElement('geo:SpatialThing');
-				$writer->writeAttribute('rdf:about', $findspotUri);
-				$writer->writeElement('foaf:name', $coords['name']);
-				$writer->startElement('geo:lat');
-					$writer->writeAttribute('rdf:datatype', 'http://www.w3.org/2001/XMLSchema#decimal');
-					$writer->text($coords['lat']);
-				$writer->endElement();
-				$writer->startElement('geo:long');
-					$writer->writeAttribute('rdf:datatype', 'http://www.w3.org/2001/XMLSchema#decimal');
-					$writer->text($coords['long']);
-				$writer->endElement();
-			$writer->endElement();
-		}	
-	}
-}
-
-function query_geonames($service){
-	$dom = new DOMDocument('1.0', 'UTF-8');
-	if ($dom->load($service) === FALSE){
-		echo "{$service} failed to load.\n";
-	} else {
-		$xpath = new DOMXpath($dom);
-		
-		$coords = array();
-		//generate AACR2-compliant place name
-		$name = $xpath->query('descendant::name')->item(0)->nodeValue . ' (' . $xpath->query('descendant::countryName')->item(0)->nodeValue . ')';
-		$coords['name'] = $name;
-		$coords['lat'] = $xpath->query('descendant::lat')->item(0)->nodeValue;
-		$coords['long'] = $xpath->query('descendant::lng')->item(0)->nodeValue;
-		
-		return $coords;
-	}
-}
-
-//generate the VoID RDF document
-function write_metadata($collection){
-	$writer = new XMLWriter();
-	$writer->openURI("{$collection['project_id']}.void.rdf");
-	//$writer->openURI('php://output');
-	$writer->startDocument('1.0','UTF-8');
-	$writer->setIndent(true);
-	//now we need to define our Indent string,which is basically how many blank spaces we want to have for the indent
-	$writer->setIndentString("    ");
-	
-	$writer->startElement('rdf:RDF');
-	$writer->writeAttribute('xmlns:xsd', 'http://www.w3.org/2001/XMLSchema#');
-	$writer->writeAttribute('xmlns:nm', "http://nomisma.org/id/");
-	$writer->writeAttribute('xmlns:nmo', "http://nomisma.org/ontology#");
-	$writer->writeAttribute('xmlns:dcterms', "http://purl.org/dc/terms/");
-	$writer->writeAttribute('xmlns:foaf', "http://xmlns.com/foaf/0.1/");
-	$writer->writeAttribute('xmlns:geo', "http://www.w3.org/2003/01/geo/wgs84_pos#");
-	$writer->writeAttribute('xmlns:rdf', "http://www.w3.org/1999/02/22-rdf-syntax-ns#");
-	$writer->writeAttribute('xmlns:void', "http://rdfs.org/ns/void#");
-	
-	$writer->startElement('void:Dataset');
-		$writer->writeAttribute('rdf:about', $collection['database_homepage']);
-		
-		//titles
-		if (strlen($collection['title_en']) > 0){
-			$writer->startElement('dcterms:title');
-				$writer->writeAttribute('xml:lang', 'en');
-				$writer->text(trim($collection['title_en']));
-			$writer->endElement();
-		}
-		if (strlen($collection['title_de']) > 0){
-			$writer->startElement('dcterms:title');
-				$writer->writeAttribute('xml:lang', 'de');
-				$writer->text(trim($collection['title_de']));
-			$writer->endElement();
-		}	
-		
-		//descriptions
-		if (strlen($collection['description_en']) > 0){
-			$writer->startElement('dcterms:description');
-				$writer->writeAttribute('xml:lang', 'en');
-				$writer->text(trim($collection['description_en']));
-			$writer->endElement();
-		}
-		if (strlen($collection['description_de']) > 0){
-			$writer->startElement('dcterms:description');
-				$writer->writeAttribute('xml:lang', 'de');
-				$writer->text(trim($collection['description_de']));
-			$writer->endElement();
-		}	
-		$writer->writeElement('dcterms:publisher', $collection['publisher']);
-		$writer->startElement('dcterms:license');
-			$writer->writeAttribute('rdf:resource', $collection['license']);
-		$writer->endElement();
-		$writer->startElement('void:dataDump');
-			$writer->writeAttribute('rdf:resource', 'http://numismatics.org/rdf/' . $collection['project_id'] . '.rdf');
-		$writer->endElement();
-	$writer->endElement();
-	
-	$writer->endElement();
-	$writer->flush();
+	 $ref = $refNodes->item(0)->nodeValue;
+	 
+	 } else {
+	 //if 0 or more than 1, just output the ref
+	 echo "Cannot parse {$fullRef}\n";
+	 $results[] = array($id, '', $fullRef, 'no');
+	 }*/
 }
 
 //generate a CSV file from a concordance list of IDs, URIs, and textual references in $results
