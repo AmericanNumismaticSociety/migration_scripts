@@ -1,8 +1,8 @@
 <?php 
 
-$directories = glob('/home/komet/ans_migration/ebooks/*' , GLOB_ONLYDIR);
+$directories = glob('/home/komet/ans_migration/ebooks/2017_books/*' , GLOB_ONLYDIR);
 
-$csv = 'filename,title,author1,author2,author3';
+$csv = "filename,title,author,editor\n";
 
 foreach ($directories as $folder){
 	$files = scandir($folder);
@@ -21,13 +21,23 @@ foreach ($directories as $folder){
 				$xpath->registerNamespace("tei", "http://www.tei-c.org/ns/1.0");
 				$title = $xpath->query("descendant::tei:teiHeader/tei:fileDesc/tei:titleStmt/tei:title")->item(0)->nodeValue;
 				
-				$csv .= '"' . $filename . '","' . $title . '",';
+				$csv .= '"' . $filename . '","' . ucwords(strtolower($title)) . '",';
 				
 				$authors = $xpath->query("descendant::tei:teiHeader/tei:fileDesc/tei:titleStmt/tei:author");
+				$editors = $xpath->query("descendant::tei:teiHeader/tei:fileDesc/tei:titleStmt/tei:editor");
 				
+				$author_array = array();
 				foreach ($authors as $author){
-					$csv .= '"' . $author->nodeValue . '",';
+					$author_array[] = ucwords(strtolower($author->nodeValue));
 				}
+				
+				$editor_array = array();
+				foreach ($editors as $editor){
+					$editor_array[] = ucwords(strtolower($editor->nodeValue));
+				}
+				
+				$csv .= '"' . implode('|', $author_array) . '",';
+				$csv .= '"' . implode('|', $editor_array) . '"';
 				
 				$csv .= "\n";
 			}

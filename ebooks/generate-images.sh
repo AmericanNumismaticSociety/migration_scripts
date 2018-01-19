@@ -1,14 +1,18 @@
 #!/bin/sh
 
 BASE=$PWD;
-for dir in */;
+for dir in $BASE/ebooks/*;
 do
-	cd $BASE/"$dir";
+	cd $dir;
+	echo "$dir";
 	#ls;
 	# create folders
 	mkdir -p archive
 	mkdir -p reference
 	mkdir -p thumbnail
+	
+	#move TEI file
+	mv *.xml $BASE/tei;
 
 	#convert into thumbnails and reference images
 	for i in *.jpg;
