@@ -11,39 +11,44 @@ $project = 'pella';
 
 $count = 1;
 foreach ($data as $row){
-	echo "Processing #{$count}: {$row['Accession number']}\n";
+	echo "Processing #{$count}: {$row['uri']}\n";
+	$pieces = explode('/', $row['uri']);
 	
 	$record = array();
 	
-	$record['uri'] = $row['URI'];
-	$record['title'] = $row['Title'];
-	$record['objectnumber'] = $row['Accession number'];
-	$record['reference'] = $row['Price number'];
+	$record['uri'] = $row['uri'];
+	$record['title'] = $row['title'];
+	$record['objectnumber'] = $pieces[4];
+	//$record['reference'] = $row['Price number'];
 	
-	if (is_numeric($row['Die Axis'])){
-		$record['axis'] = $row['Die Axis'];
+	if (is_numeric($row['die_axis'])){
+		$record['axis'] = $row['die_axis'];
 	}
-	if (is_numeric($row['Diameter'])){
-		$record['diameter'] = $row['Diameter'];
+	if (is_numeric($row['diameter'])){
+		$record['diameter'] = $row['diameter'];
 	}
-	if (is_numeric($row['Weight'])){
-		$record['weight'] = $row['Weight'];
+	if (is_numeric($row['weight'])){
+		$record['weight'] = $row['weight'];
 	}	
-	if (strlen($row['Hoard URI']) > 0){
-		$record['hoard'] = $row['Hoard URI'];
+	if (strlen($row['hoard_uri']) > 0){
+		$record['hoard'] = $row['hoard_uri'];
 	}
 	
-	//images
-	$id = str_replace('HCR', '', $row['Accession number']);
-	$record['obv_image'] = "http://hcr.ashmus.ox.ac.uk/images/coin/{$id}of.jpg";
-	$record['rev_image'] = "http://hcr.ashmus.ox.ac.uk/images/coin/{$id}rf.jpg";
+	//images	
+	$record['obv_image'] = $row['uri_obverse_image'];
+	$record['rev_image'] = $row['uri_reverse_image'];
+	
+	//new spreadsheet contains PELLA URI
+	if (strlen($row['pella_uri']) > 0){
+		$record['cointype'] = $row['pella_uri'];
+	}
 	
 	//validate Price number
-	$uri = "http://numismatics.org/pella/id/price.{$row['Price number']}";	
+	/*$uri = "http://numismatics.org/pella/id/price.{$row['Price number']}";	
 	$typeValid = check_uri($uri);
 	if ($typeValid == true){
 		$record['cointype'] = $uri;
-	}	
+	}*/
 	
 	$records[] = $record;
 	$count++;
@@ -172,7 +177,7 @@ function generate_rdf($records, $project){
 
 			//void:inDataset
 			$writer->startElement('void:inDataset');
-				$writer->writeAttribute('rdf:resource', 'http://www.ashmus.ox.ac.uk/');
+				$writer->writeAttribute('rdf:resource', 'http://hcr.ashmus.ox.ac.uk/');
 			$writer->endElement();
 
 			//end nmo:NumismaticObject
