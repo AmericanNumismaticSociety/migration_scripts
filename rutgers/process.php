@@ -29,6 +29,8 @@ function process_set($setURL, $start){
 			$id = str_replace('rutgers-lib:', '', $result->getAttribute('recordid'));
 			echo "{$num}: ";
 			process_record($id);
+			
+			
 			//echo "{$num}\n";
 		}
 		//if there are still records to process, call function again
@@ -95,9 +97,10 @@ function process_record($id){
 						
 			//parse JSON-LD IIIF manifest to service services
 			$services = parse_manifest("https://rucore.libraries.rutgers.edu/api/iiif/presentation/2.0/rutgers-lib:{$id}/manifest");
-			$row['obvService'] = $services[0];
-			$row['revService'] = $services[1];
 			
+			$row['obvService'] = $services['obv'];
+			$row['revService'] = $services['rev'];
+		
 			
 			$row['reference'] = $ref->item(0)->nodeValue;
 			
@@ -130,18 +133,37 @@ function process_record($id){
 
 //parse the JSON-LD IIIF manifest to dynamically extract the services and images
 function parse_manifest($url){
-	//create services array: canvas $position = 1 is the obverse, $position = 2 is the reverse. Cannot assume it is PTIF-2
+	//Update, March 2018: read the label, look for "Obverse" and "Reverse"
 	$services = array();
 	
 	$contents = file_get_contents($url);	
 	$manifest = json_decode($contents);
 	
 	foreach ($manifest->sequences as $sequence){
-		foreach ($sequence->canvases as $canvas){
-			foreach ($canvas->images as $image){
-				$services[] = $image->resource->service->{'@id'};
+		//if there are two canvases, the first is obverse and second is reverse
+		if (count($sequence->canvases) == 2){
+			echo "2 canvases: ";
+			$services['obv'] = $sequence->canvases{0}->images{0}->resource->service->{'@id'};
+			$services['rev'] = $sequence->canvases{1}->images{0}->resource->service->{'@id'};
+		} else {
+			echo "multiple canvases: ";
+			foreach ($sequence->canvases as $canvas){				
+				//label is within the canvas
+				$label = $canvas->label;
+				if (strpos($label, 'Obverse') !== FALSE){
+					foreach ($canvas->images as $image){
+						$services['obv'] = $image->resource->service->{'@id'};
+					}
+				}
+				
+				if (strpos($label, 'Reverse') !== FALSE){
+					foreach ($canvas->images as $image){
+						$services['rev'] = $image->resource->service->{'@id'};
+					}
+				}
 			}
 		}
+		
 	}
 	
 	return $services;
