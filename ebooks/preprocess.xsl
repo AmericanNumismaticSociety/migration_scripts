@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <!-- Author: Ethan Gruber
-	Date: January 2016
+	Date: April 2018
 	Function: This XSLT style is intended to preprocess TEI files received from the vendor for the Mellon/NEH Ebook project
 	before uploading into ETDPub. It performs the following tasks:
 	
@@ -31,7 +31,7 @@
 
 	<!-- get MODS from Donum -->
 	<xsl:variable name="mods" as="node()*">
-		<xsl:copy-of select="document(concat('http://donum.numismatics.org/cgi-bin/koha/opac-export.pl?op=export&amp;format=mods&amp;bib=', $entry/gsx:donum))"/>
+		<xsl:copy-of select="document(concat('https://donum.numismatics.org/cgi-bin/koha/opac-export.pl?op=export&amp;format=mods&amp;bib=', $entry/gsx:donum))"/>
 	</xsl:variable>
 
 	<xsl:template match="@*|*|comment()">
@@ -55,7 +55,7 @@
 			</xsl:choose>
 		</xsl:variable>		
 		
-		<xsl:result-document method="xml" href="final/{$id}.xml">
+		<xsl:result-document method="xml" href="{$id}.xml">
 			<xsl:element name="TEI" namespace="http://www.tei-c.org/ns/1.0">
 				<xsl:namespace name="xsi">http://www.w3.org/2001/XMLSchema-instance</xsl:namespace>
 				<xsl:attribute name="xsi:noNamespaceSchemaLocation">http://www.tei-c.org/release/xml/tei/custom/schema/xsd/tei_all.xsd</xsl:attribute>
@@ -234,6 +234,25 @@
 
 		</profileDesc>
 	</xsl:template>
+	
+	<!-- replace names with persName-->
+	<!--<xsl:template match="tei:name[@type]">
+		<xsl:choose>
+			<xsl:when test="@type='pname'">
+				<xsl:element name="persName" namespace="http://www.tei-c.org/ns/1.0">
+					<xsl:apply-templates select="@*[not(name()='type')]|node()"/>
+				</xsl:element>
+			</xsl:when>
+			<xsl:when test="@type='place'">
+				<xsl:element name="placeName" namespace="http://www.tei-c.org/ns/1.0">
+					<xsl:apply-templates select="@*[not(name()='type')]|node()"/>
+				</xsl:element>
+			</xsl:when>
+			<xsl:otherwise>
+				<xsl:copy-of select="self::node()"/>
+			</xsl:otherwise>
+		</xsl:choose>
+	</xsl:template>-->
 
 	<!-- content -->
 	<xsl:template match="*[starts-with(local-name(), 'div')]">
