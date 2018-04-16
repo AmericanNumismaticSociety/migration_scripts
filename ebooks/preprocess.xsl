@@ -145,7 +145,7 @@
 			</xsl:for-each>
 			<xsl:apply-templates select="tei:respStmt"/>
 			
-			<xsl:element name="funder" namespace="http://www.tei-c.org/ns/1.0">The Andrew W. Mellon Foundation</xsl:element>
+			<xsl:element name="funder" namespace="http://www.tei-c.org/ns/1.0">Open access edition funded by the National Endowment for the Humanities/Andrew W. Mellon Foundation Humanities Open Book Program.</xsl:element>
 		</titleStmt>
 	</xsl:template>
 
