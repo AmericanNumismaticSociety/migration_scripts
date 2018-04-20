@@ -9,6 +9,7 @@ $contents = generate_json('contents.csv');
 $counts = generate_json('counts.csv');
 $findspots = generate_json('https://docs.google.com/spreadsheets/d/e/2PACX-1vQeIbUxRU-CpMfzSM6eU22Mn4VyhdRmNtMNUEfkHegVAQLEkblX0OFJlUNyouZBDao_clG1c9xS15Y1/pub?output=csv');
 $depositDates = generate_json('https://docs.google.com/spreadsheets/d/e/2PACX-1vTI1-N57bT5PxIen4dafjV3MoSQa-4gV5ZVQNstLB4FeTkIuT8CcRfe9f8o9MmkQoE4iM1izCtbpDDw/pub?output=csv');
+$refNotes = generate_json('https://docs.google.com/spreadsheets/d/e/2PACX-1vSye6cSV45CuOpVDvYDaUrABoP7W7CesN_lTlZo9G4ydfBh_kbEUuaWXq3ZiBkEPkojyAyI0B46zYPW/pub?output=csv');
 $hoards = array();
 
 //associative array of Nomisma IDs and preferred labels
@@ -48,6 +49,7 @@ foreach($counts as $hoard){
 		//extract discovery and find information
 		foreach ($findspots as $findspot){
 			if ($findspot['id'] == $id){
+				//findspots
 				$record['findspot']['desc'] = $findspot['value'];
 				if (strlen($findspot['geonames_place']) > 0){
 					$record['findspot']['label'] = $findspot['geonames_place'];
@@ -55,6 +57,60 @@ foreach($counts as $hoard){
 				if (strlen($findspot['geonames_uri']) > 0){
 					$record['findspot']['uri'] = $findspot['geonames_uri'];
 				}
+				
+				//discovery
+				if (is_numeric($findspot['fromDate']) || is_numeric($findspot['toDate'])){
+					//if both are numeric, then it is a date range
+					if (is_numeric($findspot['fromDate']) && is_numeric($findspot['toDate'])){
+						$record['discovery']['fromDate'] = $findspot['fromDate'];
+						$record['discovery']['toDate'] = $findspot['toDate'];
+						
+						//certainty: approximate takes precedence over uncertain
+						if ($findspot['fromDate_approximate'] == 'TRUE'){
+							$record['discovery']['fromDate_certainty'] = 'approximate';
+						} elseif ($findspot['fromDate_uncertain'] == 'TRUE'){
+							$record['discovery']['fromDate_certainty'] = 'uncertain';
+						}
+						
+						if ($findspot['toDate_approximate'] == 'TRUE'){
+							$record['discovery']['toDate_certainty'] = 'approximate';
+						} elseif ($findspot['toDate_uncertain'] == 'TRUE'){
+							$record['discovery']['toDate_certainty'] = 'uncertain';
+						}
+						
+						
+					} elseif (is_numeric($findspot['fromDate']) && !is_numeric($findspot['toDate'])){
+						$record['discovery']['date'] = $findspot['fromDate'];	
+						//certainty: approximate takes precedence over uncertain
+						if ($findspot['fromDate_approximate'] == 'TRUE'){
+							$record['discovery']['date_certainty'] = 'approximate';
+						} elseif ($findspot['fromDate_uncertain'] == 'TRUE'){
+							$record['discovery']['date_certainty'] = 'uncertain';
+						}
+					} elseif (!is_numeric($findspot['fromDate']) && is_numeric($findspot['toDate'])){
+						$record['discovery']['notAfter'] = $findspot['fromDate'];
+						if ($findspot['toDate_approximate'] == 'TRUE'){
+							$record['discovery']['date_certainty'] = 'approximate';
+						} elseif ($findspot['toDate_uncertain'] == 'TRUE'){
+							$record['discovery']['date_certainty'] = 'uncertain';
+						}
+					}
+				}
+			}
+		}
+		
+		//disposition, notes, refs
+		$record['notes'] = array();
+		$record['refs'] = array();
+		foreach ($refNotes as $row){
+			if ($row['id'] == $id){
+				if ($row['type'] == 'disposition'){
+					$record['disposition'] = trim($row['value']);
+				} elseif ($row['type'] == 'note'){
+					$record['notes'][] = trim($row['value']);
+				} elseif ($row['type'] == 'ref'){
+					$record['refs'][] = trim($row['value']);
+				}				
 			}
 		}
 		
@@ -140,8 +196,8 @@ foreach($counts as $hoard){
 
 $count = 0;
 foreach ($hoards as $k=>$v){
-	if ($count < 2){
-		var_dump($v);
+	if ($count < 11){
+		//var_dump($v);
 		generate_nuds($k, $v);		
 	}
 	$count++;
@@ -151,8 +207,8 @@ foreach ($hoards as $k=>$v){
 /***** FUNCTIONS *****/
 function generate_nuds($recordId, $hoard){
 	$writer = new XMLWriter();  
-	//$writer->openURI("nuds/{$recordId}.xml");  
-	$writer->openURI('php://output');
+	$writer->openURI("nuds/{$recordId}.xml");  
+	//$writer->openURI('php://output');
 	$writer->setIndent(true);
 	$writer->setIndentString("    ");	
 	$writer->startDocument('1.0','UTF-8');
@@ -197,9 +253,17 @@ function generate_nuds($recordId, $hoard){
 				$writer->text('IGCH ' . ltrim(str_replace('igch', '', $recordId), '0'));
 			$writer->endElement();
 		
-			//hoardDesc = nuds:findspotDesc
-			$writer->startElement('hoardDesc');
+			//noteSet
+			if (count($hoard['notes']) > 0){
+				foreach ($hoard['notes'] as $note){
+					$writer->startElement('note');
+					
+					$writer->endElement();
+				}
+			}
 			
+			//hoardDesc = nuds:findspotDesc
+			$writer->startElement('hoardDesc');			
 				//findspot
 				$writer->startElement('findspot');
 					$writer->startElement('description');
@@ -238,15 +302,73 @@ function generate_nuds($recordId, $hoard){
 				$writer->endElement();
 				
 				//discovery
-				$writer->startElement('discovery');
+				if (array_key_exists('discovery', $hoard)){
+					$writer->startElement('discovery');
+						if (array_key_exists('date', $hoard['discovery'])){
+							$writer->startElement('date');
+								$writer->writeAttribute('standardDate', number_pad($hoard['discovery']['date'], 4));							
+								if (array_key_exists('date_certainty', $hoard['discovery'])){
+									$writer->writeAttribute('certainty', $hoard['discovery']['date_certainty']);									
+								}
+								$writer->text(get_date_textual($hoard['discovery']['date']));
+								
+							$writer->endElement();
+						} elseif (array_key_exists('notAfter', $hoard['discovery'])){
+							$writer->startElement('date');
+								$writer->writeAttribute('notAfter', number_pad($hoard['discovery']['notAfter'], 4));
+								if (array_key_exists('date_certainty', $hoard['discovery'])){
+									$writer->writeAttribute('certainty', $hoard['discovery']['date_certainty']);
+								}
+								$writer->text('before' . get_date_textual($hoard['discovery']['notAfter']));
+							$writer->endElement();
+						} elseif (array_key_exists('fromDate', $hoard['discovery']) && array_key_exists('toDate', $hoard['discovery'])){
+							$writer->startElement('dateRange');
+								$writer->startElement('fromDate');
+									$writer->writeAttribute('standardDate', number_pad($hoard['discovery']['fromDate'], 4));
+									if (array_key_exists('fromDate_certainty', $hoard['discovery'])){
+										$writer->writeAttribute('certainty', $hoard['discovery']['fromDate_certainty']);
+									}
+									$writer->text(get_date_textual($hoard['discovery']['fromDate']));
+								$writer->endElement();
+								$writer->startElement('toDate');
+									$writer->writeAttribute('standardDate', number_pad($hoard['discovery']['toDate'], 4));
+									if (array_key_exists('toDate_certainty', $hoard['discovery'])){
+										$writer->writeAttribute('certainty', $hoard['discovery']['toDate_certainty']);
+									}
+									$writer->text(get_date_textual($hoard['discovery']['toDate']));
+								$writer->endElement();
+							$writer->endElement();
+						}
+					$writer->endElement();
+				}
 				
-				$writer->endElement();
+				//disposition
+				if (array_key_exists('disposition', $hoard)){
+					$writer->startElement('disposition');
+						$writer->startElement('description');
+							$writer->writeAttribute('xml:lang', 'en');
+							$writer->text($hoard['disposition']);
+						$writer->endElement();
+					$writer->endElement();
+				}
+			
 			$writer->endElement();
 		
 			//contentsDesc
 			if (count($hoard['contents']) > 0){
 				$writer->startElement('contentsDesc');
 					$writer->startElement('contents');
+					//add counts
+					if (array_key_exists('total', $hoard)){
+						$writer->writeAttribute('count', $hoard['total']);
+					}
+					if (array_key_exists('min', $hoard)){
+						$writer->writeAttribute('minCount', $hoard['min']);
+					}
+					if (array_key_exists('max', $hoard)){
+						$writer->writeAttribute('maxCount', $hoard['max']);
+					}
+					
 					foreach ($hoard['contents'] as $content){
 						//coin or coinGrp
 						if ((int)$content['count'] == 1){
@@ -261,6 +383,15 @@ function generate_nuds($recordId, $hoard){
 						}
 					}
 					$writer->endElement();
+				$writer->endElement();
+			}
+			
+			//refDesc
+			if (count($hoard['refs']) > 0){
+				$writer->startElement('refDesc');
+					foreach ($hoard['refs'] as $ref){
+						$writer->writeElement('reference', $ref);
+					}
 				$writer->endElement();
 			}
 			
@@ -356,15 +487,20 @@ function generate_content($writer, $content){
 		if (array_key_exists('mint_uri', $content) || array_key_exists('region_uri', $content)){
 			$writer->startElement('nuds:geographic');
 				if (array_key_exists('mint_uri', $content)){
-					$label = get_label($content['mint_uri']);					
-					if (isset($label)){
-						$writer->startElement('nuds:geogname');
-							$writer->writeAttribute('xlink:type', 'simple');
-							$writer->writeAttribute('xlink:role', 'mint');
-							$writer->writeAttribute('xlink:href', $content['mint_uri']);
-							$writer->text($label);
-						$writer->endElement();
-					}					
+					$pieces = explode('|', $content['mint_uri']);
+					foreach ($pieces as $uri){
+						$uri = trim($uri);
+						$label = get_label($uri);
+						if (isset($label)){
+							$writer->startElement('nuds:geogname');
+								$writer->writeAttribute('xlink:type', 'simple');
+								$writer->writeAttribute('xlink:role', 'mint');
+								$writer->writeAttribute('xlink:href', $uri);
+								$writer->text($label);
+							$writer->endElement();
+						}		
+					}
+								
 				}
 				if (array_key_exists('region_uri', $content)){
 					$label = get_label($content['region_uri']);					
