@@ -5,12 +5,12 @@ $den_array = array();
 $dis_array = array();
 $findspot_array = array();
 
-if ($handle = opendir('igch')) {
+if ($handle = opendir('/usr/local/projects/igch/data')) {
 	while (false !== ($entry = readdir($handle))) {
-		if (strstr($entry, '.txt')){
-			$id = strstr($entry, '.txt', true);
+		if (strstr($entry, '.xml')){
+			$id = strstr($entry, '.xml', true);
 			$doc = new DOMDocument();
-			$doc->load('igch/' . $entry);
+			$doc->load('/usr/local/projects/igch/data/' . $entry);
 			$xpath = new DOMXPath($doc);
 			$xpath->registerNamespace('xhtml', "http://www.w3.org/1999/xhtml");
 			
@@ -23,11 +23,19 @@ if ($handle = opendir('igch')) {
 		}
 	}
 }
+
+ksort($findspot_array);
+$csv = '"id","val"' . "\n";
+foreach ($findspot_array as $k=>$v){
+	$csv .= '"' . $k . '","' . str_replace('"', '""', $v) . '"' . "\n";
+}
+file_put_contents('findspot-list.csv', $csv);
+//var_dump($findspot_array);
 //create_mint_csv($mint_array);
 //create_den_csv($den_array);
 //create_dis_csv($dis_array);
 //var_dump($findspot_array);
-create_findspot_csv($findspot_array);
+//create_findspot_csv($findspot_array);
 
 /******* INITIAL PROCESSING FUNCTION *******/
 function extract_denominations($links){
@@ -159,7 +167,7 @@ function process_findspot ($xpath){
 		}
 	}
 	//$content = reverse_iteration($content, 0);
-	$findspot = trim( preg_replace('!\s+!', ' ', $content[0]));
+	$findspot = trim(preg_replace('!\s+!', ' ', $content[0]));
 	return $findspot;
 }
 

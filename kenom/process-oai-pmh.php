@@ -93,6 +93,12 @@ function read_oai($url, $writer){
 					case 'http://ld.zdb-services.de/resource/organisations/DE-MUS-878719':
 						$nomisma_collection = 'http://nomisma.org/id/thuringia_museum';
 						break;
+					case 'http://ld.zdb-services.de/resource/organisations/DE-MUS-805518':
+						$nomisma_collection = 'http://nomisma.org/id/kunstmuseum_moritzburg';
+						break;
+					case 'http://ld.zdb-services.de/resource/organisations/DE-MUS-109513':
+						$nomisma_collection = 'http://nomisma.org/id/stadtmuseum_oldenburg';
+						break;						
 				}
 				
 				$writer->startElement('nmo:NumismaticObject');

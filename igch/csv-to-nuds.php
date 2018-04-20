@@ -7,6 +7,8 @@
 
 $contents = generate_json('contents.csv');
 $counts = generate_json('counts.csv');
+$findspots = generate_json('https://docs.google.com/spreadsheets/d/e/2PACX-1vQeIbUxRU-CpMfzSM6eU22Mn4VyhdRmNtMNUEfkHegVAQLEkblX0OFJlUNyouZBDao_clG1c9xS15Y1/pub?output=csv');
+$depositDates = generate_json('https://docs.google.com/spreadsheets/d/e/2PACX-1vTI1-N57bT5PxIen4dafjV3MoSQa-4gV5ZVQNstLB4FeTkIuT8CcRfe9f8o9MmkQoE4iM1izCtbpDDw/pub?output=csv');
 $hoards = array();
 
 //associative array of Nomisma IDs and preferred labels
@@ -32,7 +34,28 @@ foreach($counts as $hoard){
 			$record['is_approximate'] = true;
 		}
 		if (strlen($hoard['notes']) > 0){
-			
+			$record['notes'] = $hoard['notes'];
+		}
+		
+		//extract deposit dates
+		foreach ($depositDates as $date){
+			if ($date['id'] == $id){
+				$record['deposit']['fromDate'] = (int) $date['fromDate'];
+				$record['deposit']['toDate'] = (int) $date['toDate'];
+			}
+		}
+		
+		//extract discovery and find information
+		foreach ($findspots as $findspot){
+			if ($findspot['id'] == $id){
+				$record['findspot']['desc'] = $findspot['value'];
+				if (strlen($findspot['geonames_place']) > 0){
+					$record['findspot']['label'] = $findspot['geonames_place'];
+				}
+				if (strlen($findspot['geonames_uri']) > 0){
+					$record['findspot']['uri'] = $findspot['geonames_uri'];
+				}
+			}
 		}
 		
 		//reconstruct the contents into an associative array
@@ -60,6 +83,22 @@ foreach($counts as $hoard){
 				if (strlen($row['nomisma id (dynasty)']) > 0){
 					$content['dynasty_uri'] = trim($row['nomisma id (dynasty)']);
 				}
+				if (strlen($row['general type desc.']) > 0){
+					$content['desc'] = trim($row['general type desc.']);
+				}
+				if (strlen($row['obv_type']) > 0){
+					$content['obverse']['type'] = trim($row['obv_type']);
+				}
+				if (strlen($row['rev_type']) > 0){
+					$content['reverse']['type'] = trim($row['rev_type']);
+				}
+				if (strlen($row['rev_legend']) > 0){
+					$content['reverse']['legend'] = trim($row['rev_legend']);
+				}
+				if (is_numeric($row['from_date']) && is_numeric($row['to_date'])){
+					$content['fromDate'] = (int) $row['from_date'];
+					$content['toDate'] = (int) $row['to_date'];
+				}
 				
 				//refs
 				if (strlen($row['ref1']) > 0){
@@ -80,6 +119,13 @@ foreach($counts as $hoard){
 				if (strlen($row['nomisma id (ref1)']) > 0){
 					$content['refs']['uri'] = $row['nomisma id (ref1)'];
 				}
+				
+				//read findspot
+				/*foreach ($findspots as $findspot){
+					if ($findspot['id'] == $id){
+						
+					}
+				}*/
 				
 				$record['contents'][] = $content;
 			}
@@ -146,7 +192,56 @@ function generate_nuds($recordId, $hoard){
 		
 		//descMeta
 		$writer->startElement('descMeta');
-			//hoardDesc
+			$writer->startElement('title');
+				$writer->writeAttribute('xml:lang', 'en');
+				$writer->text('IGCH ' . ltrim(str_replace('igch', '', $recordId), '0'));
+			$writer->endElement();
+		
+			//hoardDesc = nuds:findspotDesc
+			$writer->startElement('hoardDesc');
+			
+				//findspot
+				$writer->startElement('findspot');
+					$writer->startElement('description');
+						$writer->writeAttribute('xml:lang', 'en');
+						$writer->text($hoard['findspot']['desc']);
+					$writer->endElement();
+					if (array_key_exists('label', $hoard['findspot']) && array_key_exists('uri', $hoard['findspot'])){
+						$writer->startElement('geogname');
+							$writer->writeAttribute('xlink:type', 'simple');
+							$writer->writeAttribute('xlink:role', 'findspot');
+							$writer->writeAttribute('xlink:href', $hoard['findspot']['uri']);
+							$writer->text($hoard['findspot']['label']);
+						$writer->endElement();
+					}						
+				$writer->endElement();
+				
+				//deposit
+				$writer->startElement('deposit');
+					if ($hoard['deposit']['fromDate'] == $hoard['deposit']['toDate']){
+						$writer->startElement('date');
+							$writer->writeAttribute('standardDate', number_pad($hoard['deposit']['fromDate'], 4));
+							$writer->text(get_date_textual($hoard['deposit']['fromDate']));
+						$writer->endElement();
+					} else {
+						$writer->startElement('dateRange');
+							$writer->startElement('fromDate');
+								$writer->writeAttribute('standardDate', number_pad($hoard['deposit']['fromDate'], 4));
+								$writer->text(get_date_textual($hoard['deposit']['fromDate']));
+							$writer->endElement();
+							$writer->startElement('toDate');
+								$writer->writeAttribute('standardDate', number_pad($hoard['deposit']['toDate'], 4));
+								$writer->text(get_date_textual($hoard['deposit']['toDate']));
+							$writer->endElement();
+						$writer->endElement();
+					}
+				$writer->endElement();
+				
+				//discovery
+				$writer->startElement('discovery');
+				
+				$writer->endElement();
+			$writer->endElement();
 		
 			//contentsDesc
 			if (count($hoard['contents']) > 0){
@@ -181,84 +276,117 @@ function generate_nuds($recordId, $hoard){
 function generate_content($writer, $content){
 	//begin with typeDesc
 	$writer->startElement('nuds:typeDesc');
-		if (array_key_exists('mint_uri', $content) || array_key_exists('region_uri', $content)){
-			if (array_key_exists('denomination_uri', $content)){
-				$label = get_label($content['denomination_uri']);
+		//order elements to be compatible with the NUDS schema
+		
+		//date
+		if (array_key_exists('fromDate', $content) && array_key_exists('toDate', $content)){
+			if ($content['fromDate'] == $content['toDate']){
+				$writer->startElement('nuds:date');
+					$writer->writeAttribute('standardDate', number_pad($content['fromDate'], 4));
+					$writer->text(get_date_textual($content['fromDate']));
+				$writer->endElement();
+			} else {
+				$writer->startElement('nuds:dateRange');
+					$writer->startElement('nuds:fromDate');
+						$writer->writeAttribute('standardDate', number_pad($content['fromDate'], 4));
+						$writer->text(get_date_textual($content['fromDate']));
+					$writer->endElement();
+					$writer->startElement('nuds:toDate');
+						$writer->writeAttribute('standardDate', number_pad($content['toDate'], 4));
+						$writer->text(get_date_textual($content['toDate']));
+					$writer->endElement();
+				$writer->endElement();
+			}
+		}
+		
+		/*if (array_key_exists('dob', $content)){
+			
+		}*/
+	
+		if (array_key_exists('denomination_uri', $content)){
+			$label = get_label($content['denomination_uri']);
+			if (isset($label)){
+				$writer->startElement('nuds:denomination');
+					$writer->writeAttribute('xlink:type', 'simple');
+					$writer->writeAttribute('xlink:href', $content['denomination_uri']);
+					$writer->text($label);
+				$writer->endElement();
+			}
+		}
+		if (array_key_exists('material_uri', $content)){
+			$label = get_label($content['material_uri']);
+			if (isset($label)){
+				$writer->startElement('nuds:material');
+				$writer->writeAttribute('xlink:type', 'simple');
+				$writer->writeAttribute('xlink:href', $content['material_uri']);
+				$writer->text($label);
+				$writer->endElement();
+			}
+		}
+		
+		//authority
+		if (array_key_exists('authority_uri', $content) || array_key_exists('dynasty_uri', $content)){
+			$writer->startElement('nuds:authority');
+			if (array_key_exists('authority_uri', $content)){
+				$label = get_label($content['authority_uri']);
 				if (isset($label)){
-					$writer->startElement('nuds:denomination');
+					$writer->startElement('nuds:persname');
 						$writer->writeAttribute('xlink:type', 'simple');
-						$writer->writeAttribute('xlink:href', $content['denomination_uri']);
+						$writer->writeAttribute('xlink:role', 'authority');
+						$writer->writeAttribute('xlink:href', $content['authority_uri']);
 						$writer->text($label);
 					$writer->endElement();
 				}
 			}
-			if (array_key_exists('material_uri', $content)){
-				$label = get_label($content['material_uri']);
+			if (array_key_exists('dynasty_uri', $content)){
+				$label = get_label($content['dynasty_uri']);
 				if (isset($label)){
-					$writer->startElement('nuds:material');
-					$writer->writeAttribute('xlink:type', 'simple');
-					$writer->writeAttribute('xlink:href', $content['material_uri']);
-					$writer->text($label);
+					$writer->startElement('nuds:famname');
+						$writer->writeAttribute('xlink:type', 'simple');
+						$writer->writeAttribute('xlink:role', 'dynasty');
+						$writer->writeAttribute('xlink:href', $content['dynasty_uri']);
+						$writer->text($label);
 					$writer->endElement();
 				}
 			}
-			
-			//authority
-			if (array_key_exists('authority_uri', $content) || array_key_exists('dynasty_uri', $content)){
-				$writer->startElement('nuds:authority');
-				if (array_key_exists('authority_uri', $content)){
-					$label = get_label($content['authority_uri']);
+			$writer->endElement();
+		}
+		
+		//geographic
+		if (array_key_exists('mint_uri', $content) || array_key_exists('region_uri', $content)){
+			$writer->startElement('nuds:geographic');
+				if (array_key_exists('mint_uri', $content)){
+					$label = get_label($content['mint_uri']);					
 					if (isset($label)){
-						$writer->startElement('nuds:persname');
+						$writer->startElement('nuds:geogname');
 							$writer->writeAttribute('xlink:type', 'simple');
-							$writer->writeAttribute('xlink:role', 'authority');
-							$writer->writeAttribute('xlink:href', $content['authority_uri']);
+							$writer->writeAttribute('xlink:role', 'mint');
+							$writer->writeAttribute('xlink:href', $content['mint_uri']);
+							$writer->text($label);
+						$writer->endElement();
+					}					
+				}
+				if (array_key_exists('region_uri', $content)){
+					$label = get_label($content['region_uri']);					
+					if (isset($label)){
+						$writer->startElement('nuds:geogname');
+							$writer->writeAttribute('xlink:type', 'simple');
+							$writer->writeAttribute('xlink:role', 'region');
+							$writer->writeAttribute('xlink:href', $content['region_uri']);
 							$writer->text($label);
 						$writer->endElement();
 					}
 				}
-				if (array_key_exists('dynasty_uri', $content)){
-					$label = get_label($content['dynasty_uri']);
-					if (isset($label)){
-						$writer->startElement('nuds:famname');
-							$writer->writeAttribute('xlink:type', 'simple');
-							$writer->writeAttribute('xlink:role', 'dynasty');
-							$writer->writeAttribute('xlink:href', $content['dynasty_uri']);
-							$writer->text($label);
-						$writer->endElement();
-					}
-				}
-				$writer->endElement();
-			}
-			
-			//geographic
-			if (array_key_exists('mint_uri', $content) || array_key_exists('region_uri', $content)){
-				$writer->startElement('nuds:geographic');
-					if (array_key_exists('mint_uri', $content)){
-						$label = get_label($content['mint_uri']);					
-						if (isset($label)){
-							$writer->startElement('nuds:geogname');
-								$writer->writeAttribute('xlink:type', 'simple');
-								$writer->writeAttribute('xlink:role', 'mint');
-								$writer->writeAttribute('xlink:href', $content['mint_uri']);
-								$writer->text($label);
-							$writer->endElement();
-						}					
-					}
-					if (array_key_exists('region_uri', $content)){
-						$label = get_label($content['region_uri']);					
-						if (isset($label)){
-							$writer->startElement('nuds:geogname');
-								$writer->writeAttribute('xlink:type', 'simple');
-								$writer->writeAttribute('xlink:role', 'region');
-								$writer->writeAttribute('xlink:href', $content['region_uri']);
-								$writer->text($label);
-							$writer->endElement();
-						}
-					}
-				$writer->endElement();
-			}
-			
+			$writer->endElement();
+		}
+		
+		//obv
+		if (array_key_exists('obverse', $content)){
+			generate_side($writer, 'obverse', $content['obverse']);
+		}
+		//rev
+		if (array_key_exists('reverse', $content)){
+			generate_side($writer, 'reverse', $content['reverse']);
 		}
 	//end typeDesc
 	$writer->endElement();
@@ -290,6 +418,24 @@ function generate_content($writer, $content){
 	}
 }
 
+//generate obverse or reverse description
+function generate_side($writer, $side, $arr){
+	$writer->startElement('nuds:' . $side);
+		if (array_key_exists('legend', $arr)){
+			$writer->writeElement('nuds:legend', $arr['legend']);
+		}
+		if (array_key_exists('type', $arr)){
+			$writer->startElement('nuds:type');
+				$writer->startElement('nuds:description');
+					$writer->writeAttribute('xml:lang', 'en');
+					$writer->text($arr['type']);
+				$writer->endElement();
+			$writer->endElement();
+		}
+	$writer->endElement();
+}
+
+//get label from Nomisma JSON API
 function get_label($uri){
 	GLOBAL $nomisma;
 	
@@ -308,6 +454,32 @@ function get_label($uri){
 			return null;
 		}		
 	}
+}
+
+//generate human-readable date based on the integer value
+function get_date_textual($year){
+	$textual_date = '';
+	//display start date
+	if($year < 0){
+		$textual_date .= abs($year) . ' B.C.';
+	} elseif ($year > 0) {
+		if ($year <= 600){
+			$textual_date .= 'A.D. ';
+		}
+		$textual_date .= $year;
+	}
+	return $textual_date;
+}
+
+//pad integer value from Filemaker to create a year that meets the xs:gYear specification
+function number_pad($number,$n) {
+	if ($number > 0){
+		$gYear = str_pad((int) $number,$n,"0",STR_PAD_LEFT);
+	} elseif ($number < 0) {
+		$bcNum = (int)abs($number);
+		$gYear = '-' . str_pad($bcNum,$n,"0",STR_PAD_LEFT);
+	}
+	return $gYear;
 }
 
 //parse CSV
