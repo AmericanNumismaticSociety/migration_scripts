@@ -5,8 +5,8 @@
   * Function: Transform CSV for IGCH Hellenistic Hoards into NUDS-Hoard XML 
   ****/
 
-$contents = generate_json('contents.csv');
-$counts = generate_json('counts.csv');
+$contents = generate_json('https://docs.google.com/spreadsheets/d/e/2PACX-1vTxvKZJTXq0ztK_K8J5RYd0R6aXIqRr1qUAeqm3bgSIB3jhe9SxDmJcO6oqEHG70VAR8o0lJcKSUiEv/pub?output=csv');
+$counts = generate_json('https://docs.google.com/spreadsheets/d/e/2PACX-1vTr01VFU1jNLPm_YPZ4RAEKlIppeAGDOR56Go3uW0rfMC6ZEjyzmQ3BgbKDcOJbjjQOfDR_NR6tg4Zt/pub?output=csv');
 $findspots = generate_json('https://docs.google.com/spreadsheets/d/e/2PACX-1vQeIbUxRU-CpMfzSM6eU22Mn4VyhdRmNtMNUEfkHegVAQLEkblX0OFJlUNyouZBDao_clG1c9xS15Y1/pub?output=csv');
 $depositDates = generate_json('https://docs.google.com/spreadsheets/d/e/2PACX-1vTI1-N57bT5PxIen4dafjV3MoSQa-4gV5ZVQNstLB4FeTkIuT8CcRfe9f8o9MmkQoE4iM1izCtbpDDw/pub?output=csv');
 $refNotes = generate_json('https://docs.google.com/spreadsheets/d/e/2PACX-1vSye6cSV45CuOpVDvYDaUrABoP7W7CesN_lTlZo9G4ydfBh_kbEUuaWXq3ZiBkEPkojyAyI0B46zYPW/pub?output=csv');
@@ -35,7 +35,7 @@ foreach($counts as $hoard){
 			$record['is_approximate'] = true;
 		}
 		if (strlen($hoard['notes']) > 0){
-			$record['notes'] = $hoard['notes'];
+			$record['content_notes'] = str_replace('Contents: ', '', $hoard['notes']);
 		}
 		
 		//extract deposit dates
@@ -120,21 +120,49 @@ foreach($counts as $hoard){
 			if ($row['id'] == $id){
 				$content = array();
 				
-				$content['count'] = $row['count'];
-				//insert approximation
+				if (is_numeric($row['count'])){					
+					$content['count'] = $row['count'];
+				}
+				if (is_numeric($row['min count'])){
+					$content['minCount'] = $row['min count'];
+				}
+				if (is_numeric($row['max count'])){
+					$content['maxCount'] = $row['max count'];
+				}
+				//certainty
+				if ($row['count approximate'] == 'TRUE'){
+					$content['certainty'] = 'approximate';
+				} elseif ($row['count uncertain'] == 'TRUE'){
+					$content['certainty'] = 'uncertain';
+				}
 				
 				//typeDesc
 				if (strlen($row['nomisma id (region)']) > 0){
 					$content['region_uri'] = trim($row['nomisma id (region)']);
 				}
+				if ($row['region uncertain'] == 'TRUE'){
+					$content['region_uncertain'] = true;
+				}
 				if (strlen($row['nomisma id (mint)']) > 0){
 					$content['mint_uri'] = trim($row['nomisma id (mint)']);
+				}
+				if ($row['mint uncertain'] == 'TRUE'){
+					$content['mint_uncertain'] = true;
 				}
 				if (strlen($row['nomisma id (denomination)']) > 0){
 					$content['denomination_uri'] = trim($row['nomisma id (denomination)']);
 				}
+				if (strlen($row['denomination uncertain']) == 'TRUE'){
+					$content['denomination_uncertain'] = true;
+				}
+				if (strlen($row['desc3 (material 1)']) > 0){
+					$content['material_uri'] = 'http://nomisma.org/id/' . trim($row['desc3 (material 1)']);
+				}
 				if (strlen($row['nomisma id (authority)']) > 0){
 					$content['authority_uri'] = trim($row['nomisma id (authority)']);
+				}
+				if ($row['authority uncertain'] == 'TRUE'){
+					$content['authority_uncertain'] = true;
 				}
 				if (strlen($row['nomisma id (dynasty)']) > 0){
 					$content['dynasty_uri'] = trim($row['nomisma id (dynasty)']);
@@ -176,13 +204,6 @@ foreach($counts as $hoard){
 					$content['refs']['uri'] = $row['nomisma id (ref1)'];
 				}
 				
-				//read findspot
-				/*foreach ($findspots as $findspot){
-					if ($findspot['id'] == $id){
-						
-					}
-				}*/
-				
 				$record['contents'][] = $content;
 			}
 		}
@@ -196,10 +217,9 @@ foreach($counts as $hoard){
 
 $count = 0;
 foreach ($hoards as $k=>$v){
-	if ($count < 11){
-		//var_dump($v);
-		generate_nuds($k, $v);		
-	}
+	//var_dump($v);
+	echo "Writing {$k}\n";
+	generate_nuds($k, $v);		
 	$count++;
 }
 
@@ -210,7 +230,7 @@ function generate_nuds($recordId, $hoard){
 	$writer->openURI("nuds/{$recordId}.xml");  
 	//$writer->openURI('php://output');
 	$writer->setIndent(true);
-	$writer->setIndentString("    ");	
+	$writer->setIndentString("    ");
 	$writer->startDocument('1.0','UTF-8');
 	
 	//begin XML document
@@ -255,11 +275,11 @@ function generate_nuds($recordId, $hoard){
 		
 			//noteSet
 			if (count($hoard['notes']) > 0){
+				$writer->startElement('noteSet');
 				foreach ($hoard['notes'] as $note){
-					$writer->startElement('note');
-					
-					$writer->endElement();
+					$writer->writeElement('note', $note);
 				}
+				$writer->endElement();
 			}
 			
 			//hoardDesc = nuds:findspotDesc
@@ -355,8 +375,8 @@ function generate_nuds($recordId, $hoard){
 			$writer->endElement();
 		
 			//contentsDesc
-			if (count($hoard['contents']) > 0){
-				$writer->startElement('contentsDesc');
+			if (count($hoard['contents']) > 0 || array_key_exists('content_notes', $hoard)){
+				$writer->startElement('contentsDesc');					
 					$writer->startElement('contents');
 					//add counts
 					if (array_key_exists('total', $hoard)){
@@ -369,15 +389,33 @@ function generate_nuds($recordId, $hoard){
 						$writer->writeAttribute('maxCount', $hoard['max']);
 					}
 					
+					if (array_key_exists('content_notes', $hoard)){
+						$writer->startElement('description');
+							$writer->writeAttribute('xml:lang', 'en');
+							$writer->text($hoard['content_notes']);
+						$writer->endElement();
+					}
+					
 					foreach ($hoard['contents'] as $content){
 						//coin or coinGrp
-						if ((int)$content['count'] == 1){
+						if (array_key_exists('count', $content) && (int)$content['count'] == 1){
 							$writer->startElement('coin');
 							generate_content($writer, $content);
 							$writer->endElement();
 						} else {
 							$writer->startElement('coinGrp');
-								$writer->writeAttribute('count', $content['count']);
+								if (array_key_exists('count', $content)){									
+									$writer->writeAttribute('count', $content['count']);
+								}
+								if (array_key_exists('minCount', $content)){
+									$writer->writeAttribute('minCount', $content['minCount']);
+								}
+								if (array_key_exists('maxCount', $content)){
+									$writer->writeAttribute('maxCount', $content['maxCount']);
+								}
+								if (array_key_exists('certainty', $content)){
+									$writer->writeAttribute('certainty', $content['certainty']);
+								}
 								generate_content($writer, $content);
 							$writer->endElement();							
 						}
@@ -435,15 +473,23 @@ function generate_content($writer, $content){
 		}*/
 	
 		if (array_key_exists('denomination_uri', $content)){
-			$label = get_label($content['denomination_uri']);
-			if (isset($label)){
-				$writer->startElement('nuds:denomination');
-					$writer->writeAttribute('xlink:type', 'simple');
-					$writer->writeAttribute('xlink:href', $content['denomination_uri']);
-					$writer->text($label);
-				$writer->endElement();
+			$pieces = explode('|', $content['denomination_uri']);
+			foreach ($pieces as $uri){
+				$uri = trim($uri);
+				$label = get_label($uri);
+				if (isset($label)){
+					$writer->startElement('nuds:denomination');
+						$writer->writeAttribute('xlink:type', 'simple');
+						$writer->writeAttribute('xlink:href', $uri);
+						if (array_key_exists('denomination_uncertain', $content)){
+							$writer->writeAttribute('certainty', 'uncertain');
+						}
+						$writer->text($label);
+					$writer->endElement();
+				}
 			}
 		}
+		
 		if (array_key_exists('material_uri', $content)){
 			$label = get_label($content['material_uri']);
 			if (isset($label)){
@@ -459,14 +505,21 @@ function generate_content($writer, $content){
 		if (array_key_exists('authority_uri', $content) || array_key_exists('dynasty_uri', $content)){
 			$writer->startElement('nuds:authority');
 			if (array_key_exists('authority_uri', $content)){
-				$label = get_label($content['authority_uri']);
-				if (isset($label)){
-					$writer->startElement('nuds:persname');
+				$pieces = explode('|', $content['authority_uri']);
+				foreach ($pieces as $uri){
+					$uri = trim($uri);
+					$label = get_label($uri);
+					if (isset($label)){
+						$writer->startElement('nuds:persname');
 						$writer->writeAttribute('xlink:type', 'simple');
 						$writer->writeAttribute('xlink:role', 'authority');
-						$writer->writeAttribute('xlink:href', $content['authority_uri']);
+						$writer->writeAttribute('xlink:href', $uri);
+						if (array_key_exists('authority_uncertain', $content)){
+							$writer->writeAttribute('certainty', 'uncertain');
+						}
 						$writer->text($label);
-					$writer->endElement();
+						$writer->endElement();
+					}
 				}
 			}
 			if (array_key_exists('dynasty_uri', $content)){
@@ -496,6 +549,9 @@ function generate_content($writer, $content){
 								$writer->writeAttribute('xlink:type', 'simple');
 								$writer->writeAttribute('xlink:role', 'mint');
 								$writer->writeAttribute('xlink:href', $uri);
+								if (array_key_exists('mint_uncertain', $content)){
+									$writer->writeAttribute('certainty', 'uncertain');
+								}
 								$writer->text($label);
 							$writer->endElement();
 						}		
@@ -503,14 +559,21 @@ function generate_content($writer, $content){
 								
 				}
 				if (array_key_exists('region_uri', $content)){
-					$label = get_label($content['region_uri']);					
-					if (isset($label)){
-						$writer->startElement('nuds:geogname');
-							$writer->writeAttribute('xlink:type', 'simple');
-							$writer->writeAttribute('xlink:role', 'region');
-							$writer->writeAttribute('xlink:href', $content['region_uri']);
-							$writer->text($label);
-						$writer->endElement();
+					$pieces = explode('|', $content['region_uri']);
+					foreach ($pieces as $uri){
+						$uri = trim($uri);
+						$label = get_label($uri);
+						if (isset($label)){
+							$writer->startElement('nuds:geogname');
+								$writer->writeAttribute('xlink:type', 'simple');
+								$writer->writeAttribute('xlink:role', 'mint');
+								$writer->writeAttribute('xlink:href', $uri);
+								if (array_key_exists('region_uncertain', $content)){
+									$writer->writeAttribute('certainty', 'uncertain');
+								}
+								$writer->text($label);
+							$writer->endElement();
+						}
 					}
 				}
 			$writer->endElement();
