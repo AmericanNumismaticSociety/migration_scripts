@@ -339,7 +339,7 @@ function generate_nuds($recordId, $hoard){
 								if (array_key_exists('date_certainty', $hoard['discovery'])){
 									$writer->writeAttribute('certainty', $hoard['discovery']['date_certainty']);
 								}
-								$writer->text('before' . get_date_textual($hoard['discovery']['notAfter']));
+								$writer->text('before ' . get_date_textual($hoard['discovery']['notAfter']));
 							$writer->endElement();
 						} elseif (array_key_exists('fromDate', $hoard['discovery']) && array_key_exists('toDate', $hoard['discovery'])){
 							$writer->startElement('dateRange');
