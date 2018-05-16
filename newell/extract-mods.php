@@ -1,6 +1,6 @@
 <?php 
 
-$records = array('187744','188323','188324','188557','188524','188555','189144','189145','189146','189148','189149','189213','189216','189217','189218','189219','189220','189224','189225','189227');
+$records = array('189221','189222','189223','189215');
 
 foreach ($records as $record){
 	$url = 'http://donum.numismatics.org/cgi-bin/koha/opac-export.pl?format=mods&op=export&bib=' . $record;
