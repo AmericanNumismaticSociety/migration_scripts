@@ -88,7 +88,7 @@ foreach($counts as $hoard){
 							$record['discovery']['date_certainty'] = 'uncertain';
 						}
 					} elseif (!is_numeric($findspot['fromDate']) && is_numeric($findspot['toDate'])){
-						$record['discovery']['notAfter'] = $findspot['fromDate'];
+						$record['discovery']['notAfter'] = $findspot['toDate'];
 						if ($findspot['toDate_approximate'] == 'TRUE'){
 							$record['discovery']['date_certainty'] = 'approximate';
 						} elseif ($findspot['toDate_uncertain'] == 'TRUE'){
