@@ -1,5 +1,7 @@
 <?php 
 
+//requires mbstring package for PHP
+
 $records = array('189221','189222','189223','189215');
 
 foreach ($records as $record){
