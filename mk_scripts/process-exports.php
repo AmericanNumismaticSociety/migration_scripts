@@ -59,12 +59,14 @@ function parse_dump($collection){
 				//only insert the record into the records array only if it's unique
 				$record = parse_lido($file, $collection, $count);
 				
-				if (!array_key_exists($id, $records)){
-					$records[$id] = $record;
-				} else {
-					echo "{$id} has already been processed, and therefore not added to final RDF output.\n";
+				if (isset($record)){
+				    if (!array_key_exists($id, $records)){
+				        $records[$id] = $record;
+				    } else {
+				        echo "{$id} has already been processed, and therefore not added to final RDF output.\n";
+				    }
+				    $count++;
 				}
-				$count++;
 			}
 		}
 	}
@@ -129,7 +131,9 @@ function parse_lido($file, $collection, $count){
 			
 			//$results[] = array($id, $typeURI, '', 'yes');
 		} else {		
-			$ref = parseReference($xpath, $collection['project_id'], $id);
+			$ref = parseReference($xpath, $collection['project_id'], $id);			
+			
+			echo "{$id}: {$ref}\n";
 			
 			if (isset($ref)){
 				$typeURI = array($ref);
@@ -137,6 +141,8 @@ function parse_lido($file, $collection, $count){
 				echo "Processing #{$count}: {$id}, {$out}\n";
 				
 				return extract_metadata($id, $typeURI, $hoardURI, $collection, $xpath);
+			} else {
+			    return null;
 			}
 		}
 	}	
@@ -164,8 +170,11 @@ function extract_metadata ($id, $typeURI, $hoardURI, $collection, $xpath) {
 	$record['title'] = $title;
 	$record['coinURI'] = $xpath->query("descendant::lido:recordInfoLink")->item(0)->nodeValue;
 	$record['identifier'] = $identifier;
-	$record['collection'] = $collection['collection_uri'];	
-	$record['coinType'] = $typeURI;
+	$record['collection'] = $collection['collection_uri'];
+	
+	if (isset($typeURI)){	    
+	    $record['coinType'] = $typeURI;
+	}
 	
 	//measurements
 	foreach($measurements as $measurement){
@@ -287,7 +296,7 @@ function generateNumismaticObject($record, $writer){
 	GLOBAL $geonames;
 	
 	//only write the NumismaticObject if it has a valid coin type URI
-	if (count($record['coinType']) > 0){
+	if (array_key_exists('coinType', $record)){
 		
 	$writer->startElement('nmo:NumismaticObject');
 		$writer->writeAttribute('rdf:about', $record['coinURI']);
@@ -1056,6 +1065,7 @@ function parseReference($xpath, $collection, $id){
 						//$results[] = array($id, $match, $fullRef, 'no');
 						return $match;
 					} else {
+					    //echo "No reference: {$ref}\n";
 						//$results[] = array($id, '', $fullRef, 'no');
 					}
 				}

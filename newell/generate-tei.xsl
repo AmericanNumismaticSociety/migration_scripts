@@ -52,14 +52,7 @@
 						<idno type="donum">
 							<xsl:value-of select="$id"/>
 						</idno>
-					</publicationStmt>
-					<notesStmt>
-						<note type="abstract">
-							<p>
-								<xsl:value-of select="mods:abstract"/>
-							</p>
-						</note>
-					</notesStmt>
+					</publicationStmt>					
 					<sourceDesc>
 						<biblStruct>
 							<monogr>
@@ -96,6 +89,16 @@
 						</biblStruct>
 					</sourceDesc>
 				</fileDesc>
+				<profileDesc>
+					<abstract>
+						<p>
+							<xsl:value-of select="mods:abstract"/>
+						</p>
+					</abstract>
+					<textClass>
+						<classCode scheme="http://vocab.getty/edu/aat/">300264354</classCode>
+					</textClass>
+				</profileDesc>
 				<revisionDesc>
 					<change when="{current-date()}">Generated TEI-XML document from MODS, image file list, and IIIF service lookups</change>
 				</revisionDesc>
