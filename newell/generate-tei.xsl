@@ -96,7 +96,7 @@
 						</p>
 					</abstract>
 					<textClass>
-						<classCode scheme="http://vocab.getty/edu/aat/">300264354</classCode>
+						<classCode scheme="http://vocab.getty.edu/aat/">300264354</classCode>
 					</textClass>
 				</profileDesc>
 				<revisionDesc>
