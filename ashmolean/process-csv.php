@@ -1,6 +1,6 @@
 <?php 
-
-$data = generate_json('pella.csv');
+$collection = 'leeds';
+$data = generate_json("{$collection}.csv");
 //store successful hits
 $coinTypes = array();
 
@@ -18,7 +18,13 @@ foreach ($data as $row){
 	
 	$record['uri'] = $row['uri'];
 	$record['title'] = $row['title'];
-	$record['objectnumber'] = $pieces[4];
+	
+	if ($collection == 'ashmolean'){
+	    $record['objectnumber'] = $pieces[4];
+	} elseif ($collection == 'leeds'){
+	    $record['objectnumber'] = $row['IRN'];
+	}
+	
 	//$record['reference'] = $row['Price number'];
 	
 	if (is_numeric($row['die_axis'])){
@@ -55,8 +61,8 @@ foreach ($data as $row){
 }
 
 //after the CSV has been parsed, then process the resulting records array into Nomisma-conformant RDF
-generate_csv($records, $project);
-generate_rdf($records, $project);
+//generate_csv($records, $project);
+generate_rdf($records, $project, $collection);
 
 function check_uri($uri){
 	GLOBAL $coinTypes;
@@ -86,11 +92,11 @@ function check_uri($uri){
 	return $valid;
 }
 
-function generate_rdf($records, $project){
+function generate_rdf($records, $project, $collection){
 	//start RDF/XML file
 	//use XML writer to generate RDF
 	$writer = new XMLWriter();
-	$writer->openURI("ashmolean-{$project}.rdf");
+	$writer->openURI("{$collection}-{$project}.rdf");
 	//$writer->openURI('php://output');
 	$writer->startDocument('1.0','UTF-8');
 	$writer->setIndent(true);
@@ -117,7 +123,11 @@ function generate_rdf($records, $project){
 			$writer->endElement();
 			$writer->writeElement('dcterms:identifier', $record['objectnumber']);
 			$writer->startElement('nmo:hasCollection');
-				$writer->writeAttribute('rdf:resource', 'http://nomisma.org/id/ashmolean');
+			if ($collection == 'ashmolean'){
+			    $writer->writeAttribute('rdf:resource', 'http://nomisma.org/id/ashmolean');
+			} elseif ($collection == 'leeds'){
+			    $writer->writeAttribute('rdf:resource', 'http://nomisma.org/id/leeds_university_library');
+			}				
 			$writer->endElement();
 			$writer->startElement('nmo:hasTypeSeriesItem');
 				$writer->writeAttribute('rdf:resource', $record['cointype']);
@@ -153,9 +163,11 @@ function generate_rdf($records, $project){
 			if (isset($record['obv_image'])){
 				$writer->startElement('nmo:hasObverse');
 					$writer->startElement('rdf:Description');
-						$writer->startElement('foaf:thumbnail');
-							$writer->writeAttribute('rdf:resource', str_replace('of', 'ot', $record['obv_image']));
-						$writer->endElement();
+    					if ($collection == 'ashmolean'){
+    					    $writer->startElement('foaf:thumbnail');
+    					       $writer->writeAttribute('rdf:resource', str_replace('of', 'ot', $record['obv_image']));
+    					    $writer->endElement();
+    					}
 						$writer->startElement('foaf:depiction');
 							$writer->writeAttribute('rdf:resource', $record['obv_image']);
 						$writer->endElement();
@@ -165,9 +177,11 @@ function generate_rdf($records, $project){
 			if (isset($record['rev_image'])){
 				$writer->startElement('nmo:hasReverse');
 					$writer->startElement('rdf:Description');
-						$writer->startElement('foaf:thumbnail');
-							$writer->writeAttribute('rdf:resource', str_replace('rf', 'rt', $record['rev_image']));
-						$writer->endElement();
+    					if ($collection == 'ashmolean'){
+    						$writer->startElement('foaf:thumbnail');
+    							$writer->writeAttribute('rdf:resource', str_replace('rf', 'rt', $record['rev_image']));
+    						$writer->endElement();
+    					}
 						$writer->startElement('foaf:depiction');
 							$writer->writeAttribute('rdf:resource', $record['rev_image']);
 						$writer->endElement();
@@ -177,7 +191,11 @@ function generate_rdf($records, $project){
 
 			//void:inDataset
 			$writer->startElement('void:inDataset');
-				$writer->writeAttribute('rdf:resource', 'http://hcr.ashmus.ox.ac.uk/');
+			if ($collection == 'ashmolean'){
+			    $writer->writeAttribute('rdf:resource', 'http://hcr.ashmus.ox.ac.uk/');
+			} elseif ($collection == 'leeds'){
+			    $writer->writeAttribute('rdf:resource', 'https://library.leeds.ac.uk/special-collections/collection/1491');
+			}				
 			$writer->endElement();
 
 			//end nmo:NumismaticObject
