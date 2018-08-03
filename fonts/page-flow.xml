@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Author: Ethan Gruber
+	Date: August 2018
+	Function: View and identify Greek monograms organized as SVG files in folders -->
+
+<config xmlns="http://www.orbeon.com/oxf/controller" xmlns:oxf="http://www.orbeon.com/oxf/processors" matcher="oxf:perl5-matcher">
+		
+	<page path="/monograms/" view="xforms/monograms.xhtml"/>	
+	
+	<epilogue url="oxf:/config/epilogue.xpl"/>
+</config>

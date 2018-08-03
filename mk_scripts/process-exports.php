@@ -78,7 +78,7 @@ function parse_dump($collection){
 	write_metadata($collection);
 	
 	//write concordance CSV
-	//write_csv($collection['project_id'], $results);
+	write_csv($collection['project_id'], $records);
 }
 
 function parse_lido($file, $collection, $count){
@@ -1090,13 +1090,13 @@ function parseReference($xpath, $collection, $id){
 }
 
 //generate a CSV file from a concordance list of IDs, URIs, and textual references in $results
-function write_csv($collection, $results){
+function write_csv($collection, $records){
 	$heading = array('id','coinType','ref','contains_uri');
 	
 	$file = fopen($collection . '.csv', 'w');
 	
 	fputcsv($file, $heading);
-	foreach ($results as $row) {
+	foreach ($records as $row) {
 		fputcsv($file, $row);
 	}
 	

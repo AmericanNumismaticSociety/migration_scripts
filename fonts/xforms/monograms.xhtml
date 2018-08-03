@@ -1,0 +1,75 @@
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:xforms="http://www.w3.org/2002/xforms" xmlns:xs="http://www.w3.org/2001/XMLSchema"
+	xmlns:ev="http://www.w3.org/2001/xml-events" xmlns:xxforms="http://orbeon.org/oxf/xml/xforms" xmlns:fr="http://orbeon.org/oxf/xml/form-runner"
+	xmlns:xi="http://www.w3.org/2001/XInclude">
+	<head>
+		<title>Monograms</title>
+		<link rel="stylesheet" href="/fr/style/bootstrap/css/bootstrap.css" type="text/css" />
+		<link rel="stylesheet" href="/fr/style/form-runner-bootstrap-override.css" type="text/css" />
+		<link rel="stylesheet" href="http://netdna.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" />
+		<script type="text/javascript" src="http://netdna.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
+		<link rel="shortcut icon" href="/ops/images/orbeon-icon-16.ico" />
+		<link rel="icon" href="/ops/images/orbeon-icon-16.png" type="image/png" />
+		<link rel="stylesheet" href="/apps/monograms/xforms/css/style.css" />
+
+		<xforms:model>
+			<xforms:instance id="control-instance" xxforms:exclude-result-prefixes="#all">
+				<controls xmlns="">
+					<folder></folder>
+				</controls>
+			</xforms:instance>
+
+			<xforms:instance id="monograms" xxforms:exclude-result-prefixes="#all">
+				<xi:include href="../monograms.xml"/>
+			</xforms:instance>
+		</xforms:model>
+	</head>
+
+
+	<body>
+		<div class="container-fluid">
+			<div class="row">
+				<div class="col-md-12">
+					<h1>Monograms</h1>
+
+
+					<div>
+						<xforms:select1 ref="instance('control-instance')/folder">
+							<xforms:item>
+								<xforms:label>Select folder...</xforms:label>
+								<xforms:value/>
+							</xforms:item>
+							<xforms:itemset nodeset="instance('monograms')/folder">
+								<xforms:label ref="@name"/>
+								<xforms:value ref="@name"/>
+							</xforms:itemset>
+						</xforms:select1>
+					</div>
+
+					<xforms:group ref="instance('monograms')/folder[@name = instance('control-instance')/folder]">
+						<div>
+							<h2><xforms:output ref="@name"/></h2>
+							<table class="table">
+								<tbody>
+									<xforms:repeat nodeset="file">
+										<tr>
+											<td style="width:200px">
+												<img src="{concat('svg/', instance('control-instance')/folder, '/', @name)}"/>
+											</td>
+											<td>
+												<xforms:output ref="@name"/>
+											</td>
+										</tr>
+									</xforms:repeat>
+								</tbody>
+							</table>
+							
+						</div>
+						
+					</xforms:group>
+
+					<!--<fr:xforms-inspector/>-->
+				</div>
+			</div>
+		</div>
+	</body>
+</html>
