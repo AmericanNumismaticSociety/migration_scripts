@@ -78,7 +78,7 @@ function parse_dump($collection){
 	write_metadata($collection);
 	
 	//write concordance CSV
-	write_csv($collection['project_id'], $records);
+	//write_csv($collection['project_id'], $records);
 }
 
 function parse_lido($file, $collection, $count){
@@ -127,10 +127,11 @@ function parse_lido($file, $collection, $count){
 			} else {
 				echo "Processing #{$count}: {$id}, {$typeURI}\n";
 			}
-			return extract_metadata($id, $typeURI, $hoardURI, $collection, $xpath);
+			return extract_metadata($id, $typeURI, $hoardURI, $collection, $xpath, true);
 			
 			//$results[] = array($id, $typeURI, '', 'yes');
-		} else {		
+		} else {	
+		    //otherwise use the textual reference for evaluating OCRE URI
 			$ref = parseReference($xpath, $collection['project_id'], $id);			
 			
 			echo "{$id}: {$ref}\n";
@@ -140,7 +141,7 @@ function parse_lido($file, $collection, $count){
 				$out = implode(',', $typeURI);
 				echo "Processing #{$count}: {$id}, {$out}\n";
 				
-				return extract_metadata($id, $typeURI, $hoardURI, $collection, $xpath);
+				return extract_metadata($id, $typeURI, $hoardURI, $collection, $xpath, false);
 			} else {
 			    return null;
 			}
@@ -149,7 +150,7 @@ function parse_lido($file, $collection, $count){
 }
 
 //extract metadata from LIDO XML file and return an array
-function extract_metadata ($id, $typeURI, $hoardURI, $collection, $xpath) {
+function extract_metadata ($id, $typeURI, $hoardURI, $collection, $xpath, $containsURI) {
 	GLOBAL $geonames;
 	$record = array();
 	
@@ -171,6 +172,7 @@ function extract_metadata ($id, $typeURI, $hoardURI, $collection, $xpath) {
 	$record['coinURI'] = $xpath->query("descendant::lido:recordInfoLink")->item(0)->nodeValue;
 	$record['identifier'] = $identifier;
 	$record['collection'] = $collection['collection_uri'];
+	//$record['containsURI'] = $containsURI;
 	
 	if (isset($typeURI)){	    
 	    $record['coinType'] = $typeURI;
@@ -1096,7 +1098,8 @@ function write_csv($collection, $records){
 	$file = fopen($collection . '.csv', 'w');
 	
 	fputcsv($file, $heading);
-	foreach ($records as $row) {
+	foreach ($records as $k=>$v) {
+	    $row = array($v['identifier'], implode('|', $v['coinType']), '', '');	    
 		fputcsv($file, $row);
 	}
 	

@@ -14,13 +14,72 @@
 		<xforms:model>
 			<xforms:instance id="control-instance" xxforms:exclude-result-prefixes="#all">
 				<controls xmlns="">
+					<status></status>
 					<folder></folder>
+					<username></username>
+					<filter></filter>
 				</controls>
 			</xforms:instance>
 
-			<xforms:instance id="monograms" xxforms:exclude-result-prefixes="#all">
-				<xi:include href="../monograms.xml"/>
+			<xforms:instance id="filter-enabled" xxforms:exclude-result-prefixes="#all">
+				<enabled xmlns="">false</enabled>
 			</xforms:instance>
+
+			<xforms:instance id="monograms" xxforms:exclude-result-prefixes="#all">
+				<monograms xmlns=""></monograms>
+			</xforms:instance>
+
+			<xforms:instance id="load-config">
+				<config xmlns="">
+					<url>oxf:/apps/monograms/xforms/xml/monograms.xml</url>
+					<content-type>application/xml</content-type>
+					<mode>xml</mode>
+				</config>
+			</xforms:instance>
+
+			<xforms:instance id="save-config">
+				<config xmlns="">
+					<url>oxf:/apps/monograms/xforms/xml/monograms.xml</url>
+					<content-type>text/plain</content-type>
+					<make-directories>false</make-directories>
+					<append>false</append>
+				</config>
+			</xforms:instance>
+
+			<xforms:instance id="dump">
+				<dump xmlns=""></dump>
+			</xforms:instance>
+
+			<xforms:instance id="filtered-monograms" xxforms:exclude-result-prefixes="#all">
+				<monograms xmlns=""></monograms>
+			</xforms:instance>
+
+			<!-- **************** BINDINGS ********************** -->
+			<xforms:bind nodeset="instance('filter-enabled')" type="xs:boolean" calculate="boolean(string-length(instance('control-instance')/filter) &gt; 0)"/>
+
+			<xforms:bind nodeset="instance('filtered-monograms')">
+				<xforms:bind nodeset="monogram">
+					<xforms:bind nodeset="@visible" type="xs:boolean"/>
+				</xforms:bind>
+			</xforms:bind>
+
+			<!--<xforms:action ev:event="xforms-value-changed" ev:observer="filter-enabled">
+				<xforms:toggle case="filter" if="instance('filter-enabled') = true()"/>
+				<xforms:toggle case="folder" if="instance('filter-enabled') = false()"/>
+			</xforms:action>-->
+
+			<!-- **************** MODEL-CONSTRUCT-DONE ********************** -->
+			<xforms:action ev:event="xforms-model-construct-done">
+				<xforms:insert nodeset="instance('monograms')"
+					origin="xxforms:call-xpl('oxf:/apps/monograms/xforms/xpl/load-id.xpl', 'file', instance('load-config'), 'data')"/>
+
+				<xforms:action xxforms:iterate="instance('monograms')//file">
+					<xforms:var name="id" select="concat(context()/parent::folder/@name, ':', context()/@name)"/>
+					<xforms:insert context="instance('filtered-monograms')" nodeset="./child::node()[last()]"
+						origin="xforms:element('monogram', (xforms:attribute('visible', false()), $id))"/>
+				</xforms:action>
+
+			</xforms:action>
 		</xforms:model>
 	</head>
 
@@ -29,45 +88,168 @@
 		<div class="container-fluid">
 			<div class="row">
 				<div class="col-md-12">
-					<h1>Monograms</h1>
-
-
-					<div>
-						<xforms:select1 ref="instance('control-instance')/folder">
-							<xforms:item>
-								<xforms:label>Select folder...</xforms:label>
-								<xforms:value/>
-							</xforms:item>
-							<xforms:itemset nodeset="instance('monograms')/folder">
-								<xforms:label ref="@name"/>
-								<xforms:value ref="@name"/>
-							</xforms:itemset>
-						</xforms:select1>
-					</div>
-
-					<xforms:group ref="instance('monograms')/folder[@name = instance('control-instance')/folder]">
-						<div>
-							<h2><xforms:output ref="@name"/></h2>
-							<table class="table">
-								<tbody>
-									<xforms:repeat nodeset="file">
-										<tr>
-											<td style="width:200px">
-												<img src="{concat('svg/', instance('control-instance')/folder, '/', @name)}"/>
-											</td>
-											<td>
-												<xforms:output ref="@name"/>
-											</td>
-										</tr>
-									</xforms:repeat>
-								</tbody>
-							</table>
-							
+					<xforms:group ref=".[string-length(instance('control-instance')/status) &gt; 0]">
+						<div class="alert-success alert-box alert">
+							<span class="glyphicon glyphicon-info-sign"></span>
+							<strong>Status:</strong>
+							<xforms:output ref="instance('control-instance')/status"/>
 						</div>
-						
 					</xforms:group>
 
-					<!--<fr:xforms-inspector/>-->
+					<h1>Monograms</h1>
+
+					<div>
+						<xforms:input ref="instance('control-instance')/filter">
+							<xforms:label>Filter</xforms:label>
+						</xforms:input>
+						<xforms:trigger>
+							<xforms:label>Update Filter</xforms:label>
+							<xforms:action ev:event="DOMActivate">
+								<xforms:action if="instance('filter-enabled') = true()">
+									<xforms:var name="chars"
+										select="tokenize(replace(
+										replace(
+										normalize-space(instance('control-instance')/filter),
+										'(.{1})',
+										'$1|'),
+										'\|$',
+										''), '\|')"/>
+
+									<xforms:action xxforms:iterate="$chars">
+										<xforms:var name="char" select="."/>
+										<xforms:var name="position" select="position()"/>
+
+										<xforms:action xxforms:iterate="instance('monograms')//file">
+											<xforms:var name="id" select="concat(context()/parent::folder/@name, ':', context()/@name)"/>
+
+											<xforms:action if="contains(context()/@letters, $char)">
+												<xforms:setvalue ref="instance('filtered-monograms')/monogram[. = $id]/@visible" value="true()"
+													if="$position = 1"/>
+												<xforms:setvalue ref="instance('filtered-monograms')/monogram[. = $id]/@visible" value="true()"
+													if="$position &gt; 1 and instance('filtered-monograms')/monogram[. = $id]/@visible = true()"/>
+
+											</xforms:action>
+											<xforms:action if="not(contains(context()/@letters, $char))">
+												<xforms:setvalue ref="instance('filtered-monograms')/monogram[. = $id]/@visible" value="false()"/>
+											</xforms:action>
+										</xforms:action>
+									</xforms:action>
+
+									<xforms:toggle case="filter"/>
+								</xforms:action>
+
+
+								<xforms:toggle case="folder" if="instance('filter-enabled') = false()"/>
+							</xforms:action>
+						</xforms:trigger>
+					</div>
+
+					<xforms:switch>
+						<xforms:case id="folder">
+							<div>
+								<xforms:select1 ref="instance('control-instance')/folder">
+									<xforms:label>Font File</xforms:label>
+									<xforms:item>
+										<xforms:label>Select folder...</xforms:label>
+										<xforms:value/>
+									</xforms:item>
+									<xforms:itemset nodeset="instance('monograms')/folder">
+										<xforms:label ref="@name"/>
+										<xforms:value ref="@name"/>
+									</xforms:itemset>
+								</xforms:select1>
+							</div>
+
+							<xforms:group ref="instance('monograms')/folder[@name = instance('control-instance')/folder]">
+								<div>
+									<h2><xforms:output ref="@name"/></h2>
+
+									<xforms:repeat nodeset="file">
+										<div class="col-md-3 col-sm-6 col-lg-2 monogram" style="height:400px">
+											<img src="{concat('svg/', instance('control-instance')/folder, '/', @name)}" style="height:240px" />
+											<div>
+												<xforms:output ref="@name"/>
+											</div>
+											<div>
+												<xforms:output ref="@editor"/>
+											</div>
+											<div>
+												<xforms:input ref="@letters">
+													<xforms:action ev:event="xforms-value-changed">
+														<xforms:var name="id" select="parent::node()/@name"/>
+														<xforms:setvalue ref="instance('control-instance')/status" value="concat($id, ' updated.')"/>
+
+														<xforms:insert nodeset="instance('dump')"
+															origin="xxforms:call-xpl('oxf:/apps/monograms/xforms/xpl/save-id.xpl', ('doc', 'configuration'), (instance('monograms'), instance('save-config')), 'data')"
+														/>
+													</xforms:action>
+												</xforms:input>
+											</div>
+										</div>
+									</xforms:repeat>
+								</div>
+
+							</xforms:group>
+						</xforms:case>
+						<xforms:case id="filter">
+							<xforms:group ref="instance('filtered-monograms')">
+								<xforms:var name="chars"
+									select="tokenize(replace(
+									replace(
+									normalize-space(instance('control-instance')/filter),
+									'(.{1})',
+									'$1|'),
+									'\|$',
+									''), '\|')"/>
+								
+								<div>
+									<h2>Filtered results</h2>
+
+									<div>
+										<xforms:output ref="count(monogram[@visible = true()])">
+											<xforms:label>Number found</xforms:label>
+										</xforms:output>
+									</div>
+
+									<xforms:group ref=".[count($chars) &gt; 0]">
+										<xforms:repeat nodeset="monogram[@visible = true()]">
+											<xforms:var name="folder" select="substring-before(., ':')"/>
+											<xforms:var name="file" select="substring-after(., ':')"/>
+											
+											<xforms:group ref="instance('monograms')/folder[@name = $folder]/file[@name = $file]">
+												<div class="col-md-3 col-sm-6 col-lg-2 monogram" style="height:400px">
+													<img src="{concat('svg/', $folder, '/', $file)}" style="height:240px" />
+													<div>
+														<xforms:output ref="@name"/>
+													</div>
+													<div>
+														<xforms:output ref="@editor"/>
+													</div>
+													<div>
+														<xforms:input ref="@letters">
+															<xforms:action ev:event="xforms-value-changed">
+																<xforms:var name="id" select="parent::node()/@name"/>
+																<xforms:setvalue ref="instance('control-instance')/status" value="concat($id, ' updated.')"/>
+																
+																<xforms:insert nodeset="instance('dump')"
+																	origin="xxforms:call-xpl('oxf:/apps/monograms/xforms/xpl/save-id.xpl', ('doc', 'configuration'), (instance('monograms'), instance('save-config')), 'data')"
+																/>
+															</xforms:action>
+														</xforms:input>
+													</div>
+												</div>
+											</xforms:group>
+											
+										</xforms:repeat>
+									</xforms:group>
+								</div>
+							</xforms:group>
+						</xforms:case>
+					</xforms:switch>
+
+
+
+					<fr:xforms-inspector/>
 				</div>
 			</div>
 		</div>
