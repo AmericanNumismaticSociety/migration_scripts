@@ -70,6 +70,8 @@
 
 			<!-- **************** MODEL-CONSTRUCT-DONE ********************** -->
 			<xforms:action ev:event="xforms-model-construct-done">
+				<xforms:setvalue ref="instance('control-instance')/username" value="xxforms:get-remote-user()"/>
+				
 				<xforms:insert nodeset="instance('monograms')"
 					origin="xxforms:call-xpl('oxf:/apps/monograms/xforms/xpl/load-id.xpl', 'file', instance('load-config'), 'data')"/>
 
@@ -78,7 +80,6 @@
 					<xforms:insert context="instance('filtered-monograms')" nodeset="./child::node()[last()]"
 						origin="xforms:element('monogram', (xforms:attribute('visible', false()), $id))"/>
 				</xforms:action>
-
 			</xforms:action>
 		</xforms:model>
 	</head>
@@ -176,8 +177,11 @@
 											<div>
 												<xforms:input ref="@letters">
 													<xforms:action ev:event="xforms-value-changed">
+														<xforms:var name="val" select="normalize-space(.)"/>
+														
 														<xforms:var name="id" select="parent::node()/@name"/>
 														<xforms:setvalue ref="instance('control-instance')/status" value="concat($id, ' updated.')"/>
+														<xforms:setvalue ref="parent::node()/@editor" value="if (string($val)) then instance('control-instance')/username else ''"/>
 
 														<xforms:insert nodeset="instance('dump')"
 															origin="xxforms:call-xpl('oxf:/apps/monograms/xforms/xpl/save-id.xpl', ('doc', 'configuration'), (instance('monograms'), instance('save-config')), 'data')"
@@ -228,8 +232,11 @@
 													<div>
 														<xforms:input ref="@letters">
 															<xforms:action ev:event="xforms-value-changed">
+																<xforms:var name="val" select="normalize-space(.)"/>
+																
 																<xforms:var name="id" select="parent::node()/@name"/>
 																<xforms:setvalue ref="instance('control-instance')/status" value="concat($id, ' updated.')"/>
+																<xforms:setvalue ref="parent::node()/@editor" value="if (string($val)) then instance('control-instance')/username else ''"/>
 																
 																<xforms:insert nodeset="instance('dump')"
 																	origin="xxforms:call-xpl('oxf:/apps/monograms/xforms/xpl/save-id.xpl', ('doc', 'configuration'), (instance('monograms'), instance('save-config')), 'data')"
@@ -246,10 +253,7 @@
 							</xforms:group>
 						</xforms:case>
 					</xforms:switch>
-
-
-
-					<fr:xforms-inspector/>
+					<!--<fr:xforms-inspector/>-->
 				</div>
 			</div>
 		</div>
