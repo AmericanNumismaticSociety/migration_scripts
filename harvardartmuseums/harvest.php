@@ -43,7 +43,7 @@ function parse_page($page, $apiKey){
 					$file_headers = @get_headers($cointype);
 					if ($file_headers[0] == 'HTTP/1.1 200 OK'){
 						echo "{$row['objectnumber']}: {$cointype}\n";
-						$row['cointype'] = $cointype;
+						$row['cointype'][] = $cointype;
 					} 
 				}
 				$records[] = $row;
@@ -62,7 +62,7 @@ function parse_page($page, $apiKey){
 					$file_headers = @get_headers($cointype);					
 					if ($file_headers[0] == 'HTTP/1.1 200 OK'){
 						echo "{$row['objectnumber']}: {$cointype}\n";
-						$row['cointype'] = $cointype;
+						$row['cointype'][] = $cointype;
 					}
 				}
 				$records[] = $row;
@@ -82,54 +82,11 @@ function parse_page($page, $apiKey){
 							
 							//ignore uncertain coins
 							if (substr($matches[1], -1) != '?'){
-								$uri = 'http://numismatics.org/sco/id/sc.1.' . $num;
-								$file_headers = @get_headers($uri . '.rdf');
-								if ($file_headers[0] == 'HTTP/1.1 200 OK'){
-									//get current URI from RDF
-									$xmlDoc = new DOMDocument();
-									$xmlDoc->load($uri. '.rdf');
-									$xpath = new DOMXpath($xmlDoc);
-									$xpath->registerNamespace('dcterms', 'http://purl.org/dc/terms/');
-									$xpath->registerNamespace('rdf', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#');
-									$match = $xpath->query("descendant::dcterms:isReplacedBy")->item(0)->getAttribute('rdf:resource');
-									
-									echo "{$row['objectnumber']}: {$match}\n";
-									$row['cointype'] = $match;
-								} else {									
-									//append .1 if it's an integer
-									if (is_integer((int)$num)){										
-										$uri = 'http://numismatics.org/sco/id/sc.1.' . $num . '.1';
-										echo "Trying {$uri}\n";
-										$file_headers = @get_headers($uri . '.rdf');
-										if ($file_headers[0] == 'HTTP/1.1 200 OK'){
-											//get current URI from RDF
-											$xmlDoc = new DOMDocument();
-											$xmlDoc->load($uri . '.rdf');
-											$xpath = new DOMXpath($xmlDoc);
-											$xpath->registerNamespace('dcterms', 'http://purl.org/dc/terms/');
-											$xpath->registerNamespace('rdf', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#');
-											$match = $xpath->query("descendant::dcterms:isReplacedBy")->item(0)->getAttribute('rdf:resource');
-											
-											echo "{$row['objectnumber']}: {$match}\n";
-											$row['cointype'] = $match;
-										} else {
-											$uri = 'http://numismatics.org/sco/id/sc.1.' . $num . '.1a';
-											echo "Trying {$uri}\n";
-											$file_headers = @get_headers($uri . '.rdf');
-											if ($file_headers[0] == 'HTTP/1.1 200 OK'){
-												//get current URI from RDF
-												$xmlDoc = new DOMDocument();
-												$xmlDoc->load($uri . '.rdf');
-												$xpath = new DOMXpath($xmlDoc);
-												$xpath->registerNamespace('dcterms', 'http://purl.org/dc/terms/');
-												$xpath->registerNamespace('rdf', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#');
-												$match = $xpath->query("descendant::dcterms:isReplacedBy")->item(0)->getAttribute('rdf:resource');
-												
-												echo "{$row['objectnumber']}: {$match}\n";
-												$row['cointype'] = $match;
-											}
-										}
-									}
+							    $cointype = 'http://numismatics.org/sco/id/sc.1.' . $num;
+							    $file_headers = @get_headers($cointype);
+								if ($file_headers[0] == 'HTTP/1.1 200 OK'){									
+									echo "{$row['objectnumber']}: {$cointype}\n";
+									$row['cointype'][] = $cointype;
 								}
 							}
 							$records[] = $row;
@@ -257,14 +214,14 @@ function parse_page($page, $apiKey){
 											$file_headers = @get_headers($cointype);
 											if ($file_headers[0] == 'HTTP/1.1 200 OK'){
 												echo "{$row['objectnumber']}: {$cointype}\n";
-												$row['cointype'] = $cointype;
+												$row['cointype'][] = $cointype;
 											} else {
 												//if it can't find the subtype, just try to match on parent type
 												$cointype = "http://numismatics.org/ocre/id/{$prefix}" . strtoupper($matches[1]);
 												$file_headers = @get_headers($cointype);
 												if ($file_headers[0] == 'HTTP/1.1 200 OK'){
 													echo "{$row['objectnumber']}: {$cointype}\n";
-													$row['cointype'] = $cointype;
+													$row['cointype'][] = $cointype;
 												}
 											}
 										}									
@@ -275,14 +232,14 @@ function parse_page($page, $apiKey){
 										$file_headers = @get_headers($cointype);
 										if ($file_headers[0] == 'HTTP/1.1 200 OK'){
 											echo "{$row['objectnumber']}: {$cointype}\n";
-											$row['cointype'] = $cointype;
+											$row['cointype'][] = $cointype;
 										} else {
 											//then try default
 											$cointype = "http://numismatics.org/ocre/id/{$prefix}" . urlencode($id);
 											$file_headers = @get_headers($cointype);
 											if ($file_headers[0] == 'HTTP/1.1 200 OK'){
 												echo "{$row['objectnumber']}: {$cointype}\n";
-												$row['cointype'] = $cointype;
+												$row['cointype'][] = $cointype;
 											}
 										}
 									}
@@ -291,7 +248,7 @@ function parse_page($page, $apiKey){
 									$file_headers = @get_headers($cointype);
 									if ($file_headers[0] == 'HTTP/1.1 200 OK'){												
 										echo "{$row['objectnumber']}: {$cointype}\n";
-										$row['cointype'] = $cointype;
+										$row['cointype'][] = $cointype;
 									} 
 								}									
 							}								
@@ -355,7 +312,7 @@ function generate_csv($records){
 	$csv = '"objectnumber","title","uri","reference","type"' . "\n";
 	
 	foreach ($records as $record){
-		$csv .= '"' . $record['objectnumber'] . '","' . $record['title'] . '","' . $record['uri'] . '","' . $record['reference'] . '","' . (isset($record['cointype']) ? $record['cointype'] : '') . '"' . "\n";
+		$csv .= '"' . $record['objectnumber'] . '","' . $record['title'] . '","' . $record['uri'] . '","' . $record['reference'] . '","' . (isset($record['cointype']) ? implode('|', $record['cointype']) : '') . '"' . "\n";
 	}
 	
 	file_put_contents('concordances.csv', $csv);
@@ -400,9 +357,12 @@ function generate_rdf($records){
 				$writer->startElement('nmo:hasCollection');
 					$writer->writeAttribute('rdf:resource', 'http://nomisma.org/id/harvard');
 				$writer->endElement();
-				$writer->startElement('nmo:hasTypeSeriesItem');
-					$writer->writeAttribute('rdf:resource', $record['cointype']);
-				$writer->endElement();
+				
+				foreach ($record['cointype'] as $uri){
+				    $writer->startElement('nmo:hasTypeSeriesItem');
+				        $writer->writeAttribute('rdf:resource', $uri);
+				    $writer->endElement();
+				}
 				
 				//conditional measurement data
 				if (isset($record['weight'])){

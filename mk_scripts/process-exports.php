@@ -1053,19 +1053,10 @@ function parseReference($xpath, $collection, $id){
 					$uri = 'http://numismatics.org/sco/id/' . $id;
 					
 					//always look it up
-					$file_headers = @get_headers($uri . '.rdf');
+					$file_headers = @get_headers($uri);
 					if ($file_headers[0] == 'HTTP/1.1 200 OK'){
-						//get current URI from RDF
-						$xmlDoc = new DOMDocument();
-						$xmlDoc->load($uri . '.rdf');
-						$xpath = new DOMXpath($xmlDoc);
-						$xpath->registerNamespace('dcterms', 'http://purl.org/dc/terms/');
-						$xpath->registerNamespace('rdf', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#');
-						$match = $xpath->query("descendant::dcterms:isReplacedBy")->item(0)->getAttribute('rdf:resource');
-						
-						$types[] = $match;
-						//$results[] = array($id, $match, $fullRef, 'no');
-						return $match;
+						$types[] = $uri;
+						return $uri;
 					} else {
 					    //echo "No reference: {$ref}\n";
 						//$results[] = array($id, '', $fullRef, 'no');
