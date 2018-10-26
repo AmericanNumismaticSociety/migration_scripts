@@ -1,34 +1,35 @@
 <?php 
  /*****
  * Author: Ethan Gruber
- * Date: December 2017
- * Function: Process the Seleucid Coins Online spreadsheet from Google Drive into two sets of NUDS/XML documents:
- * 1. SCO version 2 
- * 2. SC version 1 that points to the new URI
+ * Date: October 2018
+ * Function: Process the Seleucid Coins Online spreadsheet from Google Drive into NUDS/XML:
  *****/
 
-$data = generate_json('https://docs.google.com/spreadsheets/d/e/2PACX-1vQLdeurX2qJZ6zN-uWLJex2DylQOx3wav5ZCMgAidsy6yilV4j8cco9WEuvXckxEJhuSnBTmJaF4zPj/pub?gid=998961995&single=true&output=csv');
+$data = generate_json('sco.csv');
 $deities = generate_json('https://docs.google.com/spreadsheet/pub?hl=en_US&hl=en_US&key=0Avp6BVZhfwHAdHk2ZXBuX0RYMEZzUlNJUkZOLXRUTmc&single=true&gid=0&output=csv');
-$stylesheet = generate_json('https://docs.google.com/spreadsheets/d/e/2PACX-1vQRCPbdTLG7EIXIt7jo4rz-Ruy565RQS9x9aj2vBwvsbZdC_NBXZweyJVunU3WylvvbcoOAzBJI0OFS/pub?gid=1882169178&single=true&output=csv');
+$stylesheet = generate_json('stylesheet.csv');
 
 $nomismaUris = array();
 //$records = array();
 
+$part = 1;
+$count = 0;
+
 foreach($data as $row){
-	//call generate_nuds twice to generate two sets of NUDS records
-	generate_nuds($row, $recordIdKey='ID', $mode='new');
-	
-	generate_nuds($row, $recordIdKey='SC no.', $mode='old');
+    if ($row['Type Number'] == '1296'){
+        $part = 2;
+    }
+	generate_nuds($row, $part, $count);
 }
 
 //functions
-function generate_nuds($row, $recordIdKey, $mode){
+function generate_nuds($row, $part, $count){
 	GLOBAL $deities;
 	GLOBAL $stylesheet;
 	
 	$uri_space = 'http://numismatics.org/sco/id/';
 	
-	$recordId = trim($row[$recordIdKey]);
+	$recordId = trim($row['SC no.']);
 	
 	
 	if (strlen($recordId) > 0){
@@ -57,39 +58,41 @@ function generate_nuds($row, $recordIdKey, $mode){
 				$doc->writeElement('recordId', $recordId);
 				
 				//handle semantic relation with other record
-				if ($mode == 'new'){
-					if (strlen($row['SC no.']) > 0){
-						$doc->startElement('otherRecordId');
-							$doc->writeAttribute('semantic', 'dcterms:replaces');
-							$doc->text(trim($row['SC no.']));
-						$doc->endElement();
-						$doc->startElement('otherRecordId');
-							$doc->writeAttribute('semantic', 'skos:exactMatch');
-							$doc->text($uri_space . trim($row['SC no.']));
-						$doc->endElement();
-					}
-					$doc->writeElement('publicationStatus', 'approved');
-					$doc->writeElement('maintenanceStatus', 'derived');
-					$doc->startElement('maintenanceAgency');
-						$doc->writeElement('agencyName', 'American Numismatic Society');
-					$doc->endElement();
-				} else {
-					if (strlen($row['SC no.']) > 0){
-						$doc->startElement('otherRecordId');						
-							$doc->writeAttribute('semantic', 'dcterms:isReplacedBy');
-							$doc->text(trim($row['ID']));
-						$doc->endElement();
-						$doc->startElement('otherRecordId');
-							$doc->writeAttribute('semantic', 'skos:exactMatch');
-							$doc->text($uri_space . trim($row['ID']));
-						$doc->endElement();
-					}
-					$doc->writeElement('publicationStatus', 'deprecatedType');					
-					$doc->writeElement('maintenanceStatus', 'cancelledReplaced');
-					$doc->startElement('maintenanceAgency');
-						$doc->writeElement('agencyName', 'American Numismatic Society');
-					$doc->endElement();
+				if (strlen($row['Deprecated ID']) > 0){
+				    $doc->startElement('otherRecordId');
+    				    $doc->writeAttribute('semantic', 'dcterms:replaces');
+    				    $doc->text(trim($row['Deprecated ID']));
+    				$doc->endElement();
+    				$doc->startElement('otherRecordId');
+    				    $doc->writeAttribute('semantic', 'skos:exactMatch');
+    				    $doc->text($uri_space . trim($row['Deprecated ID']));
+				    $doc->endElement();
 				}
+				
+				//hierarchy
+				if (strlen($row['Parent ID']) > 0){
+				    $doc->startElement('otherRecordId');
+    				    $doc->writeAttribute('semantic', 'skos:broader');
+    				    $doc->text(trim($row['Parent ID']));
+				    $doc->endElement();
+				    $doc->writeElement('publicationStatus', 'approvedSubtype');
+				} else {
+				    //insert a sortID
+				    $doc->startElement('otherRecordId');
+    				    $doc->writeAttribute('localType', 'sortId');
+    				    $doc->text(number_pad($count, 4));
+				    $doc->endElement();
+				    
+				    $doc->writeElement('publicationStatus', 'approved');
+				    
+				    $count++;
+				}
+				
+				
+				$doc->writeElement('maintenanceStatus', 'derived');
+				$doc->startElement('maintenanceAgency');
+				    $doc->writeElement('agencyName', 'American Numismatic Society');
+				$doc->endElement();
 				
 				//maintenanceHistory
 				$doc->startElement('maintenanceHistory');
@@ -101,7 +104,7 @@ function generate_nuds($row, $recordIdKey, $mode){
 						$doc->endElement();
 						$doc->writeElement('agentType', 'machine');
 						$doc->writeElement('agent', 'PHP');
-						$doc->writeElement('eventDescription', 'Generated from CSV fro Google Drive.');
+						$doc->writeElement('eventDescription', 'Generated from CSV from ANS Curatorial Google Drive.');
 					$doc->endElement();
 				$doc->endElement();
 				
@@ -136,17 +139,10 @@ function generate_nuds($row, $recordIdKey, $mode){
 			$doc->startElement('descMeta');
 		
 			//title
-			if ($mode == 'new'){
-				$doc->startElement('title');
-					$doc->writeAttribute('xml:lang', 'en');
-					$doc->text('Seleucid Coins v2 '. str_replace('sc.2.', '', $recordId));
-				$doc->endElement();
-			} else {
-				$doc->startElement('title');
-					$doc->writeAttribute('xml:lang', 'en');
-					$doc->text('Seleucid Coins (part 1) '. str_replace('sc.1.', '', $recordId));
-				$doc->endElement();
-			}
+			$doc->startElement('title');
+    			$doc->writeAttribute('xml:lang', 'en');
+    			$doc->text('Seleucid Coins (part ' . $part . ') ' . str_replace('sc.1.', '', $recordId));
+			$doc->endElement();
 			
 			/***** NOTES *****/
 			if (strlen(trim($row['Mint Note'])) > 0 || strlen(trim($row['Note'])) > 0){
@@ -179,76 +175,30 @@ function generate_nuds($row, $recordIdKey, $mode){
 				//sort dates
 				if (strlen($row['Start Date']) > 0 || strlen($row['End Date']) > 0){
 					if (($row['Start Date'] == $row['End Date']) || (strlen($row['Start Date']) > 0 && strlen($row['End Date']) == 0)){
-						//ascertain whether or not the date is a range
-						if (strpos(trim($row['Start Date']), '/') !== FALSE){
-							$pieces = explode('/', trim($row['Start Date']));
-							$fromDate = intval($pieces[0]) * -1;
-							if (strlen($pieces[1]) == 3){
-								//full three-digit year
-								$toDate = intval($pieces[1]) * -1;
-							} elseif (strlen($pieces[1]) == 2){
-								$toDate = intval(substr($pieces[0], 0, 1) . $pieces[1]) * -1;
-							} elseif (strlen($pieces[1]) == 1){
-								$toDate = intval(substr($pieces[0], 0, 2) . $pieces[1]) * -1;
-							}
-							
-							//only write date if both are integers
-							if (is_int($fromDate) && is_int($toDate)){
-								$doc->startElement('dateRange');
-									$doc->startElement('fromDate');
-										$doc->writeAttribute('standardDate', number_pad($fromDate, 4));
-										$doc->text(abs($fromDate) . ' B.C.');
-									$doc->endElement();
-									$doc->startElement('toDate');
-										$doc->writeAttribute('standardDate', number_pad($toDate, 4));
-										$doc->text(abs($toDate) . ' B.C.');
-									$doc->endElement();
-								$doc->endElement();
-							}							
-						} elseif (is_numeric(trim($row['Start Date']))){
-							$fromDate = intval(trim($row['Start Date'])) * -1;
-							
-							$doc->startElement('date');
-								$doc->writeAttribute('standardDate', number_pad($fromDate, 4));
-								$doc->text(trim($row['Start Date']) . ' B.C.');
-							$doc->endElement();
-						}
+					    if (is_numeric(trim($row['Start Date']))){
+					        
+					        $fromDate = intval(trim($row['Start Date']));					        
+					        $doc->startElement('date');
+    					        $doc->writeAttribute('standardDate', number_pad($fromDate, 4));
+    					        $doc->text(trim($row['Start Date']) . ' B.C.');
+					        $doc->endElement();
+					    }
 					} else {
-						//ascertain whether or not the date is a range
-						if (strpos(trim($row['Start Date']), '/') !== FALSE){
-							$fromDate = intval(substr(trim($row['Start Date']), 0, strpos(trim($row['Start Date']), '/'))) * -1;
-						} elseif (is_numeric(trim($row['Start Date']))){
-							$fromDate = intval(trim($row['Start Date'])) * -1;
-						}
-						
-						//ascertain whether or not the date is a range
-						if (strpos(trim($row['End Date']), '/') !== FALSE){
-							$pieces = explode('/', trim($row['End Date']));
-							
-							if (strlen($pieces[1]) == 3){
-								//full three-digit year
-								$toDate = intval($pieces[1]) * -1;
-							} elseif (strlen($pieces[1]) == 2){
-								$toDate = intval(substr($pieces[0], 0, 1) . $pieces[1]) * -1;
-							} elseif (strlen($pieces[1]) == 1){
-								$toDate = intval(substr($pieces[0], 0, 2) . $pieces[1]) * -1;
-							}
-						} elseif (is_numeric(trim($row['End Date']))){
-							$toDate= intval(trim($row['End Date'])) * -1;
-						}
+						$fromDate = intval(trim($row['Start Date']));
+						$toDate= intval(trim($row['End Date']));
 						
 						//only write date if both are integers
 						if (is_int($fromDate) && is_int($toDate)){
-							$doc->startElement('dateRange');
-								$doc->startElement('fromDate');
-									$doc->writeAttribute('standardDate', number_pad($fromDate, 4));
-									$doc->text(trim($row['Start Date']) . ' B.C.');
-								$doc->endElement();
-								$doc->startElement('toDate');
-									$doc->writeAttribute('standardDate', number_pad($toDate, 4));
-									$doc->text(trim($row['End Date']) . ' B.C.');
-								$doc->endElement();
-							$doc->endElement();
+						    $doc->startElement('dateRange');
+    						    $doc->startElement('fromDate');
+    						      $doc->writeAttribute('standardDate', number_pad($fromDate, 4));
+    						       $doc->text(trim($row['Start Date']) . ' B.C.');
+    						    $doc->endElement();
+    						    $doc->startElement('toDate');
+    						      $doc->writeAttribute('standardDate', number_pad($toDate, 4));
+    						      $doc->text(trim($row['End Date']) . ' B.C.');
+    						    $doc->endElement();
+						    $doc->endElement();
 						}
 					}
 				}
@@ -405,19 +355,9 @@ function generate_nuds($row, $recordIdKey, $mode){
 					if (strlen($row['Mint URI']) > 0){
 						$vals = explode('|', $row['Mint URI']);
 						foreach ($vals as $val){
-							if (substr($val, -2) == '??'){
-								$uri = substr($val, 0, -2);
-								$uncertainty = 'perhaps';
-								$content = processUri($uri);
-							} elseif (substr($val, -1) == '?' && substr($val, -2, 1) != '?'){ 
-								$uri = substr($val, 0, -1);
-								$uncertainty = 'probably';
-								$content = processUri($uri);
-							} else {
-								$uri =  $val;
-								$uncertainty = null;
-								$content = processUri($uri);
-							}
+						    $uri =  $val;
+						    $uncertainty = (strlen($row['Mint Certainty']) > 0) ? $row['Mint Certainty'] : null;
+						    $content = processUri($uri);
 							
 							$doc->startElement('geogname');
 								$doc->writeAttribute('xlink:type', 'simple');
@@ -462,8 +402,7 @@ function generate_nuds($row, $recordIdKey, $mode){
 							
 							unset($uncertainty);
 						}
-					}
-					
+					}					
 					$doc->endElement();
 				}
 				
@@ -472,7 +411,30 @@ function generate_nuds($row, $recordIdKey, $mode){
 					$key = trim($row['O']);
 					$type = '';
 					
-					$doc->startElement('obverse');					
+					$doc->startElement('obverse');		
+					
+    					//legend
+    					if (strlen(trim($row['O Legend'])) > 0){
+    					    $legend = trim($row['O Legend']);    					    
+    					    
+    					    $doc->startElement('legend');
+        					    $doc->writeAttribute('scriptCode', 'Grek');
+        					    $doc->writeAttribute('xml:lang', 'grc');
+        					    
+        					    //evaluate legibility
+        					    if ($legend == 'Illegible' || $legend == 'Pseudo-legend' || $legend == 'Uncertain'){
+        					        $doc->startElement('tei:div');
+        					           $doc->writeAttribute('type', 'edition');
+        					           $doc->startElement('tei:gap');
+        					               $doc->writeAttribute('reason', 'illegible');
+        					           $doc->endElement();
+        					        $doc->endElement();
+        					    } else {
+        					        $doc->text($legend);
+        					    }
+    					    $doc->endElement();
+    					}
+					
 						//multilingual type descriptions
 						$doc->startElement('type');
 							foreach ($stylesheet as $desc){
@@ -531,6 +493,33 @@ function generate_nuds($row, $recordIdKey, $mode){
 						if (strlen($row['OBV']) > 0){
 							$doc->writeElement('symbol', trim($row['OBV']));
 						}
+						
+						//portrait
+						if (strlen($row['Portrait URI']) > 0){
+						    $vals = explode('|', $row['Portrait URI']);
+						    foreach ($vals as $val){
+						        if (substr($val, -1) == '?'){
+						            $uri = substr($val, 0, -1);
+						            $uncertainty = true;
+						            $content = processUri($uri);
+						        } else {
+						            $uri =  $val;
+						            $uncertainty = false;
+						            $content = processUri($uri);
+						        }
+						        $role = 'portrait';
+						        
+						        $doc->startElement($content['element']);
+						        $doc->writeAttribute('xlink:type', 'simple');
+						        $doc->writeAttribute('xlink:role', $role);
+						        $doc->writeAttribute('xlink:href', $uri);
+						        if($uncertainty == true){
+						            $doc->writeAttribute('certainty', 'uncertain');
+						        }
+						        $doc->text($content['label']);
+						        $doc->endElement();
+						    }
+						}
 					
 					//end obverse
 					$doc->endElement();
@@ -546,31 +535,56 @@ function generate_nuds($row, $recordIdKey, $mode){
 					$doc->startElement('reverse');
 					
 						//legend
-						if (strlen(trim($row['R Legend'])) > 0){
-							$legend = trim($row['R Legend']);
-							
+						if (strlen(trim($row['R Legend'])) > 0 || strlen(trim($row['R PhoenicianLegend'])) > 0){
+							$legend = trim($row['R Legend']);							
 							
 							$doc->startElement('legend');
-							//get Script Code
-							if (strlen($row['R Script']) > 0){
-								switch ($row['R Script']){
-									case 'Greek':
-										$doc->writeAttribute('scriptCode', 'Grek');
-										$doc->writeAttribute('xml:lang', 'grc');
-										break;
-								}
-							}
 							
-							//evaluate legibility
-							if ($legend == 'Illegible'){
-								$doc->startElement('tei:div');
-									$doc->writeAttribute('type', 'edition');
-									$doc->startElement('tei:gap');
-										$doc->writeAttribute('reason', 'illegible');
-									$doc->endElement();
-								$doc->endElement();
+							//evaluate Phoenician
+							if (strlen(trim($row['R PhoenicianLegend'])) > 0){
+							    //if there is also a Greek legend, then create a tei:div[@edition] with two tei:div textparts with difference languages
+							    if (strlen(trim($row['R Legend'])) > 0){
+							        $doc->startElement('tei:div');
+    							        $doc->writeAttribute('type', 'edition');
+    							        $doc->startElement('tei:div');
+    							             $doc->writeAttribute('type', 'textpart');
+    							             $doc->writeAttribute('xml:lang', 'grc');
+    							             $doc->startElement('tei:ab');
+    							                 $doc->text($legend);
+    							             $doc->endElement();
+    							        $doc->endElement();
+    							        $doc->startElement('tei:div');
+        							        $doc->writeAttribute('type', 'textpart');
+        							        $doc->writeAttribute('xml:lang', 'phn');
+        							        $doc->startElement('tei:ab');
+        							             $doc->text(trim($row['R PhoenicianLegend']));
+        							        $doc->endElement();
+        							    $doc->endElement();
+							        $doc->endElement();
+							    } else {
+							        //otherwise insert script and legend directly within the legend element
+							        $doc->writeAttribute('scriptCode', 'Phnx');
+							        $doc->writeAttribute('xml:lang', 'phn');
+							        $doc->text(trim($row['R PhoenicianLegend']));
+							    }
 							} else {
-								$doc->text(trim($row['R Legend']));
+							    //create the script on the legend element
+							    if (strlen($row['R Script']) > 0){
+							        $doc->writeAttribute('scriptCode', 'Grek');
+							        $doc->writeAttribute('xml:lang', 'grc');
+							    }
+							    
+							    //evaluate legibility
+							    if ($legend == 'Illegible' || $legend == 'Pseudo-legend' || $legend == 'Uncertain'){
+							        $doc->startElement('tei:div');
+    							        $doc->writeAttribute('type', 'edition');
+    							        $doc->startElement('tei:gap');
+    							          $doc->writeAttribute('reason', 'illegible');
+    							        $doc->endElement();
+							        $doc->endElement();
+							    } else {
+							        $doc->text($legend);
+							    }
 							}
 							$doc->endElement();
 						}
@@ -649,52 +663,25 @@ function generate_nuds($row, $recordIdKey, $mode){
 				//Type Series should be explicit
 				$doc->startElement('typeSeries');
 					$doc->writeAttribute('xlink:type', 'simple');
-					if ($mode == 'new'){						
-						$doc->writeAttribute('xlink:href', 'http://nomisma.org/id/seleucid_coins_online');
-						$doc->text('Seleucid Coins Online');
-					} else {
-						$doc->writeAttribute('xlink:href', 'http://nomisma.org/id/seleucid_coins');
-						$doc->text('Seleucid Coins');
-					}
+					$doc->writeAttribute('xlink:href', 'http://nomisma.org/id/seleucid_coins');
+					$doc->text('Seleucid Coins');
 				$doc->endElement();
 				
 				//end typeDesc
 				$doc->endElement();
 				
 				/***** REFDESC *****/				
-				if ($mode == 'new'){
-					if (strlen(trim($row['SC no.'])) > 0){
-						$doc->startElement('refDesc');
-							$doc->startElement('reference');
-								$doc->writeAttribute('xlink:type', 'simple');
-								$doc->writeAttribute('xlink:href', $uri_space . $row['SC no.']);
-								$doc->startElement('tei:title');
-									$doc->writeAttribute('key', 'http://nomisma.org/id/seleucid_coins');
-									$doc->text('Seleucid Coins (part 1)');
-								$doc->endElement();
-								$doc->startElement('tei:idno');
-									$doc->text(str_replace('sc.1.', '', $row['SC no.']));
-								$doc->endElement();
-							$doc->endElement();
-						$doc->endElement();
-					}					
-				} else {
-					if (strlen(trim($row['ID'])) > 0){
-						$doc->startElement('refDesc');
-							$doc->startElement('reference');
-								$doc->writeAttribute('xlink:type', 'simple');
-								$doc->writeAttribute('xlink:href', $uri_space . $row['ID']);
-								$doc->startElement('tei:title');
-									$doc->writeAttribute('key', 'http://nomisma.org/id/seleucid_coins_online');
-									$doc->text('Seleucid Coins (v2)');
-								$doc->endElement();
-								$doc->startElement('tei:idno');
-									$doc->text(str_replace('sc.2.', '', $row['ID']));
-								$doc->endElement();
-							$doc->endElement();
-						$doc->endElement();
-					}
-				}				
+				$doc->startElement('refDesc');
+    				$doc->startElement('reference');
+    				    $doc->startElement('tei:title');
+    				        $doc->writeAttribute('key', 'http://nomisma.org/id/seleucid_coins');
+    				        $doc->text('Seleucid Coins (part ' . $part . ')');
+    				    $doc->endElement();
+    				    $doc->startElement('tei:idno');
+    				        $doc->text(str_replace('sc.1.', '', $row['SC no.']));
+    				    $doc->endElement();
+    				$doc->endElement();
+				$doc->endElement();
 				
 			//end descMeta
 			$doc->endElement();		
@@ -705,7 +692,7 @@ function generate_nuds($row, $recordIdKey, $mode){
 		$doc->endDocument();
 		$doc->flush();
 	} else {
-		echo "No SC number for {$row['ID']}.\n";
+		echo "No SC number for {$row['SC no.']}.\n";
 	}
 }
 
