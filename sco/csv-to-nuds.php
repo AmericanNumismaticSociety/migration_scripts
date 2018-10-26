@@ -5,21 +5,25 @@
  * Function: Process the Seleucid Coins Online spreadsheet from Google Drive into NUDS/XML:
  *****/
 
-$data = generate_json('sco.csv');
+$data = generate_json('https://docs.google.com/spreadsheets/d/e/2PACX-1vR-U8FG5i6BSlYyWUqEYMi7SmVtLv1YhYD1siB0nlKvAyjQxMU2HsDytmwlOQvr1dh0R6Px8lJGQ_Hh/pub?gid=79107715&single=true&output=csv');
 $deities = generate_json('https://docs.google.com/spreadsheet/pub?hl=en_US&hl=en_US&key=0Avp6BVZhfwHAdHk2ZXBuX0RYMEZzUlNJUkZOLXRUTmc&single=true&gid=0&output=csv');
-$stylesheet = generate_json('stylesheet.csv');
+$stylesheet = generate_json('https://docs.google.com/spreadsheets/d/e/2PACX-1vS0CuQ4VWS_K7NNKhPfm9Km2yEggDjBgw0TH0xJRNTf5BUHeiA3Ol_SNU_CHZl10KFHXstdTSie81xC/pub?gid=1557628448&single=true&output=csv');
 
 $nomismaUris = array();
 //$records = array();
 
 $part = 1;
-$count = 0;
+$count = 1;
 
 foreach($data as $row){
     if ($row['Type Number'] == '1296'){
         $part = 2;
     }
 	generate_nuds($row, $part, $count);
+	
+	if (strlen($row['Parent ID']) == 0){
+	    $count++;
+	}
 }
 
 //functions
@@ -69,6 +73,14 @@ function generate_nuds($row, $part, $count){
 				    $doc->endElement();
 				}
 				
+				//PELLA concordance
+				if (strlen($row['Price URI']) > 0){
+				    $doc->startElement('otherRecordId');
+    				    $doc->writeAttribute('semantic', 'skos:exactMatch');
+    				    $doc->text(trim($row['Price URI']));
+				    $doc->endElement();
+				}
+				
 				//hierarchy
 				if (strlen($row['Parent ID']) > 0){
 				    $doc->startElement('otherRecordId');
@@ -80,14 +92,13 @@ function generate_nuds($row, $part, $count){
 				    //insert a sortID
 				    $doc->startElement('otherRecordId');
     				    $doc->writeAttribute('localType', 'sortId');
-    				    $doc->text(number_pad($count, 4));
+    				    $doc->text(number_pad(intval($count), 4));
 				    $doc->endElement();
 				    
 				    $doc->writeElement('publicationStatus', 'approved');
 				    
 				    $count++;
-				}
-				
+				}   				
 				
 				$doc->writeElement('maintenanceStatus', 'derived');
 				$doc->startElement('maintenanceAgency');
@@ -180,7 +191,7 @@ function generate_nuds($row, $part, $count){
 					        $fromDate = intval(trim($row['Start Date']));					        
 					        $doc->startElement('date');
     					        $doc->writeAttribute('standardDate', number_pad($fromDate, 4));
-    					        $doc->text(trim($row['Start Date']) . ' B.C.');
+    					        $doc->text(get_date_textual($fromDate));
 					        $doc->endElement();
 					    }
 					} else {
@@ -192,11 +203,11 @@ function generate_nuds($row, $part, $count){
 						    $doc->startElement('dateRange');
     						    $doc->startElement('fromDate');
     						      $doc->writeAttribute('standardDate', number_pad($fromDate, 4));
-    						       $doc->text(trim($row['Start Date']) . ' B.C.');
+    						      $doc->text(get_date_textual($fromDate));
     						    $doc->endElement();
     						    $doc->startElement('toDate');
     						      $doc->writeAttribute('standardDate', number_pad($toDate, 4));
-    						      $doc->text(trim($row['End Date']) . ' B.C.');
+    						      $doc->text(get_date_textual($toDate));
     						    $doc->endElement();
 						    $doc->endElement();
 						}
@@ -614,10 +625,10 @@ function generate_nuds($row, $part, $count){
 							//reverse symbols are preceded with R:
 							if (substr($k, 0, 2) == 'R:'){
 								if (strlen(trim($v)) > 0){
-									$position = str_replace('R: ', '', $k);
+									$position = trim(str_replace('R:', '', $k));
 									$doc->startElement('symbol');
-									$doc->writeAttribute('position', $position);
-									$doc->text(trim($v));
+    									$doc->writeAttribute('position', $position);
+    									$doc->text(trim($v));
 									$doc->endElement();
 								}
 							}
@@ -671,7 +682,7 @@ function generate_nuds($row, $part, $count){
 				$doc->endElement();
 				
 				/***** REFDESC *****/				
-				$doc->startElement('refDesc');
+				/*$doc->startElement('refDesc');
     				$doc->startElement('reference');
     				    $doc->startElement('tei:title');
     				        $doc->writeAttribute('key', 'http://nomisma.org/id/seleucid_coins');
@@ -681,7 +692,7 @@ function generate_nuds($row, $part, $count){
     				        $doc->text(str_replace('sc.1.', '', $row['SC no.']));
     				    $doc->endElement();
     				$doc->endElement();
-				$doc->endElement();
+				$doc->endElement();*/
 				
 			//end descMeta
 			$doc->endElement();		
@@ -801,6 +812,20 @@ function processUri($uri){
 			$content['label'] = $label;
 	}
 	return $content;
+}
+
+function get_date_textual($year){
+    $textual_date = '';
+    //display start date
+    if($year < 0){
+        $textual_date .= abs($year) . ' BC';
+    } elseif ($year > 0) {
+        if ($year <= 600){
+            $textual_date .= 'AD ';
+        }
+        $textual_date .= $year;
+    }
+    return $textual_date;
 }
 
 //pad integer value from Filemaker to create a year that meets the xs:gYear specification
