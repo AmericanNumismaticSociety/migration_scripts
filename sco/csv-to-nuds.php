@@ -472,8 +472,6 @@ function generate_nuds($row, $part, $count){
 								//haystack is string when the deity is multiple words
 								$haystack = strtolower(trim($type));
 								if (strstr($haystack, strtolower($deity['matches'])) !== FALSE) {
-									$bm_uri = strlen($deity['bm_uri']) > 0 ? ' xlink:href="' . $deity['bm_uri'] . '"' : '';
-									
 									$doc->startElement('persname');
 									$doc->writeAttribute('xlink:type', 'simple');
 									$doc->writeAttribute('xlink:role', 'deity');

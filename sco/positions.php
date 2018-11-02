@@ -3,12 +3,12 @@
  * Extract position translations from Google Sheets and generate XML output for Numishare config
  *****/
 
-$data = generate_json('https://docs.google.com/spreadsheets/d/e/2PACX-1vTRf8XNUUuh-Q2Ahrz0k4xkdG3qWlERH58kNWvfYXhgnX4-S1kEyD6wr_Zvi0YXYa6GOou8de4qVCXe/pub?output=csv');
+$data = generate_json('https://docs.google.com/spreadsheets/d/e/2PACX-1vQzbB17TYBmMsKA5Btcwr_cWfFbqsZrIHPNWrXIttdiCeKkXUGjtDVgWK8QvQd86l-hrKkmP5bsYs-9/pub?output=csv');
 
 $doc = new XMLWriter();
 
-$doc->openUri('php://output');
-//$doc->openUri('positions.xml');
+//$doc->openUri('php://output');
+$doc->openUri('positions.xml');
 $doc->setIndent(true);
 //now we need to define our Indent string,which is basically how many blank spaces we want to have for the indent
 $doc->setIndentString("    ");

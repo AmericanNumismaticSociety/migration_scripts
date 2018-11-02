@@ -7,12 +7,9 @@
  * 2. Svoronos 1904 numbers that direct to Lorber numbers
  *****/
 
-//$data = generate_json('https://docs.google.com/spreadsheets/d/e/2PACX-1vQLdeurX2qJZ6zN-uWLJex2DylQOx3wav5ZCMgAidsy6yilV4j8cco9WEuvXckxEJhuSnBTmJaF4zPj/pub?gid=998961995&single=true&output=csv');
-//$deities = generate_json('https://docs.google.com/spreadsheet/pub?hl=en_US&hl=en_US&key=0Avp6BVZhfwHAdHk2ZXBuX0RYMEZzUlNJUkZOLXRUTmc&single=true&gid=0&output=csv');
+$data = generate_json('https://docs.google.com/spreadsheets/d/e/2PACX-1vQ6KOO3NMCVf8YebxKYXF1g5x-r3n1mDoSXkz7RPecj-UFWkezPnmDS6UzkLqGdAMZuJGo4FgoiYHug/pub?output=csv');
+$deities = generate_json('https://docs.google.com/spreadsheet/pub?hl=en_US&hl=en_US&key=0Avp6BVZhfwHAdHk2ZXBuX0RYMEZzUlNJUkZOLXRUTmc&single=true&gid=0&output=csv');
 //$stylesheet = generate_json('https://docs.google.com/spreadsheets/d/e/2PACX-1vQRCPbdTLG7EIXIt7jo4rz-Ruy565RQS9x9aj2vBwvsbZdC_NBXZweyJVunU3WylvvbcoOAzBJI0OFS/pub?gid=1882169178&single=true&output=csv');
-
-$data = generate_json('pco.csv');
-$deities = generate_json('deities.csv');
 
 $nomismaUris = array();
 //$records = array();
@@ -21,21 +18,20 @@ foreach($data as $row){
 	//call generate_nuds twice to generate two sets of NUDS records
 	
 	if (strpos($row['fromDate'], 'vacat') === FALSE){
-		if ($row['Lorber no.'] == '2'){
-			generate_nuds($row, $recordIdKey='Lorber no.', $mode='new');
+		if ($row['Lorber no.'] == 'cpe.1_1.184'){
+			generate_nuds($row);
 		}
 	}
-	//generate_nuds($row, $recordIdKey='SC no.', $mode='old');
 }
 
 //functions
-function generate_nuds($row, $recordIdKey, $mode){
+function generate_nuds($row){
 	GLOBAL $deities;
 	GLOBAL $stylesheet;
 	
 	$uri_space = 'http://numismatics.org/pco/id/';
 	
-	$recordId = trim($row[$recordIdKey]);
+	$recordId = trim($row['Lorber no.']);
 	
 	
 	if (strlen($recordId) > 0){
@@ -63,40 +59,22 @@ function generate_nuds($row, $recordIdKey, $mode){
 			$doc->startElement('control');
 				$doc->writeElement('recordId', $recordId);
 				
-				//handle semantic relation with other record
-				if ($mode == 'new'){
-					if (strlen($row['Svoronos Nr.']) > 0){
-						$doc->startElement('otherRecordId');
-							$doc->writeAttribute('semantic', 'dcterms:replaces');
-							$doc->text(trim($row['Svoronos Nr.']));
-						$doc->endElement();
-						$doc->startElement('otherRecordId');
-							$doc->writeAttribute('semantic', 'skos:exactMatch');
-							$doc->text($uri_space . trim($row['Svoronos Nr.']));
-						$doc->endElement();
-					}
-					$doc->writeElement('publicationStatus', 'approved');
-					$doc->writeElement('maintenanceStatus', 'derived');
-					$doc->startElement('maintenanceAgency');
-						$doc->writeElement('agencyName', 'American Numismatic Society');
+				//handle semantic relation with other record				
+				if (strlen($row['Svoronos Nr.']) > 0){
+					$doc->startElement('otherRecordId');
+						$doc->writeAttribute('semantic', 'dcterms:replaces');
+						$doc->text(trim($row['Svoronos Nr.']));
 					$doc->endElement();
-				} else {
-					if (strlen($row['Svoronos Nr.']) > 0){
-						$doc->startElement('otherRecordId');						
-							$doc->writeAttribute('semantic', 'dcterms:isReplacedBy');
-							$doc->text(trim($row['Lorber no.']));
-						$doc->endElement();
-						$doc->startElement('otherRecordId');
-							$doc->writeAttribute('semantic', 'skos:exactMatch');
-							$doc->text($uri_space . trim($row['Lorber no.']));
-						$doc->endElement();
-					}
-					$doc->writeElement('publicationStatus', 'deprecatedType');					
-					$doc->writeElement('maintenanceStatus', 'cancelledReplaced');
-					$doc->startElement('maintenanceAgency');
-						$doc->writeElement('agencyName', 'American Numismatic Society');
+					$doc->startElement('otherRecordId');
+						$doc->writeAttribute('semantic', 'skos:exactMatch');
+						$doc->text($uri_space . trim($row['Svoronos Nr.']));
 					$doc->endElement();
 				}
+				$doc->writeElement('publicationStatus', 'approved');
+				$doc->writeElement('maintenanceStatus', 'derived');
+				$doc->startElement('maintenanceAgency');
+					$doc->writeElement('agencyName', 'American Numismatic Society');
+				$doc->endElement();				
 				
 				//maintenanceHistory
 				$doc->startElement('maintenanceHistory');
@@ -143,17 +121,10 @@ function generate_nuds($row, $recordIdKey, $mode){
 			$doc->startElement('descMeta');
 		
 			//title
-			if ($mode == 'new'){
-				$doc->startElement('title');
-					$doc->writeAttribute('xml:lang', 'en');
-					$doc->text('Coins of the Ptolemaic Empire '. str_replace('cpe.', '', $recordId));
-				$doc->endElement();
-			} else {
-				$doc->startElement('title');
-					$doc->writeAttribute('xml:lang', 'en');
-					$doc->text('Svoronos (1904-1908) no. '. str_replace('svoronos-1904.', '', $recordId));
-				$doc->endElement();
-			}
+			$doc->startElement('title');
+			$doc->writeAttribute('xml:lang', 'en');
+			$doc->text('Coins of the Ptolemaic Empire '. str_replace('cpe.', '', $recordId));
+			$doc->endElement();
 			
 			/***** NOTES *****/
 			/*if (strlen(trim($row['Mint Note'])) > 0 || strlen(trim($row['Note'])) > 0){
@@ -187,35 +158,35 @@ function generate_nuds($row, $recordIdKey, $mode){
 				if (strlen($row['fromDate']) > 0 || strlen($row['toDate']) > 0){
 					if (($row['fromDate'] == $row['toDate']) || (strlen($row['fromDate']) > 0 && strlen($row['toDate']) == 0)){
 						//ascertain whether or not the date is a range
-						$fromDate = intval(trim($row['fromDate'])) * -1;
+						$fromDate = intval(trim($row['fromDate']));
 						
 						$doc->startElement('date');
 							$doc->writeAttribute('standardDate', number_pad($fromDate, 4));
-							if ($row['fromDate Certainty'] == 'TRUE'){
-								$doc->writeAttribute('certainty', 'http://nomisma.org/id/uncertain_value');
+							if (strlen($row['fromDate Certainty']) > 0){
+							    $doc->writeAttribute('certainty', 'http://nomisma.org/id/' . $row['fromDate Certainty']);
 							}
-							$doc->text(trim($row['fromDate']) . ' B.C.');
+							$doc->text(get_date_textual($fromDate));
 						$doc->endElement();
 					} else {
-						$fromDate = intval(trim($row['fromDate'])) * -1;
-						$toDate= intval(trim($row['toDate'])) * -1;
+						$fromDate = intval(trim($row['fromDate']));
+						$toDate= intval(trim($row['toDate']));
 						
 						//only write date if both are integers
 						if (is_int($fromDate) && is_int($toDate)){
 							$doc->startElement('dateRange');
 								$doc->startElement('fromDate');
 									$doc->writeAttribute('standardDate', number_pad($fromDate, 4));
-									if ($row['fromDate Certainty'] == 'TRUE'){
-										$doc->writeAttribute('certainty', 'http://nomisma.org/id/uncertain_value');
+									if (strlen($row['fromDate Certainty']) > 0){
+									    $doc->writeAttribute('certainty', 'http://nomisma.org/id/' . $row['fromDate Certainty']);
 									}
-									$doc->text(trim($row['fromDate']) . ' B.C.');
+									$doc->text(get_date_textual($fromDate));
 								$doc->endElement();
 								$doc->startElement('toDate');
 									$doc->writeAttribute('standardDate', number_pad($toDate, 4));
-									if ($row['toDate Certainty'] == 'TRUE'){
-										$doc->writeAttribute('certainty', 'http://nomisma.org/id/uncertain_value');
+									if (strlen($row['toDate Certainty']) > 0){
+									    $doc->writeAttribute('certainty', 'http://nomisma.org/id/' . $row['toDate Certainty']);
 									}
-									$doc->text(trim($row['toDate']) . ' B.C.');
+									$doc->text(get_date_textual($toDate));
 								$doc->endElement();
 							$doc->endElement();
 						}
@@ -225,15 +196,9 @@ function generate_nuds($row, $recordIdKey, $mode){
 				if (strlen($row['Denomination URI']) > 0){
 					$vals = explode('|', $row['Denomination URI']);
 					foreach ($vals as $val){
-						if (substr($val, -1) == '?'){
-							$uri = substr($val, 0, -1);
-							$uncertainty = true;
-							$content = processUri($uri);
-						} else {
-							$uri =  $val;
-							$uncertainty = false;
-							$content = processUri($uri);
-						}
+					    $uri =  $val;
+					    $uncertainty = ($row['Mint Uncertain']) == 'TRUE' ? 'http://nomisma.org/id/uncertain_value' : null;
+					    $content = processUri($uri);
 						
 						$doc->startElement($content['element']);
 						$doc->writeAttribute('xlink:type', 'simple');
@@ -251,8 +216,7 @@ function generate_nuds($row, $recordIdKey, $mode){
 					$doc->writeAttribute('xlink:type', 'simple');
 					$doc->writeAttribute('xlink:href', 'http://nomisma.org/id/struck');
 					$doc->text('Struck');
-				$doc->endElement();
-				
+				$doc->endElement();				
 				
 				if (strlen($row['Material URI']) > 0){
 					$vals = explode('|', $row['Material URI']);
@@ -364,34 +328,24 @@ function generate_nuds($row, $recordIdKey, $mode){
 				if (strlen($row['Mint URI']) > 0 || strlen($row['Region URI']) > 0){
 					$doc->startElement('geographic');
 					if (strlen($row['Mint URI']) > 0){
-						$vals = explode('|', $row['Mint URI']);
-						foreach ($vals as $val){
-							if (substr($val, -2) == '??'){
-								$uri = substr($val, 0, -2);
-								$uncertainty = 'perhaps';
-								$content = processUri($uri);
-							} elseif (substr($val, -1) == '?' && substr($val, -2, 1) != '?'){ 
-								$uri = substr($val, 0, -1);
-								$uncertainty = 'probably';
-								$content = processUri($uri);
-							} else {
-								$uri =  $val;
-								$uncertainty = null;
-								$content = processUri($uri);
-							}
-							
-							$doc->startElement('geogname');
-								$doc->writeAttribute('xlink:type', 'simple');
-								$doc->writeAttribute('xlink:role', 'mint');
-								$doc->writeAttribute('xlink:href', $uri);
-								if(isset($uncertainty)){
-									$doc->writeAttribute('certainty', $uncertainty);
-								}
-								$doc->text($content['label']);
-							$doc->endElement();
-							
-							unset($uncertainty);
-						}
+					    $vals = explode('|', $row['Mint URI']);
+					    foreach ($vals as $val){
+					        $uri =  $val;
+					        $uncertainty = ($row['Mint Uncertain']) == 'TRUE' ? 'http://nomisma.org/id/uncertain_value' : null;
+					        $content = processUri($uri);
+					        
+					        $doc->startElement('geogname');
+					        $doc->writeAttribute('xlink:type', 'simple');
+					        $doc->writeAttribute('xlink:role', 'mint');
+					        $doc->writeAttribute('xlink:href', $uri);
+					        if(isset($uncertainty)){
+					            $doc->writeAttribute('certainty', $uncertainty);
+					        }
+					        $doc->text($content['label']);
+					        $doc->endElement();
+					        
+					        unset($uncertainty);
+					    }
 					}
 					
 					if (strlen($row['Region URI']) > 0){
@@ -519,9 +473,9 @@ function generate_nuds($row, $recordIdKey, $mode){
 						}
 						
 						//symbols
-						/*if (strlen($row['OBV']) > 0){
+						if (strlen($row['OBV']) > 0){
 							$doc->writeElement('symbol', trim($row['OBV']));
-						}*/
+						}
 					
 					//end obverse
 					$doc->endElement();
@@ -595,7 +549,8 @@ function generate_nuds($row, $recordIdKey, $mode){
 							//reverse symbols are preceded with R:
 							if (substr($k, 0, 2) == 'R:'){
 								if (strlen(trim($v)) > 0){
-									$position = str_replace('R: ', '', $k);
+								    $position = str_replace('R:', '', $k);
+								    $position = strpos($position, '_') !== FALSE ? substr($position, 0, strpos($position, '_')) : $position;									
 									$doc->startElement('symbol');
 									$doc->writeAttribute('position', $position);
 									$doc->text(trim($v));
@@ -609,9 +564,7 @@ function generate_nuds($row, $recordIdKey, $mode){
 							if (strstr($deity['name'], ' ') !== FALSE){
 								//haystack is string when the deity is multiple words
 								$haystack = strtolower(trim($type));
-								if (strstr($haystack, strtolower($deity['matches'])) !== FALSE) {
-									$bm_uri = strlen($deity['bm_uri']) > 0 ? ' xlink:href="' . $deity['bm_uri'] . '"' : '';
-									
+								if (strstr($haystack, strtolower($deity['matches'])) !== FALSE) {									
 									$doc->startElement('persname');
 									$doc->writeAttribute('xlink:type', 'simple');
 									$doc->writeAttribute('xlink:role', 'deity');
@@ -670,13 +623,8 @@ function generate_nuds($row, $recordIdKey, $mode){
 				//Type Series should be explicit
 				$doc->startElement('typeSeries');
 					$doc->writeAttribute('xlink:type', 'simple');
-					if ($mode == 'new'){						
-						$doc->writeAttribute('xlink:href', 'http://nomisma.org/id/coins_ptolemaic_empire');
-						$doc->text('Coins of the Ptolemaic Empire');
-					} else {
-						$doc->writeAttribute('xlink:href', 'http://nomisma.org/id/svoronos-1904');
-						$doc->text('Svoronos (1904-1908)');
-					}
+					$doc->writeAttribute('xlink:href', 'http://nomisma.org/id/coins_ptolemaic_empire');
+					$doc->text('Coins of the Ptolemaic Empire');
 				$doc->endElement();
 				
 				//end typeDesc
@@ -835,6 +783,21 @@ function processUri($uri){
 			$content['label'] = $label;
 	}
 	return $content;
+}
+
+//normalize integer into human-readable date
+function get_date_textual($year){
+    $textual_date = '';
+    //display start date
+    if($year < 0){
+        $textual_date .= abs($year) . ' BC';
+    } elseif ($year > 0) {
+        if ($year <= 600){
+            $textual_date .= 'AD ';
+        }
+        $textual_date .= $year;
+    }
+    return $textual_date;
 }
 
 //pad integer value from Filemaker to create a year that meets the xs:gYear specification
