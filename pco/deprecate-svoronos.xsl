@@ -15,10 +15,12 @@
         </xsl:copy>
     </xsl:template>
     
-    <xsl:template match="nmo:TypeSeriesItem">
+    <xsl:template match="nmo:TypeSeriesItem">        
         <xsl:variable name="id" select="tokenize(tokenize(@rdf:about, '/')[last()], '-')[last()]"/>
         
         <xsl:element name="nmo:TypeSeriesItem" namespace="http://nomisma.org/ontology#">
+            <xsl:attribute name="rdf:about" select="@rdf:about"/>
+            
             <xsl:apply-templates/>
             
             <dcterms:isReplacedBy rdf:resource="http://numismatics.org/pco/id/svoronos-1904.{$id}"/>
