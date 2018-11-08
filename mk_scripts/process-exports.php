@@ -78,7 +78,7 @@ function parse_dump($collection){
 	write_metadata($collection);
 	
 	//write concordance CSV
-	//write_csv($collection['project_id'], $records);
+    //write_csv($collection['project_id'], $records);
 }
 
 function parse_lido($file, $collection, $count){
@@ -172,7 +172,7 @@ function extract_metadata ($id, $typeURI, $hoardURI, $collection, $xpath, $conta
 	$record['coinURI'] = $xpath->query("descendant::lido:recordInfoLink")->item(0)->nodeValue;
 	$record['identifier'] = $identifier;
 	$record['collection'] = $collection['collection_uri'];
-	//$record['containsURI'] = $containsURI;
+	$record['containsURI'] = $containsURI;
 	
 	if (isset($typeURI)){	    
 	    $record['coinType'] = $typeURI;
@@ -1061,6 +1061,20 @@ function parseReference($xpath, $collection, $id){
 					    //echo "No reference: {$ref}\n";
 						//$results[] = array($id, '', $fullRef, 'no');
 					}
+				} else if (strpos($ref, 'CPE') !== FALSE){
+				    //CPE
+				    $pieces = explode(',', $ref);				    
+				    
+				    $id = 'cpe.1_1.' . ltrim(trim($pieces[1]), '0');
+				    $uri = 'http://numismatics.org/pco/id/' . $id;
+				    $file_headers = @get_headers($uri);
+				    if ($file_headers[0] == 'HTTP/1.1 200 OK'){
+				        $types[] = $uri;
+				        return $uri;
+				    } else {
+				        //echo "No reference: {$ref}\n";
+				        //$results[] = array($id, '', $fullRef, 'no');
+				    }
 				}
 			}
 		}
@@ -1089,8 +1103,8 @@ function write_csv($collection, $records){
 	$file = fopen($collection . '.csv', 'w');
 	
 	fputcsv($file, $heading);
-	foreach ($records as $k=>$v) {
-	    $row = array($v['identifier'], implode('|', $v['coinType']), '', '');	    
+	foreach ($records as $record) {
+	    $row = array($record['identifier'], implode('|', $record['coinType']), '', '');	    
 		fputcsv($file, $row);
 	}
 	

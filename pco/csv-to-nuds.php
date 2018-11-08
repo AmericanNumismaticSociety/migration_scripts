@@ -14,32 +14,44 @@ $deities = generate_json('https://docs.google.com/spreadsheet/pub?hl=en_US&hl=en
 $nomismaUris = array();
 //$records = array();
 
+$count = 1;
+
 foreach($data as $row){
 	//call generate_nuds twice to generate two sets of NUDS records
 	
 	if (strpos($row['fromDate'], 'vacat') === FALSE){
-		if ($row['Lorber no.'] == 'cpe.1_1.184'){
-			generate_nuds($row);
-		}
+	    generate_nuds($row, $count);
+	    
+	    if (strlen($row['Parent ID']) == 0){
+	        $count++;
+	    }
 	}
 }
 
 //functions
-function generate_nuds($row){
+function generate_nuds($row, $count){
 	GLOBAL $deities;
-	GLOBAL $stylesheet;
+	//GLOBAL $stylesheet;
 	
-	$uri_space = 'http://numismatics.org/pco/id/';
-	
+	$uri_space = 'http://numismatics.org/pco/id/';	
 	$recordId = trim($row['Lorber no.']);
-	
 	
 	if (strlen($recordId) > 0){
 		echo "Processing {$recordId}\n";
+		
+		//parse valid Svoronos IDs
+		$svoronosID = null;
+		if (strlen($row['Svoronos Nr.']) > 0){
+		    if (strpos($row['Svoronos Nr.'], ',') === FALSE){
+		        $svoronosID = 'svoronos-1904.' . trim($row['Svoronos Nr.']);
+		    }
+		}
+		
+		
 		$doc = new XMLWriter();
 		
-		$doc->openUri('php://output');
-		//$doc->openUri('nuds/' . $recordId . '.xml');
+		//$doc->openUri('php://output');
+		$doc->openUri('nuds/' . $recordId . '.xml');
 		$doc->setIndent(true);
 		//now we need to define our Indent string,which is basically how many blank spaces we want to have for the indent
 		$doc->setIndentString("    ");
@@ -59,17 +71,24 @@ function generate_nuds($row){
 			$doc->startElement('control');
 				$doc->writeElement('recordId', $recordId);
 				
-				//handle semantic relation with other record				
-				if (strlen($row['Svoronos Nr.']) > 0){
+				//handle semantic relation with other record
+				if (isset($svoronosID)){				    
 					$doc->startElement('otherRecordId');
 						$doc->writeAttribute('semantic', 'dcterms:replaces');
-						$doc->text(trim($row['Svoronos Nr.']));
+						$doc->text($svoronosID);
 					$doc->endElement();
 					$doc->startElement('otherRecordId');
 						$doc->writeAttribute('semantic', 'skos:exactMatch');
-						$doc->text($uri_space . trim($row['Svoronos Nr.']));
+						$doc->text($uri_space . $svoronosID);
 					$doc->endElement();
 				}
+				
+				//sortID
+				$doc->startElement('otherRecordId');
+    				$doc->writeAttribute('localType', 'sortId');
+    				$doc->text(number_pad(intval($count), 4));
+				$doc->endElement();
+				
 				$doc->writeElement('publicationStatus', 'approved');
 				$doc->writeElement('maintenanceStatus', 'derived');
 				$doc->startElement('maintenanceAgency');
@@ -121,9 +140,17 @@ function generate_nuds($row){
 			$doc->startElement('descMeta');
 		
 			//title
+			
+			$pieces = explode('.', $recordId);
+			switch ($pieces[1]){
+			    case '1_1':
+			        $vol = 'Vol. I, Part 1';
+			        break;
+			}
+			
 			$doc->startElement('title');
-			$doc->writeAttribute('xml:lang', 'en');
-			$doc->text('Coins of the Ptolemaic Empire '. str_replace('cpe.', '', $recordId));
+    			$doc->writeAttribute('xml:lang', 'en');
+    			$doc->text('Coins of the Ptolemaic Empire ' . $vol . ', no. '. $pieces[2]);
 			$doc->endElement();
 			
 			/***** NOTES *****/
@@ -631,39 +658,21 @@ function generate_nuds($row){
 				$doc->endElement();
 				
 				/***** REFDESC *****/				
-				/*if ($mode == 'new'){
-					if (strlen(trim($row['SC no.'])) > 0){
-						$doc->startElement('refDesc');
-							$doc->startElement('reference');
-								$doc->writeAttribute('xlink:type', 'simple');
-								$doc->writeAttribute('xlink:href', $uri_space . $row['SC no.']);
-								$doc->startElement('tei:title');
-									$doc->writeAttribute('key', 'http://nomisma.org/id/seleucid_coins');
-									$doc->text('Seleucid Coins (part 1)');
-								$doc->endElement();
-								$doc->startElement('tei:idno');
-									$doc->text(str_replace('sc.1.', '', $row['SC no.']));
-								$doc->endElement();
-							$doc->endElement();
-						$doc->endElement();
-					}					
-				} else {
-					if (strlen(trim($row['ID'])) > 0){
-						$doc->startElement('refDesc');
-							$doc->startElement('reference');
-								$doc->writeAttribute('xlink:type', 'simple');
-								$doc->writeAttribute('xlink:href', $uri_space . $row['ID']);
-								$doc->startElement('tei:title');
-									$doc->writeAttribute('key', 'http://nomisma.org/id/seleucid_coins_online');
-									$doc->text('Seleucid Coins (v2)');
-								$doc->endElement();
-								$doc->startElement('tei:idno');
-									$doc->text(str_replace('sc.2.', '', $row['ID']));
-								$doc->endElement();
-							$doc->endElement();
-						$doc->endElement();
-					}
-				}*/				
+				if (isset($svoronosID)){
+				    $doc->startElement('refDesc');
+    				    $doc->startElement('reference');
+        				    $doc->writeAttribute('xlink:type', 'simple');
+        				    $doc->writeAttribute('xlink:href', $uri_space . $svoronosID);
+        				    $doc->startElement('tei:title');
+        				        $doc->writeAttribute('key', 'http://nomisma.org/id/svoronos-1904');
+        				        $doc->text('Svoronos (1904-1908)');
+        				    $doc->endElement();
+        				    $doc->startElement('tei:idno');
+        				        $doc->text(trim($row['Svoronos Nr.']));
+        				    $doc->endElement();
+    				    $doc->endElement();
+				    $doc->endElement();
+				}	
 				
 			//end descMeta
 			$doc->endElement();		
@@ -673,6 +682,9 @@ function generate_nuds($row){
 		//close file
 		$doc->endDocument();
 		$doc->flush();
+		
+		//unset $svoronosID
+		unset($svoronosID);
 	} else {
 		echo "No number for {$row['ID']}.\n";
 	}

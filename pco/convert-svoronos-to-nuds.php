@@ -39,8 +39,8 @@ function generate_nuds($row, $cpeID){
 		echo "Processing {$recordId}\n";
 		$doc = new XMLWriter();
 		
-		$doc->openUri('php://output');
-		//$doc->openUri('nuds/' . $recordId . '.xml');
+		//$doc->openUri('php://output');
+		$doc->openUri('nuds/' . $recordId . '.xml');
 		$doc->setIndent(true);
 		//now we need to define our Indent string,which is basically how many blank spaces we want to have for the indent
 		$doc->setIndentString("    ");
@@ -145,7 +145,12 @@ function generate_nuds($row, $cpeID){
     			$doc->startElement('note');
         			$doc->writeAttribute('xml:lang', 'en');
         			$doc->writeAttribute('semantic', 'skos:definition');
-        			$doc->text($row['note']);
+        			$doc->text('Coin type "Svoronos ' . $row['ID'] . '" as defined in the publication Svoronos, Joannes N. Ta nomismata tou kratous ton Ptolemaion. Athens, 1904-1908.');
+			    $doc->endElement();
+    			$doc->startElement('note');
+        			$doc->writeAttribute('xml:lang', 'en');
+        			$doc->writeAttribute('semantic', 'skos:note');
+        			$doc->text('Derived label is "' . $row['note'] . '", though this may not reflect latest opinion on this type.');
     			$doc->endElement();
 			$doc->endElement();
 			
@@ -378,42 +383,6 @@ function generate_nuds($row, $cpeID){
 				
 				//end typeDesc
 				$doc->endElement();
-				
-				/***** REFDESC *****/				
-				/*if ($mode == 'new'){
-					if (strlen(trim($row['SC no.'])) > 0){
-						$doc->startElement('refDesc');
-							$doc->startElement('reference');
-								$doc->writeAttribute('xlink:type', 'simple');
-								$doc->writeAttribute('xlink:href', $uri_space . $row['SC no.']);
-								$doc->startElement('tei:title');
-									$doc->writeAttribute('key', 'http://nomisma.org/id/seleucid_coins');
-									$doc->text('Seleucid Coins (part 1)');
-								$doc->endElement();
-								$doc->startElement('tei:idno');
-									$doc->text(str_replace('sc.1.', '', $row['SC no.']));
-								$doc->endElement();
-							$doc->endElement();
-						$doc->endElement();
-					}					
-				} else {
-					if (strlen(trim($row['ID'])) > 0){
-						$doc->startElement('refDesc');
-							$doc->startElement('reference');
-								$doc->writeAttribute('xlink:type', 'simple');
-								$doc->writeAttribute('xlink:href', $uri_space . $row['ID']);
-								$doc->startElement('tei:title');
-									$doc->writeAttribute('key', 'http://nomisma.org/id/seleucid_coins_online');
-									$doc->text('Seleucid Coins (v2)');
-								$doc->endElement();
-								$doc->startElement('tei:idno');
-									$doc->text(str_replace('sc.2.', '', $row['ID']));
-								$doc->endElement();
-							$doc->endElement();
-						$doc->endElement();
-					}
-				}*/				
-				
 			//end descMeta
 			$doc->endElement();		
 		//close NUDS

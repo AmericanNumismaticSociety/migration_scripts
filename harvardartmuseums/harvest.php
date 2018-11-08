@@ -19,9 +19,9 @@ function parse_page($page, $apiKey){
 	
 	echo "Page {$page}\n";
 	
-	$query = '(standardreferencenumber:RRC+OR+standardreferencenumber:RIC+OR+standardreferencenumber:Price+OR+standardreferencenumber:SC)';
-	//$query = '"RIC+IX,+p.+235,+88b(1)"';
-	$service = 'http://api.harvardartmuseums.org/object?size=100&classification=Coins&q=' . $query . '+AND+department:"Department%20of%20Ancient%20and%20Byzantine%20Art%20%26%20Numismatics"&apikey=' . $apiKey . '&page=' . $page;
+	$query = 'standardreferencenumber(RRC+OR+RIC+OR+Price+OR+SC+OR+Svoronos+OR+Lorber)';
+	//$query= 'standardreferencenumber(Lorber+OR+Svoronos)';
+	$service = 'https://api.harvardartmuseums.org/object?size=100&classification=Coins&q=' . $query . '+AND+department:"Department%20of%20Ancient%20and%20Byzantine%20Art%20%26%20Numismatics"&apikey=' . $apiKey . '&page=' . $page;
 	
 	$json = file_get_contents($service);
 	$data = json_decode($json);
@@ -94,6 +94,66 @@ function parse_page($page, $apiKey){
 					 //var_dump($matches);
 					}
 				}				
+			} elseif (preg_match('/Svoronos/', $reference) || preg_match('/Lorber/', $reference)){
+			    $refs = explode(',', $reference);
+			    
+			    foreach ($refs as $ref){
+			        $ref = trim($ref);
+			        
+			        if (strpos($record->title, 'Ptolemy') !== FALSE || strpos($record->title, 'Cleopatra') !== FALSE){
+			            //check Lorber number first
+			            if (preg_match('/^Lorber\s(B?\d+[a-zA-Z]?)$/', $ref, $matches)){
+			                //only proceed if the number is matchable
+			                if (isset($matches[1])){
+			                    //generate record metadata array
+			                    $row = construct_metadata($record);
+			                    $row['reference'] = $ref;
+			                    $num = $matches[1];
+			                    
+			                    //ignore uncertain coins
+			                    if (substr($matches[1], -1) != '?'){
+			                        if (substr($num, 0, 1) == 'B'){
+			                            $vol = '1_2';
+			                        } else {
+			                            $vol = '1_1';
+			                        }
+			                        
+			                        $cointype = 'http://numismatics.org/pco/id/cpe.' . $vol . '.' . $num;
+			                        $file_headers = @get_headers($cointype);
+			                        //var_dump($file_headers);
+			                        if ($file_headers[0] == 'HTTP/1.1 200 OK'){
+			                            echo "{$row['objectnumber']}: {$cointype}\n";
+			                            $row['cointype'][] = $cointype;
+			                        }
+			                    }
+			                    $records[] = $row;
+			                }
+			            } elseif (preg_match('/^Svoronos\s(\d+[a-zA-Z]?)$/', $ref, $matches)){
+			                //only proceed if the number is matchable
+			                if (isset($matches[1])){
+			                    //generate record metadata array
+			                    $row = construct_metadata($record);
+			                    $row['reference'] = $ref;
+			                    $num = $matches[1];
+			                    
+			                    //ignore uncertain coins
+			                    if (substr($matches[1], -1) != '?'){
+			                        $svoronosURI = 'http://numismatics.org/pco/id/svoronos-1904.' . $num;
+			                        $file_headers = @get_headers($svoronosURI);
+			                        //var_dump($file_headers);
+			                        if ($file_headers[0] == 'HTTP/1.1 303 See Other'){
+			                            //get URI from 303 redirect
+			                            $cointype = str_replace('Location: ', '', $file_headers[7]);
+			                            
+			                            echo "{$row['objectnumber']}: {$svoronosURI} -> {$cointype}\n";
+			                            $row['cointype'][] = $cointype;
+			                        }
+			                    }
+			                    $records[] = $row;
+			                }
+			            }
+			        }			        
+			    }
 			} elseif (preg_match('/RIC/', $reference)){
 				$originalReference = $reference;
 				
