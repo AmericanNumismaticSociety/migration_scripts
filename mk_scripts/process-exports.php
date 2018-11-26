@@ -1,4 +1,11 @@
 <?php 
+ /***** 
+ * Author: Ethan Gruber
+ * Last Modified: November 2018
+ * Function: Harvest the MK Berlin-style lists of LIDO XML files given metadata stored in a Google spreadsheet.
+ *****/
+
+
 //libxml timeout
 $options = ['http' => ['method' => 'GET','timeout' => '10']];
 $context = stream_context_create($options);
