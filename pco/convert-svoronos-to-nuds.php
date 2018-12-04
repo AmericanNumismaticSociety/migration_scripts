@@ -1,24 +1,28 @@
 <?php 
  /*****
  * Author: Ethan Gruber
- * Date: November 2018
+ * Last modified: December 2018
  * Function: Generate NUDS documents from the Google spreadsheet of parsed Svoronos data, and deprecate the IDs (optional redirect)
  *****/
 
+//svoronos spreadsheet
 $data = generate_json('https://docs.google.com/spreadsheets/d/e/2PACX-1vRf52HzPeW0XE4jNVg0mL296k8yfKp0D43_faM907lYt5XZzUloYzZwe2o68IXXO3GjiLtQgp7XeJBL/pub?output=csv');
+
+//cpe spreadsheet
 $pco = generate_json('https://docs.google.com/spreadsheets/d/e/2PACX-1vQ6KOO3NMCVf8YebxKYXF1g5x-r3n1mDoSXkz7RPecj-UFWkezPnmDS6UzkLqGdAMZuJGo4FgoiYHug/pub?output=csv');
 
 $nomismaUris = array();
 //$records = array();
 
-foreach($data as $row){
-	//call generate_nuds twice to generate two sets of NUDS records
-	
+foreach($data as $row){	
     $id = $row['ID'];
     $cpeID = null;
     foreach($pco as $type){
-        if ($type['Svoronos Nr.'] == $id){
-            $cpeID = $type['Lorber no.'];
+        if (strlen($type['Svoronos Nr.']) > 0){
+            $svoronosIDs = explode('|', trim($type['Svoronos Nr.']));
+            if (in_array($id, $svoronosIDs)){
+                $cpeID = $type['Lorber no.'];
+            }
         }
     }
     
@@ -32,8 +36,9 @@ function generate_nuds($row, $cpeID){
 	
 	$uri_space = 'http://numismatics.org/pco/id/';
 	
-	$recordId = 'svoronos-1904.' . trim($row['ID']);
-	
+	//use URI column to set the ID
+	$pieces = explode('/', $row['URI']);
+	$recordId = str_replace('1904-', '1904.', $pieces[4]);
 	
 	if (strlen($recordId) > 0){
 		echo "Processing {$recordId}\n";
@@ -70,6 +75,13 @@ function generate_nuds($row, $cpeID){
 						$doc->writeAttribute('semantic', 'skos:exactMatch');
 						$doc->text($uri_space . $cpeID);
 					$doc->endElement();
+				}
+				
+				if (strlen($row['Parent ID']) > 0){
+				    $doc->startElement('otherRecordId');
+				        $doc->writeAttribute('semantic', 'skos:broader');
+				        $doc->text(trim($row['Parent ID']));
+				    $doc->endElement();
 				}
 				
 				$doc->writeElement('publicationStatus', 'deprecatedType');

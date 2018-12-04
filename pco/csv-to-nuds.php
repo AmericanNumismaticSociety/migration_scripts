@@ -1,7 +1,7 @@
 <?php 
  /*****
  * Author: Ethan Gruber
- * Date: October 2018
+ * Last modified: December 2018
  * Function: Process the Ptolemaic Coins Online spreadsheet from Google Drive into two sets of NUDS/XML documents:
  * 1. Lorber Coins of the Ptolemaic Empire numbers 
  * 2. Svoronos 1904 numbers that direct to Lorber numbers
@@ -39,14 +39,11 @@ function generate_nuds($row, $count){
 	if (strlen($recordId) > 0){
 		echo "Processing {$recordId}\n";
 		
-		//parse valid Svoronos IDs
-		$svoronosID = null;
+		//parse Svoronos IDs
+		$svoronosIDs = null;
 		if (strlen($row['Svoronos Nr.']) > 0){
-		    if (strpos($row['Svoronos Nr.'], ',') === FALSE){
-		        $svoronosID = 'svoronos-1904.' . trim($row['Svoronos Nr.']);
-		    }
+		    $svoronosIDs = explode('|', trim($row['Svoronos Nr.']));
 		}
-		
 		
 		$doc = new XMLWriter();
 		
@@ -72,24 +69,36 @@ function generate_nuds($row, $count){
 				$doc->writeElement('recordId', $recordId);
 				
 				//handle semantic relation with other record
-				if (isset($svoronosID)){				    
-					$doc->startElement('otherRecordId');
-						$doc->writeAttribute('semantic', 'dcterms:replaces');
-						$doc->text($svoronosID);
-					$doc->endElement();
-					$doc->startElement('otherRecordId');
-						$doc->writeAttribute('semantic', 'skos:exactMatch');
-						$doc->text($uri_space . $svoronosID);
-					$doc->endElement();
+				if (isset($svoronosIDs)){
+				    foreach ($svoronosIDs as $id){				        
+				        $svoronosID = 'svoronos-1904.' . normalizeID($id);
+    				    $doc->startElement('otherRecordId');
+    						$doc->writeAttribute('semantic', 'dcterms:replaces');
+    						$doc->text($svoronosID);
+    					$doc->endElement();
+    					$doc->startElement('otherRecordId');
+    						$doc->writeAttribute('semantic', 'skos:exactMatch');
+    						$doc->text($uri_space . $svoronosID);
+    					$doc->endElement(); 
+				    }
 				}
 				
-				//sortID
-				$doc->startElement('otherRecordId');
-    				$doc->writeAttribute('localType', 'sortId');
-    				$doc->text(number_pad(intval($count), 4));
-				$doc->endElement();
+				//handle subtype hierarchy
+				if (strlen($row['Parent ID']) > 0){
+				    $doc->startElement('otherRecordId');
+    				    $doc->writeAttribute('semantic', 'skos:broader');
+    				    $doc->text(trim($row['Parent ID']));
+				    $doc->endElement();
+				    $doc->writeElement('publicationStatus', 'approvedSubtype');
+				} else {
+				    //insert a sortID
+				    $doc->startElement('otherRecordId');
+				        $doc->writeAttribute('localType', 'sortId');
+				        $doc->text(number_pad(intval($count), 4));
+				    $doc->endElement();				    
+				    $doc->writeElement('publicationStatus', 'approved');
+				}
 				
-				$doc->writeElement('publicationStatus', 'approved');
 				$doc->writeElement('maintenanceStatus', 'derived');
 				$doc->startElement('maintenanceAgency');
 					$doc->writeElement('agencyName', 'American Numismatic Society');
@@ -657,23 +666,26 @@ function generate_nuds($row, $count){
 				//end typeDesc
 				$doc->endElement();
 				
-				/***** REFDESC *****/				
-				if (isset($svoronosID)){
+				/***** REFDESC *****/			
+				if (isset($svoronosIDs)){
 				    $doc->startElement('refDesc');
-    				    $doc->startElement('reference');
-        				    $doc->writeAttribute('xlink:type', 'simple');
-        				    $doc->writeAttribute('xlink:href', $uri_space . $svoronosID);
-        				    $doc->startElement('tei:title');
+				    foreach ($svoronosIDs as $id){
+				        $svoronosID = 'svoronos-1904.' . normalizeID($id);
+				        
+				        $doc->startElement('reference');
+    				        $doc->writeAttribute('xlink:type', 'simple');
+    				        $doc->writeAttribute('xlink:href', $uri_space . $svoronosID);
+        				        $doc->startElement('tei:title');
         				        $doc->writeAttribute('key', 'http://nomisma.org/id/svoronos-1904');
         				        $doc->text('Svoronos (1904-1908)');
-        				    $doc->endElement();
-        				    $doc->startElement('tei:idno');
-        				        $doc->text(trim($row['Svoronos Nr.']));
-        				    $doc->endElement();
-    				    $doc->endElement();
+    				        $doc->endElement();
+        				        $doc->startElement('tei:idno');
+        				        $doc->text($id);
+    				        $doc->endElement();
+				        $doc->endElement();
+				    }
 				    $doc->endElement();
-				}	
-				
+				}
 			//end descMeta
 			$doc->endElement();		
 		//close NUDS
@@ -684,7 +696,7 @@ function generate_nuds($row, $count){
 		$doc->flush();
 		
 		//unset $svoronosID
-		unset($svoronosID);
+		unset($svoronosIDs);
 	} else {
 		echo "No number for {$row['ID']}.\n";
 	}
@@ -692,6 +704,13 @@ function generate_nuds($row, $count){
 
 
  /***** FUNCTIONS *****/
+//normalize the Svoronos subtype IDs for Greek letters into Latin letters
+function normalizeID($id){
+    //letters: αβγεζ
+    //return strtr($id, 'αβγεζ', 'abcez');
+    return str_replace(array('α', 'β', 'γ', 'ε', 'ζ'), array('a','b','c','e','z'), $id);
+}
+
 function processUri($uri){
 	GLOBAL $nomismaUris;
 	$content = array();
