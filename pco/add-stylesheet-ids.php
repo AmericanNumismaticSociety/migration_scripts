@@ -2,13 +2,13 @@
 
 /*****
  * Author: Ethan Gruber
- * Date: October 2018
+ * Date: December 2018
  * Function: add the stylesheet IDs for type descriptions back into the master CSV document
  *****/
 
 
-$data = generate_json('pco.csv');
-$stylesheet = generate_json('stylesheet.csv');
+$data = generate_json('https://docs.google.com/spreadsheets/d/e/2PACX-1vQ6KOO3NMCVf8YebxKYXF1g5x-r3n1mDoSXkz7RPecj-UFWkezPnmDS6UzkLqGdAMZuJGo4FgoiYHug/pub?output=csv');
+$stylesheet = generate_json('https://docs.google.com/spreadsheets/d/e/2PACX-1vQ9dm5-zYlLzEm_URfzguJhQr_VT0Xt5uh7qAQTK23YKzwNUvyRQO0LgcihP18h4JRTVD41C-6PZf9c/pub?output=csv');
 
 $csv = array();
 
@@ -17,30 +17,33 @@ foreach ($data as $row){
    $rev = $row['R (en)'];
    
    if (strlen($obv) > 0){
-       foreach ($stylesheet as $desc){
-           if ($desc['en'] == $obv){
-               $row['O'] = $desc['Abbreviation'];
-           }
-           
-           if ($desc['en'] == $rev){
-               $row['R'] = $desc['Abbreviation'];
-           }
-       }
+   	foreach ($stylesheet as $desc){
+   		if ($desc['ORIGINAL'] == $obv){
+   			$row['O'] = $desc['Abbreviation'];
+   		}
+   	}
+   }
+   
+   if (strlen($rev) > 0){
+   	foreach ($stylesheet as $desc){
+   		if ($desc['ORIGINAL'] == $rev){
+   			$row['R'] = $desc['Abbreviation'];
+   		}
+   	}
    }
    
    $csv[] = $row;
 }
 
-var_dump($csv);
+//var_dump($csv);
 
 
 //write CSV
-/*$file = fopen('stylesheet.csv', 'w');
-fputcsv($file, array('Abbreviation', 'en'));
+$file = fopen('stylesheet.csv', 'w');
 foreach ($csv as $fields) {
     fputcsv($file, $fields);
 }
-fclose($file);*/
+fclose($file);
 
 
 /***** FUNCTIONS *****/

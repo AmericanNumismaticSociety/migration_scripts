@@ -83,6 +83,14 @@ function generate_nuds($row, $count){
 				    }
 				}
 				
+				//PELLA concordance
+				if (strlen($row['Price URI']) > 0){
+					$doc->startElement('otherRecordId');
+						$doc->writeAttribute('semantic', 'skos:exactMatch');
+						$doc->text(trim($row['Price URI']));
+					$doc->endElement();
+				}
+				
 				//handle subtype hierarchy
 				if (strlen($row['Parent ID']) > 0){
 				    $doc->startElement('otherRecordId');
