@@ -9,7 +9,7 @@
 
 $data = generate_json('https://docs.google.com/spreadsheets/d/e/2PACX-1vQ6KOO3NMCVf8YebxKYXF1g5x-r3n1mDoSXkz7RPecj-UFWkezPnmDS6UzkLqGdAMZuJGo4FgoiYHug/pub?output=csv');
 $deities = generate_json('https://docs.google.com/spreadsheet/pub?hl=en_US&hl=en_US&key=0Avp6BVZhfwHAdHk2ZXBuX0RYMEZzUlNJUkZOLXRUTmc&single=true&gid=0&output=csv');
-//$stylesheet = generate_json('https://docs.google.com/spreadsheets/d/e/2PACX-1vQRCPbdTLG7EIXIt7jo4rz-Ruy565RQS9x9aj2vBwvsbZdC_NBXZweyJVunU3WylvvbcoOAzBJI0OFS/pub?gid=1882169178&single=true&output=csv');
+$stylesheet = generate_json('https://docs.google.com/spreadsheets/d/e/2PACX-1vQ9dm5-zYlLzEm_URfzguJhQr_VT0Xt5uh7qAQTK23YKzwNUvyRQO0LgcihP18h4JRTVD41C-6PZf9c/pub?output=csv');
 
 $nomismaUris = array();
 //$records = array();
@@ -19,7 +19,7 @@ $count = 1;
 foreach($data as $row){
 	//call generate_nuds twice to generate two sets of NUDS records
 	
-	if (strpos($row['fromDate'], 'vacat') === FALSE){
+	if (strpos($row['Date original'], 'vacat') === FALSE){
 	    generate_nuds($row, $count);
 	    
 	    if (strlen($row['Parent ID']) == 0){
@@ -31,7 +31,7 @@ foreach($data as $row){
 //functions
 function generate_nuds($row, $count){
 	GLOBAL $deities;
-	//GLOBAL $stylesheet;
+	GLOBAL $stylesheet;
 	
 	$uri_space = 'http://numismatics.org/pco/id/';	
 	$recordId = trim($row['Lorber no.']);
@@ -80,6 +80,18 @@ function generate_nuds($row, $count){
     						$doc->writeAttribute('semantic', 'skos:exactMatch');
     						$doc->text($uri_space . $svoronosID);
     					$doc->endElement(); 
+				    }
+				}
+				
+				//Price concordance
+				if (strlen($row['Price URI']) > 0){
+				    $priceURIs = explode('|', $row['Price URI']);
+				    
+				    foreach ($priceURIs as $uri){
+				        $doc->startElement('otherRecordId');
+    				        $doc->writeAttribute('semantic', 'skos:exactMatch');
+    				        $doc->text($uri);
+				        $doc->endElement(); 
 				    }
 				}
 				
@@ -419,20 +431,16 @@ function generate_nuds($row, $count){
 				}
 				
 				//obverse
-				if (strlen($row['O (en)']) > 0){
-					//$key = trim($row['O']);
-					$type = $row['O (en)'];
+				if (strlen($row['O']) > 0){
+					$key = trim($row['O']);
+					//$type = $row['O (en)'];
 					
 					$doc->startElement('obverse');					
 						//multilingual type descriptions
 						$doc->startElement('type');
-							$doc->startElement('description');
-								$doc->writeAttribute('xml:lang', 'en');
-								$doc->text($row['O (en)']);
-							$doc->endElement();
-							/*foreach ($stylesheet as $desc){
+							foreach ($stylesheet as $desc){
 								if ($desc['Abbreviation'] == $key){
-									$type = $desc['en'];
+								    $type = $desc['en'];
 									foreach ($desc as $k=>$v){
 										if ($k != 'Abbreviation'){
 											if (strlen($v) > 0){
@@ -445,7 +453,7 @@ function generate_nuds($row, $count){
 									}
 									break;
 								}
-							}*/
+							}
 						$doc->endElement();
 						
 						//deity
@@ -453,9 +461,7 @@ function generate_nuds($row, $count){
 							if (strstr($deity['name'], ' ') !== FALSE){
 								//haystack is string when the deity is multiple words
 								$haystack = strtolower(trim($type));
-								if (strstr($haystack, strtolower($deity['matches'])) !== FALSE) {
-									$bm_uri = strlen($deity['bm_uri']) > 0 ? ' xlink:href="' . $deity['bm_uri'] . '"' : '';
-									
+								if (strstr($haystack, strtolower($deity['matches'])) !== FALSE) {									
 									$doc->startElement('persname');
 									$doc->writeAttribute('xlink:type', 'simple');
 									$doc->writeAttribute('xlink:role', 'deity');
@@ -520,9 +526,8 @@ function generate_nuds($row, $count){
 				}
 				
 				//reverse
-				if (strlen($row['R (en)']) > 0){
-					//$key = trim($row['R']);
-					$type = $row['R (en)'];
+				if (strlen($row['R']) > 0){
+					$key = trim($row['R']);					
 					
 					$doc->startElement('reverse');
 					
@@ -558,13 +563,9 @@ function generate_nuds($row, $count){
 					
 						//multilingual type descriptions
 						$doc->startElement('type');
-							$doc->startElement('description');
-								$doc->writeAttribute('xml:lang', 'en');
-								$doc->text($row['R (en)']);
-							$doc->endElement();
-						 /*foreach ($stylesheet as $desc){
+						 foreach ($stylesheet as $desc){
 							 if ($desc['Abbreviation'] == $key){
-								 $type = $desc['en'];
+							     $type = $desc['en'];
 								 foreach ($desc as $k=>$v){
 									 if ($k != 'Abbreviation'){
 									 	if (strlen($v) > 0){
@@ -577,7 +578,7 @@ function generate_nuds($row, $count){
 								 }
 								 break;
 							 }
-						 }*/
+						 }
 						 $doc->endElement();
 						 
 						//symbols
@@ -667,24 +668,46 @@ function generate_nuds($row, $count){
 				$doc->endElement();
 				
 				/***** REFDESC *****/			
-				if (isset($svoronosIDs)){
+				if (isset($svoronosIDs) || strlen($row['Price URI']) > 0){
 				    $doc->startElement('refDesc');
-				    foreach ($svoronosIDs as $id){
-				        $svoronosID = 'svoronos-1904.' . normalizeID($id);
-				        
+				    
+				    if (isset($svoronosIDs)){
+    				    foreach ($svoronosIDs as $id){
+    				        $svoronosID = 'svoronos-1904.' . normalizeID($id);
+    				        
+    				        $doc->startElement('reference');
+        				        $doc->writeAttribute('xlink:type', 'simple');
+        				        $doc->writeAttribute('xlink:href', $uri_space . $svoronosID);
+        				        $doc->startElement('tei:title');
+        				            $doc->writeAttribute('key', 'http://nomisma.org/id/svoronos-1904');
+        				            $doc->text('Svoronos (1904-1908)');
+    				            $doc->endElement();
+        				        $doc->startElement('tei:idno');
+        				            $doc->text($id);
+    				            $doc->endElement();
+    				        $doc->endElement();
+    				    }
+    				    $doc->endElement();
+    				}
+				}
+				
+				//Price references
+				if (strlen($row['Price URI']) > 0){
+				    $priceURIs = explode('|', $row['Price URI']);
+				    
+				    foreach ($priceURIs as $uri){
 				        $doc->startElement('reference');
     				        $doc->writeAttribute('xlink:type', 'simple');
-    				        $doc->writeAttribute('xlink:href', $uri_space . $svoronosID);
-        				        $doc->startElement('tei:title');
-        				        $doc->writeAttribute('key', 'http://nomisma.org/id/svoronos-1904');
-        				        $doc->text('Svoronos (1904-1908)');
+    				        $doc->writeAttribute('xlink:href', $uri);
+    				        $doc->startElement('tei:title');
+        				        $doc->writeAttribute('key', 'http://nomisma.org/id/price1991');
+        				        $doc->text('Price (1991)');
     				        $doc->endElement();
-        				        $doc->startElement('tei:idno');
-        				        $doc->text($id);
+    				        $doc->startElement('tei:idno');
+    				            $doc->text(str_replace('http://numismatics.org/pella/id/price.', '', $uri));
     				        $doc->endElement();
 				        $doc->endElement();
 				    }
-				    $doc->endElement();
 				}
 			//end descMeta
 			$doc->endElement();		
@@ -708,7 +731,7 @@ function generate_nuds($row, $count){
 function normalizeID($id){
     //letters: αβγεζ
     //return strtr($id, 'αβγεζ', 'abcez');
-    return str_replace(array('α', 'β', 'γ', 'ε', 'ζ'), array('a','b','c','e','z'), $id);
+    return str_replace(array('α', 'β', 'γ', 'ε', 'ζ'), array('a','b','g','e','z'), $id);
 }
 
 function processUri($uri){
