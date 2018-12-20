@@ -686,28 +686,28 @@ function generate_nuds($row, $count){
         				            $doc->text($id);
     				            $doc->endElement();
     				        $doc->endElement();
-    				    }
-    				    $doc->endElement();
+    				    }    				    
     				}
-				}
-				
-				//Price references
-				if (strlen($row['Price URI']) > 0){
-				    $priceURIs = explode('|', $row['Price URI']);
-				    
-				    foreach ($priceURIs as $uri){
-				        $doc->startElement('reference');
-    				        $doc->writeAttribute('xlink:type', 'simple');
-    				        $doc->writeAttribute('xlink:href', $uri);
-    				        $doc->startElement('tei:title');
-        				        $doc->writeAttribute('key', 'http://nomisma.org/id/price1991');
-        				        $doc->text('Price (1991)');
+    				//Price references
+    				if (strlen($row['Price URI']) > 0){
+    				    $priceURIs = explode('|', $row['Price URI']);
+    				    
+    				    foreach ($priceURIs as $uri){
+    				        $doc->startElement('reference');
+        				        $doc->writeAttribute('xlink:type', 'simple');
+        				        $doc->writeAttribute('xlink:href', $uri);
+        				        $doc->startElement('tei:title');
+            				        $doc->writeAttribute('key', 'http://nomisma.org/id/price1991');
+            				        $doc->text('Price (1991)');
+        				        $doc->endElement();
+        				        $doc->startElement('tei:idno');
+        				            $doc->text(str_replace('http://numismatics.org/pella/id/price.', '', $uri));
+        				        $doc->endElement();
     				        $doc->endElement();
-    				        $doc->startElement('tei:idno');
-    				            $doc->text(str_replace('http://numismatics.org/pella/id/price.', '', $uri));
-    				        $doc->endElement();
-				        $doc->endElement();
-				    }
+    				    }
+    				}
+    				//end refDesc
+    				$doc->endElement();
 				}
 			//end descMeta
 			$doc->endElement();		
