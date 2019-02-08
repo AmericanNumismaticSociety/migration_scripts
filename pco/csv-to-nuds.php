@@ -95,6 +95,12 @@ function generate_nuds($row, $count){
 				    }
 				}
 				
+				//insert typeNumber just to capture the num.
+				$doc->startElement('otherRecordId');
+    				$doc->writeAttribute('localType', 'typeNumber');
+    				$doc->text(str_replace('cpe.1_1.', '', $recordId));
+    			$doc->endElement();	
+				
 				//handle subtype hierarchy
 				if (strlen($row['Parent ID']) > 0){
 				    $doc->startElement('otherRecordId');
@@ -244,15 +250,21 @@ function generate_nuds($row, $count){
 				if (strlen($row['Denomination URI']) > 0){
 					$vals = explode('|', $row['Denomination URI']);
 					foreach ($vals as $val){
-					    $uri =  $val;
-					    $uncertainty = ($row['Mint Uncertain']) == 'TRUE' ? 'http://nomisma.org/id/uncertain_value' : null;
-					    $content = processUri($uri);
+					    if (substr($val, -1) == '?'){
+					        $uri = substr($val, 0, -1);
+					        $uncertainty = true;
+					        $content = processUri($uri);
+					    } else {
+					        $uri =  $val;
+					        $uncertainty = false;
+					        $content = processUri($uri);
+					    }
 						
 						$doc->startElement($content['element']);
 						$doc->writeAttribute('xlink:type', 'simple');
 						$doc->writeAttribute('xlink:href', $uri);
 						if($uncertainty == true){
-							$doc->writeAttribute('certainty', 'uncertain');
+						    $doc->writeAttribute('certainty', 'http://nomisma.org/id/uncertain_value');
 						}
 						$doc->text($content['label']);
 						$doc->endElement();
@@ -283,7 +295,7 @@ function generate_nuds($row, $count){
 						$doc->writeAttribute('xlink:type', 'simple');
 						$doc->writeAttribute('xlink:href', $uri);
 						if($uncertainty == true){
-							$doc->writeAttribute('certainty', 'uncertain');
+						    $doc->writeAttribute('certainty', 'http://nomisma.org/id/uncertain_value');
 						}
 						$doc->text($content['label']);
 						$doc->endElement();
@@ -312,7 +324,7 @@ function generate_nuds($row, $count){
 									$doc->writeAttribute('xlink:role', $role);
 									$doc->writeAttribute('xlink:href', $uri);
 									if($uncertainty == true){
-										$doc->writeAttribute('certainty', 'uncertain');
+									    $doc->writeAttribute('certainty', 'http://nomisma.org/id/uncertain_value');
 									}
 									$doc->text($content['label']);
 								$doc->endElement();
@@ -337,7 +349,7 @@ function generate_nuds($row, $count){
 									$doc->writeAttribute('xlink:role', $role);
 									$doc->writeAttribute('xlink:href', $uri);
 									if($uncertainty == true){
-										$doc->writeAttribute('certainty', 'uncertain');
+									    $doc->writeAttribute('certainty', 'http://nomisma.org/id/uncertain_value');
 									}
 									$doc->text($content['label']);
 								$doc->endElement();
@@ -362,7 +374,7 @@ function generate_nuds($row, $count){
 									$doc->writeAttribute('xlink:role', $role);
 									$doc->writeAttribute('xlink:href', $uri);
 									if($uncertainty == true){
-										$doc->writeAttribute('certainty', 'uncertain');
+									    $doc->writeAttribute('certainty', 'http://nomisma.org/id/uncertain_value');
 									}
 									$doc->text($content['label']);
 								$doc->endElement();
@@ -378,16 +390,22 @@ function generate_nuds($row, $count){
 					if (strlen($row['Mint URI']) > 0){
 					    $vals = explode('|', $row['Mint URI']);
 					    foreach ($vals as $val){
-					        $uri =  $val;
-					        $uncertainty = ($row['Mint Uncertain']) == 'TRUE' ? 'http://nomisma.org/id/uncertain_value' : null;
-					        $content = processUri($uri);
+					        if (substr($val, -1) == '?'){
+					            $uri = substr($val, 0, -1);
+					            $uncertainty = true;
+					            $content = processUri($uri);
+					        } else {
+					            $uri =  $val;
+					            $uncertainty = false;
+					            $content = processUri($uri);
+					        }
 					        
 					        $doc->startElement('geogname');
 					        $doc->writeAttribute('xlink:type', 'simple');
 					        $doc->writeAttribute('xlink:role', 'mint');
 					        $doc->writeAttribute('xlink:href', $uri);
-					        if(isset($uncertainty)){
-					            $doc->writeAttribute('certainty', $uncertainty);
+					        if($uncertainty == true){
+					            $doc->writeAttribute('certainty', 'http://nomisma.org/id/uncertain_value');
 					        }
 					        $doc->text($content['label']);
 					        $doc->endElement();
@@ -399,26 +417,22 @@ function generate_nuds($row, $count){
 					if (strlen($row['Region URI']) > 0){
 						$vals = explode('|', $row['Region URI']);
 						foreach ($vals as $val){
-							if (substr($val, -2) == '??'){
-								$uri = substr($val, 0, -2);
-								$uncertainty = 'perhaps';
-								$content = processUri($uri);
-							} elseif (substr($val, -1) == '?' && substr($val, -2, 1) != '?'){
-								$uri = substr($val, 0, -1);
-								$uncertainty = 'probably';
-								$content = processUri($uri);
-							} else {
-								$uri =  $val;
-								$uncertainty = null;
-								$content = processUri($uri);
-							}
+						    if (substr($val, -1) == '?'){
+						        $uri = substr($val, 0, -1);
+						        $uncertainty = true;
+						        $content = processUri($uri);
+						    } else {
+						        $uri =  $val;
+						        $uncertainty = false;
+						        $content = processUri($uri);
+						    }
 							
 							$doc->startElement('geogname');
 								$doc->writeAttribute('xlink:type', 'simple');
 								$doc->writeAttribute('xlink:role', 'region');
 								$doc->writeAttribute('xlink:href', $uri);
-								if(isset($uncertainty)){
-									$doc->writeAttribute('certainty', $uncertainty);
+								if($uncertainty == true){
+								    $doc->writeAttribute('certainty', 'http://nomisma.org/id/uncertain_value');
 								}
 								$doc->text($content['label']);
 							$doc->endElement();
@@ -507,7 +521,7 @@ function generate_nuds($row, $count){
 									$doc->writeAttribute('xlink:role', $role);
 									$doc->writeAttribute('xlink:href', $uri);
 									if($uncertainty == true){
-										$doc->writeAttribute('certainty', 'uncertain');
+									    $doc->writeAttribute('certainty', 'http://nomisma.org/id/uncertain_value');
 									}
 									$doc->text($content['label']);
 								$doc->endElement();
@@ -647,7 +661,7 @@ function generate_nuds($row, $count){
 								$doc->writeAttribute('xlink:role', $role);
 								$doc->writeAttribute('xlink:href', $uri);
 								if($uncertainty == true){
-									$doc->writeAttribute('certainty', 'uncertain');
+								    $doc->writeAttribute('certainty', 'http://nomisma.org/id/uncertain_value');
 								}
 								$doc->text($content['label']);
 								$doc->endElement();
