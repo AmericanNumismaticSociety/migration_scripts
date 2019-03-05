@@ -1,7 +1,7 @@
 <?php 
  /*****
  * Author: Ethan Gruber
- * Date: October 2018
+ * Date: March 2019
  * Function: Process the Seleucid Coins Online spreadsheet from Google Drive into NUDS/XML:
  *****/
 
@@ -60,6 +60,12 @@ function generate_nuds($row, $part, $count){
 			//control
 			$doc->startElement('control');
 				$doc->writeElement('recordId', $recordId);
+				
+				//insert typeNumber just to capture the num.
+				$doc->startElement('otherRecordId');
+					$doc->writeAttribute('localType', 'typeNumber');
+					$doc->text(str_replace('sc.1.', '', $recordId));
+				$doc->endElement();	
 				
 				//handle semantic relation with other record
 				if (strlen($row['Deprecated ID']) > 0){
