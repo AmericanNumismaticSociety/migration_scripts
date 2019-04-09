@@ -2,7 +2,7 @@
 
 
 //first process pella spreadsheet
-$data = generate_json('pella.csv');
+$data = generate_json('hrc.csv');
 $pella = parse_oai($data);
 
 //then process CRRO
@@ -22,83 +22,98 @@ function parse_oai($data){
 		$record = array();
 		
 		
-		if (strlen($row['Lien ark']) > 0 && strlen($row['018 $u']) > 0){
-			$record['uri'] = $row['Lien ark'];
-			$record['cointype'] = trim($row['018 $u']);
+		if (strlen($row['ark']) > 0){
+			$record['uri'] = $row['ark'];
 			
-			echo "{$count}: Processing {$record['uri']}\n";
-			$id = str_replace('http://gallica.bnf.fr/', '', $record['uri']);
-			$recordURL = 'http://oai.bnf.fr/oai2/OAIHandler?verb=GetRecord&metadataPrefix=oai_dc&identifier=oai:bnf.fr:gallica/' . $id;
-			
-			//IIIF services
-			$record['obvService'] = 'http://gallica.bnf.fr/iiif/' . $id . '/f1';
-			$record['revService'] = 'http://gallica.bnf.fr/iiif/' . $id . '/f2';
-			
-			//get measurement data from OAI-PMH
-			$doc = new DOMDocument();
-			if ($doc->load($recordURL) === FALSE){
-				return "FAIL";
-			} else {
-				$xpath = new DOMXpath($doc);
-				$xpath->registerNamespace('oai', 'http://www.openarchives.org/OAI/2.0/');
-				$xpath->registerNamespace('dc', 'http://purl.org/dc/elements/1.1/');
-				
-				
-				
-				//evaluate whether or not there's a title (search for error)
-				if ($doc->getElementsByTagNameNS('http://www.openarchives.org/OAI/2.0/', 'error')->length > 0) {
-					if (isset($row['ID number 1'])){
-						$record['identifier'] = $row['ID number 1'];
-						$record['title'] = '[Monnaies. ' . $record['identifier'] . '.]';
-					} else {
-						$record['title'] = '[Monnaies.]';
-					}
-				} else {
-					$record['title'] = $doc->getElementsByTagNameNS('http://purl.org/dc/elements/1.1/', 'title')->item(0)->nodeValue;
-					if (isset($row['ID number 1'])){
-						$record['identifier'] = $row['ID number 1'];
-					} else {
-						$record['identifier'] = trim(str_replace('Bibliothèque nationale de France, département Monnaies, médailles et antiques,', '',
-								$doc->getElementsByTagNameNS('http://purl.org/dc/elements/1.1/', 'source')->item(0)->nodeValue));
-					}
-				}
-				
-				//get measurements, but only if not contained in the spreadsheet				
-				if (isset($row['weight'])){
-					if (is_numeric($row['weight'])){						
-						$record['weight'] = (float) $row['weight'];
-					}
-					if (is_numeric($row['dimensions'])){
-						$record['diameter'] = (int) round($row['dimensions']);
-					}
-					if (is_int((int) $row['axis'])){
-						$record['axis'] = (int) $row['axis'];
-					}
-				} else {
-					$formats= $xpath->query("descendant::dc:format");
-					foreach ($formats as $format){
-						preg_match('/(\d+,?\d?)\smm/', $format->nodeValue, $matches);
-						if (isset($matches[1])){
-							$diameter = str_replace(',', '.', $matches[1]);
-							if (is_numeric($diameter)){
-								$record['diameter'] = round($diameter);
-							}							
-						}
-						unset($matches);
-						preg_match('/(\d+,\d+)\sg/', $format->nodeValue, $matches);
-						if (isset($matches[1])){
-							$weight = str_replace(',', '.', $matches[1]);
-							if (is_numeric($weight)){
-								$record['weight'] = $weight;
-							}
-						}
-						unset($matches);
-					}
-				}
+			if (isset($row['coinType1']) || isset($row['coinType2'])){
+			    $types = array();
+			    if (array_key_exists('coinType1', $row)){
+			        if (strlen(trim($row['coinType1'])) > 0){
+			            $types[] = trim($row['coinType1']);
+			        }
+			    }
+			    if (array_key_exists('coinType2', $row)){
+			        if (strlen(trim($row['coinType2'])) > 0){
+			            $types[] = trim($row['coinType2']);
+			        }
+			    }
+			    
+			    $record['cointype'] = $types;
+			    
+			    echo "{$count}: Processing {$record['uri']}\n";
+			    $id = str_replace('http://gallica.bnf.fr/', '', $record['uri']);
+			    $recordURL = 'http://oai.bnf.fr/oai2/OAIHandler?verb=GetRecord&metadataPrefix=oai_dc&identifier=oai:bnf.fr:gallica/' . $id;
+			    
+			    //IIIF services
+			    $record['obvService'] = 'http://gallica.bnf.fr/iiif/' . $id . '/f1';
+			    $record['revService'] = 'http://gallica.bnf.fr/iiif/' . $id . '/f2';
+			    
+			    //get measurement data from OAI-PMH
+			    $doc = new DOMDocument();
+			    if ($doc->load($recordURL) === FALSE){
+			        return "FAIL";
+			    } else {
+			        $xpath = new DOMXpath($doc);
+			        $xpath->registerNamespace('oai', 'http://www.openarchives.org/OAI/2.0/');
+			        $xpath->registerNamespace('dc', 'http://purl.org/dc/elements/1.1/');
+			        
+			        
+			        
+			        //evaluate whether or not there's a title (search for error)
+			        if ($doc->getElementsByTagNameNS('http://www.openarchives.org/OAI/2.0/', 'error')->length > 0) {
+			            if (isset($row['ID number 1'])){
+			                $record['identifier'] = $row['ID number 1'];
+			                $record['title'] = '[Monnaies. ' . $record['identifier'] . '.]';
+			            } else {
+			                $record['title'] = '[Monnaies.]';
+			            }
+			        } else {
+			            $record['title'] = $doc->getElementsByTagNameNS('http://purl.org/dc/elements/1.1/', 'title')->item(0)->nodeValue;
+			            if (isset($row['ID number 1'])){
+			                $record['identifier'] = $row['ID number 1'];
+			            } else {
+			                $record['identifier'] = trim(str_replace('Bibliothèque nationale de France, département Monnaies, médailles et antiques,', '',
+			                    $doc->getElementsByTagNameNS('http://purl.org/dc/elements/1.1/', 'source')->item(0)->nodeValue));
+			            }
+			        }
+			        
+			        //get measurements, but only if not contained in the spreadsheet
+			        if (isset($row['weight'])){
+			            if (is_numeric($row['weight'])){
+			                $record['weight'] = (float) $row['weight'];
+			            }
+			            if (is_numeric($row['dimensions'])){
+			                $record['diameter'] = (int) round($row['dimensions']);
+			            }
+			            if (is_int((int) $row['axis'])){
+			                $record['axis'] = (int) $row['axis'];
+			            }
+			        } else {
+			            $formats= $xpath->query("descendant::dc:format");
+			            foreach ($formats as $format){
+			                preg_match('/(\d+,?\d?)\smm/', $format->nodeValue, $matches);
+			                if (isset($matches[1])){
+			                    $diameter = str_replace(',', '.', $matches[1]);
+			                    if (is_numeric($diameter)){
+			                        $record['diameter'] = round($diameter);
+			                    }
+			                }
+			                unset($matches);
+			                preg_match('/(\d+,\d+)\sg/', $format->nodeValue, $matches);
+			                if (isset($matches[1])){
+			                    $weight = str_replace(',', '.', $matches[1]);
+			                    if (is_numeric($weight)){
+			                        $record['weight'] = $weight;
+			                    }
+			                }
+			                unset($matches);
+			            }
+			        }
+			    }
+			    
+			    //var_dump($record);
+			    $records[] = $record;
 			}
-			
-			//var_dump($record);
-			$records[] = $record;
 		}
 		
 		$count++;
@@ -132,7 +147,7 @@ function generate_rdf($records){
 	$writer->writeAttribute('xmlns:doap', "http://usefulinc.com/ns/doap#");
 	
 	foreach ($records as $record){
-		if (isset($record['cointype'])){
+		if (count($record['cointype']) > 0){
 			$writer->startElement('nmo:NumismaticObject');
 			$writer->writeAttribute('rdf:about', $record['uri']);
 			$writer->startElement('dcterms:title');
@@ -143,9 +158,12 @@ function generate_rdf($records){
 			$writer->startElement('nmo:hasCollection');
 				$writer->writeAttribute('rdf:resource', 'http://nomisma.org/id/bnf');
 			$writer->endElement();
-			$writer->startElement('nmo:hasTypeSeriesItem');
-				$writer->writeAttribute('rdf:resource', $record['cointype']);
-			$writer->endElement();
+			
+			foreach ($record['cointype'] as $type){
+			    $writer->startElement('nmo:hasTypeSeriesItem');
+			         $writer->writeAttribute('rdf:resource', $type);
+			    $writer->endElement();
+			}
 			
 			//conditional measurement data
 			if (isset($record['weight'])){
