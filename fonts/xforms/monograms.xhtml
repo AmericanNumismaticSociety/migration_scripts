@@ -15,7 +15,7 @@
 			<xforms:instance id="control-instance" xxforms:exclude-result-prefixes="#all">
 				<controls xmlns="">
 					<status></status>
-					<folder></folder>
+					<folder>Price</folder>
 					<username></username>
 					<filter></filter>
 				</controls>
@@ -165,7 +165,9 @@
 								<div>
 									<h2><xforms:output ref="@name"/></h2>
 
-									<xforms:repeat nodeset="file">
+									<xforms:repeat nodeset="xxforms:sort(file, tokenize(@name, '\.')[3], 'number', 'ascending')">
+										
+										
 										<div class="col-md-3 col-sm-6 col-lg-2 monogram" style="height:400px">
 											<img src="{concat('svg/', instance('control-instance')/folder, '/', @name)}" style="height:240px" />
 											<div>
