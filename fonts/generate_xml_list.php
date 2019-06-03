@@ -17,6 +17,8 @@ foreach(glob('svg/*', GLOB_ONLYDIR) as $dir) {
             if (strpos($file, '.svg') !== FALSE){
                 $writer->startElement('file');
                     $writer->writeAttribute('name', $file);
+                    $writer->writeAttribute('editor', '');
+                    $writer->writeAttribute('letters', '');
                 $writer->endElement();
             }          
         }
