@@ -3,13 +3,13 @@
 
 //first process pella spreadsheet
 $data = generate_json('hrc.csv');
-$pella = parse_oai($data);
+$records = parse_oai($data);
 
 //then process CRRO
-$data = generate_json('crro.csv');
-$crro = parse_oai($data);
+//$data = generate_json('crro.csv');
+//$crro = parse_oai($data);
 
-$records = array_merge($pella, $crro);
+//$records = array_merge($pella, $crro);
 
 //serialize $records object into RDF
 generate_rdf($records);
@@ -41,12 +41,12 @@ function parse_oai($data){
 			    $record['cointype'] = $types;
 			    
 			    echo "{$count}: Processing {$record['uri']}\n";
-			    $id = str_replace('http://gallica.bnf.fr/', '', $record['uri']);
+			    $id = str_replace('https://gallica.bnf.fr/', '', $record['uri']);
 			    $recordURL = 'http://oai.bnf.fr/oai2/OAIHandler?verb=GetRecord&metadataPrefix=oai_dc&identifier=oai:bnf.fr:gallica/' . $id;
 			    
 			    //IIIF services
-			    $record['obvService'] = 'http://gallica.bnf.fr/iiif/' . $id . '/f1';
-			    $record['revService'] = 'http://gallica.bnf.fr/iiif/' . $id . '/f2';
+			    $record['obvService'] = 'https://gallica.bnf.fr/iiif/' . $id . '/f1';
+			    $record['revService'] = 'https://gallica.bnf.fr/iiif/' . $id . '/f2';
 			    
 			    //get measurement data from OAI-PMH
 			    $doc = new DOMDocument();
@@ -126,7 +126,7 @@ function generate_rdf($records){
 	//start RDF/XML file
 	//use XML writer to generate RDF
 	$writer = new XMLWriter();
-	$writer->openURI("bnf.rdf");
+	$writer->openURI("bnf-hrc.rdf");
 	//$writer->openURI('php://output');
 	$writer->startDocument('1.0','UTF-8');
 	$writer->setIndent(true);
