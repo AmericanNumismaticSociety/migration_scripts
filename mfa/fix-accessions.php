@@ -8,7 +8,7 @@
  ************************/
 $old = generate_json("MFARomanCoinage-fixed.csv");
 $new = generate_json("mfa-complete.csv");
-
+$ids = generate_json('ids.csv');
 
 $fixes = array();
 //var_dump($old[519]);
@@ -43,9 +43,17 @@ foreach ($new as $row){
 $fp = fopen('corrected.csv', 'w');
 foreach ($new as $row) {
     $acc = (string) $row['Object No.'];
+    
+    //add ID
+    foreach ($ids as $id){
+        if ($id['Object Number'] == $acc){
+            $row['ObjectID'] = $id['ObjectID'];
+        }
+    }
+    
     if (array_key_exists($acc, $fixes)){
         echo "{$fixes[$acc]}\n";
-        $row['Object No.'] = $fixes[$acc];
+        $row['Object No.'] = $fixes[$acc];        
         fputcsv($fp, $row);
     } else {
         fputcsv($fp, $row);
