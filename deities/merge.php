@@ -9,8 +9,6 @@
 $data = generate_json('nomisma_deities.csv');
 $cnt = generate_json("cnt_deities.csv");
 
-var_dump($cnt);
-
 foreach ($data as $row){
     //echo "{$k}\n";
     
@@ -53,7 +51,37 @@ foreach ($data as $k=>$row){
     }
 }
 
-var_dump($data);
+//insert deities thatBM Definitionare not present in the Nomisma sheeet
+foreach ($cnt as $row){
+	if (!array_key_exists('Nomisma ID', $row)){
+		$label = (strlen($row['sub_instance']) > 0 ? $row['sub_instance'] : $row['instance']);
+		$broader = (strlen($row['sub_instance']) > 0 ? str_replace(' ', '_', strtolower($row['instance'])) : '');
+		$id = str_replace(' ', '_', strtolower($label));
+		
+		$record = array('ID'=>$id, 'prefLabel_en'=>$label, 'related'=>'', 'broader'=>$broader, 
+				'atlLabel_en'=>'','definition_en'=>'', 'BM Definition'=>'', 'Wikidata label'=>'', 'Wikidata URI'=>'', 'BM URI'=>'',
+				'Field of Numismatics 1'=>'', 'Field of Numismatics 2'=>'' ,'Field of Numismatics 3'=>'', 'sex'=>$row['cat_i'],
+				'role1'=>$row['cat_ii'], 'role2'=>$row['cat_iii'], 'role3'=>$row['cat_iv']
+		);
+		
+		$data[] = $record;
+	}
+}
+
+$labels = array();
+foreach($data[0] as $k=>$v){
+	$labels[] = $k;
+}
+
+//write array into CSV file
+$fp = fopen('combined.csv', 'w');
+fputcsv($fp, $labels);
+foreach ($data as $row) {
+	fputcsv($fp, $row);
+}
+
+fclose($fp);
+//var_dump($data[0]);
 
 function generate_json($doc){
     $keys = array();
