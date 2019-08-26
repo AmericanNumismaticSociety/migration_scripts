@@ -1,0 +1,315 @@
+internID,sub_instance,instance,alternative_names,fields_of_numismatics,cat_i,cat_ii,cat_iii,cat_iv,cat_v,cat_vi,related,german,french,nlp_link
+418,,Abundantia,,from_ocre,Female,Deity,Roman,Personification,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/Abundantia_person
+628,,Aeneas,,from_cnt,Male,MythologicalFigure,Roman,,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/Aeneas_person
+501,,Aesculapius,,from_ocre,Male,Deity,Roman,Other,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/Aesculapius_person
+537,,Africa,,from_ocre,Female,Deity,Roman,Personification,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/Africa_person
+534,,Alamannia,,from_ocre,Female,Deity,Roman,Personification,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/Alamannia_person
+478,,Alexandria,,from_ocre,Female,Deity,Roman,Personification,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/Alexandria_person
+54,,Amazon,,from_it,Female,MythologicalFigure,,,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/amazon_NEW
+sub48,Amazon of Smyrna,Amazon,,,Female,MythologicalFigure,,,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/amazon_NEW
+63,,Amphilochos,,from_it,Male,Deity,,,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/amphilochos_NEW
+2,,Amphitrite,,from_it,Female,Deity,,,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/amphitrite_NEW
+259,,Anchialos,Anchiaus,"from_cnt,from_it",Male,Hero,CityFounder,,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/anchialos_person
+615,,Anchises,,from_cnt,Male,MythologicalFigure,,,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/anchises
+55,,Andromeda,,"from_cnt,from_it",Female,MythologicalFigure,,,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/andromeda_person
+416,,Annona,,from_ocre,Female,Deity,Roman,Personification,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/Annona_person
+64,,Anubis,,"from_cnt,from_it",Male,Deity,Egyptian,Other,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/anubis_person
+3,,Aphrodite,,"from_cnt,from_it",Female,Deity,Greek,Olympic,,,Venus,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/56979
+sub1,Aphrodite Kypria,Aphrodite,,,Female,Deity,Greek,Olympic,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/56979
+sub2,Aphrodite Wanassa,Aphrodite,,,Female,Deity,Greek,Olympic,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/56979
+266,,Apis,,from_cnt,Male,Deity,Egyptian,Other,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/apis_person
+65,,Apollo,"apollo citharede,apollo karinos,apollo sauroctonos,apollon kitharoedus","from_cnt,from_it",Male,Deity,Roman,Olympic,,,Apollon,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/56988
+sub49,Apollo Aktios,Apollo,,,Male,Deity,Roman,Olympic,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/56988
+sub50,Apollo Archagetas,Apollo,,,Male,Deity,Roman,Olympic,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/56988
+sub51,Apollo Asgelatas,Apollo,,,Male,Deity,Roman,Olympic,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/56988
+sub52,Apollo Axios,Apollo,,,Male,Deity,Roman,Olympic,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/56988
+sub53,Apollo Chresterios,Apollo,,,Male,Deity,Roman,Olympic,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/56988
+sub54,Apollo Citharoedus,Apollo,,,Male,Deity,Roman,Olympic,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/56988
+sub55,Apollo Daphnephoros,Apollo,,,Male,Deity,Roman,Olympic,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/56988
+sub56,Apollo Dekataphoros,Apollo,,,Male,Deity,Roman,Olympic,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/56988
+sub57,Apollo Delphinios,Apollo,,,Male,Deity,Roman,Olympic,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/56988
+sub58,Apollo Grynaieus,Apollo,,,Male,Deity,Roman,Olympic,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/56988
+sub59,Apollo Hegemon,Apollo,,,Male,Deity,Roman,Olympic,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/56988
+sub60,Apollo Hylates,Apollo,,,Male,Deity,Roman,Olympic,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/56988
+sub61,Apollo Ietros,Apollo,,,Male,Deity,Roman,Olympic,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/56988
+sub62,Apollo Karneios,Apollo,,,Male,Deity,Roman,Olympic,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/56988
+sub63,Apollo Killaios,Apollo,,,Male,Deity,Roman,Olympic,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/56988
+sub64,Apollo Korykaios,Apollo,,,Male,Deity,Roman,Olympic,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/56988
+sub65,Apollo Lykeios,Apollo,,,Male,Deity,Roman,Olympic,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/56988
+sub66,Apollo Pagasaios,Apollo,,,Male,Deity,Roman,Olympic,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/56988
+sub67,Apollo Pythios,Apollo,,,Male,Deity,Roman,Olympic,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/56988
+sub68,Apollo Smintheus,Apollo,,,Male,Deity,Roman,Olympic,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/56988
+sub69,Apollo Soter,Apollo,,,Male,Deity,Roman,Olympic,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/56988
+sub70,Apollo Thearios,Apollo,,,Male,Deity,Roman,Olympic,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/56988
+415,,Apollon,apollon keraunos,from_cnt,Male,Deity,Greek,Olympic,,,Apollo,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/56988
+471,,Arabia,,from_ocre,Female,Deity,Roman,Personification,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/Arabia_person
+66,,Ares,,"from_cnt,from_it",Male,Deity,Greek,Olympic,,,Mars,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/59284
+56,,Ariadne,,"from_cnt,from_it",Female,MythologicalFigure,,,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/57016
+544,,Arles,arelate,from_ocre,Female,Deity,Roman,Personification,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/Arles_person
+435,,Armenia,,from_ocre,Female,Deity,Roman,Personification,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/Armenia_person
+4,,Artemis,,"from_cnt,from_it",Female,Deity,Greek,Olympic,,,Diana,Artemis ist …,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/57039
+sub3,Artemis Aptara,Artemis,,,Female,Deity,Greek,Olympic,,,,Artemis ist …,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/57039
+sub4,Artemis Astyrene,Artemis,,,Female,Deity,Greek,Olympic,,,,Artemis ist …,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/57039
+sub5,Artemis Diktynna,Artemis,artemis diktynnaia,,Female,Deity,Greek,Olympic,,,,Artemis ist …,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/57039
+sub6,Artemis Elaphebolia,Artemis,,,Female,Deity,Greek,Olympic,,,,Artemis ist …,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/57039
+sub7,Artemis Ephesia,Artemis,,,Female,Deity,Greek,Olympic,,,,Artemis ist …,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/57039
+sub8,Artemis Erykine,Artemis,,,Female,Deity,Greek,Olympic,,,,Artemis ist …,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/57039
+sub9,Artemis Hekate,Artemis,,,Female,Deity,Greek,Olympic,,,,Artemis ist …,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/57039
+sub10,Artemis Hemera,Artemis,,,Female,Deity,Greek,Olympic,,,,Artemis ist …,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/57039
+sub11,Artemis Laphria,Artemis,,,Female,Deity,Greek,Olympic,,,,Artemis ist …,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/57039
+sub12,Artemis Leukophryene,Artemis,,,Female,Deity,Greek,Olympic,,,,Artemis ist …,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/57039
+sub13,Artemis Mesopolitis,Artemis,,,Female,Deity,Greek,Olympic,,,,Artemis ist …,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/57039
+sub14,Artemis Orthia,Artemis,,,Female,Deity,Greek,Olympic,,,,Artemis ist …,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/57039
+sub15,Artemis Panachaia,Artemis,,,Female,Deity,Greek,Olympic,,,,Artemis ist …,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/57039
+sub16,Artemis Pergaia,Artemis,,,Female,Deity,Greek,Olympic,,,,Artemis ist …,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/57039
+sub17,Artemis Phosphoros,Artemis,"diana lucifera,artemis tauropolos",,Female,Deity,Greek,Olympic,,,,Artemis ist …,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/57039
+sub18,Artemis Proseoea,Artemis,,,Female,Deity,Greek,Olympic,,,,Artemis ist …,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/57039
+sub19,Artemis Selene,Artemis,,,Female,Deity,Greek,Olympic,,,,Artemis ist …,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/57039
+sub20,Artemis Tauropolos,Artemis,artemis phosphoros,,Female,Deity,Greek,Olympic,,,,Artemis ist …,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/57039
+627,,Ascanius,,from_cnt,Male,MythologicalFigure,Roman,,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/Ascanius_person
+67,,Asclepius,asklepios,"from_cnt,from_it",Male,Deity,Greek-Roman,Other,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/57049
+5,,Athena,,"from_cnt,from_it",Female,Deity,Greek,Olympic,,,Minerva,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/57060
+sub21,Athena Alalkoneneis,Athena,,,Female,Deity,Greek,Olympic,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/57060
+sub22,Athena Alea,Athena,,,Female,Deity,Greek,Olympic,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/57060
+sub24,Athena Alkidemos,Athena,,,Female,Deity,Greek,Olympic,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/57060
+sub23,Athena Alkis,Athena,,,Female,Deity,Greek,Olympic,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/57060
+sub25,Athena Chalkioikos,Athena,,,Female,Deity,Greek,Olympic,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/57060
+sub26,Athena Daphnephoros,Athena,,,Female,Deity,Greek,Olympic,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/57060
+sub27,Athena Ilias,Athena,,,Female,Deity,Greek,Olympic,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/57060
+sub28,Athena Itonia,Athena,,,Female,Deity,Greek,Olympic,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/57060
+sub29,Athena Koria,Athena,,,Female,Deity,Greek,Olympic,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/57060
+sub30,Athena Kranaia,Athena,,,Female,Deity,Greek,Olympic,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/57060
+sub31,Athena Kyrrhestis,Athena,,,Female,Deity,Greek,Olympic,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/57060
+sub32,Athena Lindia,Athena,,,Female,Deity,Greek,Olympic,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/57060
+sub33,Athena Magarsis,Athena,,,Female,Deity,Greek,Olympic,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/57060
+sub34,Athena Nikephoros,Athena,athena promachos,,Female,Deity,Greek,Olympic,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/57060
+sub35,Athena Parthenos,Athena,,,Female,Deity,Greek,Olympic,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/57060
+sub37,Athena Poliaochos,Athena,,,Female,Deity,Greek,Olympic,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/57060
+sub36,Athena Polias,Athena,,,Female,Deity,Greek,Olympic,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/57060
+sub38,Athena Poliouschos,Athena,,,Female,Deity,Greek,Olympic,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/57060
+sub39,Athena Promachos,Athena,athena nikephoros,,Female,Deity,Greek,Olympic,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/57060
+95,,Attis,,"from_cnt,from_it",Male,Hero,,,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/attis_person
+275,,Bacchus,,from_cnt,Male,Deity,Roman,Olympic,,,Dionysus,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/57949
+499,,Bona Mens,"mens,mens bona",from_ocre,Female,Deity,Roman,Personification,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/BonaMens_person
+276,,Bonus Eventus,,from_cnt,Male,Deity,Roman,Other,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/57291
+482,,Britannia,,from_ocre,Female,Deity,Roman,Personification,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/Britannia_person
+483,,Bythnia,,from_ocre,Female,Deity,Roman,Personification,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/Bythnia_person
+93,,Byzas,,"from_cnt,from_it",Male,Hero,CityFounder,,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/byzas_person
+96,,Capaneus,kapaneus,"from_cnt,from_it",Male,Hero,Greek,,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/capaneus_person
+97,,Castor,kastor,"from_cnt,from_it",Male,Hero,Greek-Roman,Other,,,Dioscur,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/castor_person
+195,,centaure,,from_it,Male,MythologicalFigure,,,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/centaure_NEW
+283,,Ceres,,from_cnt,Female,Deity,Roman,Olympic,,,Demeter,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/57930
+484,,Cilicia,,from_ocre,Female,Deity,Roman,Personification,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/Cilicia_person
+6,,city goddess,city goddesses,"from_cnt,from_it",Female,Deity,Greek,Personification,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/city_goddess_person
+474,,Clementia,,from_ocre,Female,Deity,Roman,Personification,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/Clementia_person
+419,,Concordia,,from_ocre,Female,Deity,Roman,Personification,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/Concordia_person
+455,,Constantia,,from_ocre,Female,Deity,Roman,Personification,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/Constantia_person
+546,,Constantinopolis,,from_ocre,Female,Deity,Roman,Personification,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/Constantinopolis_person
+288,,Cupid,,from_cnt,Male,Deity,Roman,Other,,,Eros,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/57655
+196,,Curetes,korybantes,from_it,Male,MythologicalFigure,,,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/curetes_NEW
+7,,Cybele,kybele,"from_cnt,from_it",Female,Deity,Greek,Other,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/57657
+425,,Dacia,,from_ocre,Female,Deity,Roman,Personification,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/Dacia_person
+472,,Danuvius,danube,from_ocre,Male,Deity,Roman,RiverGod,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/Danuvius_person
+496,,Dea Caelestis,,from_ocre,Female,Deity,Roman,Other,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/DeaCaelestis_person
+8,,Demeter,,"from_cnt,from_it",Female,Deity,Greek,Olympic,,,Ceres,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/57930
+sub40,Demete Chthonia,Demeter,,,Female,Deity,Greek,Olympic,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/57930
+sub41,Demeter Eleusinia,Demeter,,,Female,Deity,Greek,Olympic,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/57930
+sub42,Demeter Tauropolos,Demeter,,,Female,Deity,Greek,Olympic,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/57930
+sub43,Demeter Thesmophoros,Demeter,,,Female,Deity,Greek,Olympic,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/57930
+9,,Despoina,,from_it,Female,Deity,,,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/despoina_NEW
+293,,Diana,diana lucifera,from_cnt,Female,Deity,Roman,Olympic,,,Artemis,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/57039
+68,,Dicaeosyne,"dicaiosyne,dikaiosyne,aequitas","from_cnt,from_it,from_ocre",Male,Deity,Greek,Personification,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/Aequitas_person
+10,,Diktynna,,from_it,Female,Deity,,,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/diktynna_NEW
+98,,Diomedes,,"from_cnt,from_it",Male,Hero,Greek,,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/diomedes_person
+69,,Dionysus,dionysos,"from_cnt,from_it",Male,Deity,Greek,Olympic,,,Bacchus,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/57949
+sub72,Dionysos Kadmeios,Dionysus,,,Male,Deity,Greek,Olympic,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/57949
+sub71,Dionysus infant,Dionysus,,,Male,Deity,Greek,Olympic,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/57949
+70,,Dioscur,"dioscuri,dioscuri","from_cnt,from_it",Male,Deity,Greek-Roman,Other,,,"Kastor,Pollux,Polydeuces",,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/57951
+11,,Earth,"gaia,gaia,ge","from_cnt,from_it",Female,Deity,Greek-Roman,Other,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/earth_person
+300,,Eirene,,from_cnt,Female,Deity,Greek,Other,,,Pax,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/eirene_person
+12,,Eleuthyia,,from_it,Female,Deity,,,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/eleuthyia_NEW
+13,,Ennodia,,from_it,Female,Deity,,,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/ennodia_NEW
+71,,Eponymos god,,from_it,Male,Deity,,,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/eponymos_god_NEW
+587,,Equitas,,from_ocre,Female,Deity,Roman,Personification,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/Equitas_person
+72,,Eros,,"from_cnt,from_it",Male,Deity,Greek,Other,,,Cupid,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/57655
+549,,Euphratides,,from_ocre,Male,Deity,Roman,RiverGod,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/Euphratides_person
+57,,Europa,,"from_cnt,from_it",Female,MythologicalFigure,Greek-Roman,,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/europa_person
+630,,Eurypylos,,from_cnt,Male,MythologicalFigure,,,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/Euryplos_person
+197,,Eurystheus,,"from_cnt,from_it",Male,MythologicalFigure,Greek,,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/eurystheus_person
+441,,fides militaris,fides militum,from_ocre,Female,Deity,Roman,Personification,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/FidesMilitaris_person
+420,,Fortuna,"fortuna felix,fortuna victrix",from_ocre,Female,Deity,Roman,Other,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/Fortuna_person
+459,,Gallia,,from_ocre,Female,Deity,Roman,Personification,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/Gallia_person
+618,,Ganymed,,from_cnt,Male,MythologicalFigure,Greek,,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/ganymed_person
+198,,genius,58396,"from_cnt,from_it",Male,MythologicalFigure,Roman,Other,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/58396
+493,,Genius Exercitus,,from_ocre,Male,Deity,Roman,Personification,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/GeniusExercitus_person
+457,,Genius Populi Romani,genius of the roman people,from_ocre,Male,Deity,Roman,Personification,,,Genius,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/GeniusPopuliRomani_person
+468,,Germania,,from_ocre,Female,Deity,Roman,Personification,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/Germania_person
+311,,Gorgo,gorgone,from_cnt,Female,MythologicalFigure,Greek-Roman,,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/gorgo_person
+15,,graces,charites,from_it,Female,Deity,,,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/graces_NEW
+73,,Hades,hades-serapis,"from_cnt,from_it",Male,Deity,Greek,Underworld,Olympic,,Pluto,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/59809
+74,,Harpokrates,harpocrates,"from_cnt,from_it",Male,Deity,,,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/harpocrates_person
+14,,Hebe,ganymeda,from_it,Female,Deity,,,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/hebe_NEW
+84,,Hebros,hebrus,"from_cnt,from_it",Male,Deity,Greek,RiverGod,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/hebros_person
+626,,Hecate,hekate,from_cnt,Female,Deity,Greek,Other,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/Hecate_person
+75,,Helios,,"from_cnt,from_it",Male,Deity,Greek,Other,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/58616
+317,,Hephaestos,hephaistus,from_cnt,Male,Deity,Greek,Olympic,,,Vulcanus,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/58623
+76,,Hephaistos,,from_it,Male,Deity,,,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/hephaistos_NEW
+16,,Hera,,"from_cnt,from_it",Female,Deity,Greek,Olympic,,,Juno,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/58624
+sub44,Hera Samia,Hera,,,Female,Deity,Greek,Olympic,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/58624
+99,,Heracles,"herakles,hercules","from_cnt,from_it",Male,Hero,Greek-Roman,,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/58628
+sub102,Heracles Kynagidas,Heracles,,,Male,Hero,Greek-Roman,,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/58628
+sub103,Heracles Patroos,Heracles,,,Male,Hero,Greek-Roman,,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/58628
+77,,Hermes,,"from_cnt,from_it",Male,Deity,Greek,Olympic,,,Mercury,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/58637
+sub73,Hermes Imbramos,Hermes,,,Male,Deity,Greek,Olympic,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/58637
+sub74,Hermes Kriophoros,Hermes,,,Male,Deity,Greek,Olympic,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/58637
+sub75,Hermes Perpheraios,Hermes,,,Male,Deity,Greek,Olympic,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/58637
+sub76,Hermes Promachos,Hermes,,,Male,Deity,Greek,Olympic,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/58637
+631,,Herophile,,from_cnt,Female,MythologicalFigure,Greek,,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/Herophile_person
+410,,heros,,from_cnt,Male,Hero,,,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/heros_person
+59,,Hesperides,,from_it,Female,MythologicalFigure,,,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/hesperides_NEW
+58,,Hippolyte,,"from_cnt,from_it",Female,MythologicalFigure,Greek,,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/hippolyte_person
+458,,Hispania,,from_ocre,Female,Deity,Roman,Personification,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/Hispania_person
+17,,Homonoia,,"from_cnt,from_it",Female,Deity,Greek,Personification,,,Concordia,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/homonoia_person
+428,,Honos,,from_ocre,Male,Deity,Roman,Personification,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/Honos_person
+18,,Hygieia,,"from_cnt,from_it",Female,Deity,Greek,Other,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/58668
+432,,Indulgentia,,from_ocre,Female,Deity,Roman,Personification,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/Indulgentia_person
+617,,Iole,,from_cnt,Female,MythologicalFigure,Greek,,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/iole_person
+19,,Isis,,"from_cnt,from_it",Female,Deity,Egyptian,Other,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/54025
+sub45,Isis Pharia,Isis,isis ploiaphesia,,Female,Deity,Egyptian,Other,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/54025
+sub46,Isis Ploiaphesia,Isis,isis pharia,,Female,Deity,Egyptian,Other,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/54025
+85,,Istrus,,from_it,Male,Deity,RiverGod,,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/istrus_NEW
+440,,Italia,,from_ocre,Female,Deity,Roman,Personification,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/Italia_person
+325,,Iupiter,"child jupiter,jupiter,jupiter karios",from_cnt,Male,Deity,Roman,Olympic,,,Zeus,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/58921
+445,,Janus,janus quadrifons,from_ocre,Male,Deity,Roman,Other,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/Janus_person
+506,,Jucunditas,,from_ocre,Female,Deity,Roman,Personification,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/Jucunditas_person
+465,,Judaea,judea,from_ocre,Female,Deity,Roman,Personification,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/Judaea_person
+328,,Juno,"juno moneta,juno sospita",from_cnt,Female,Deity,Roman,Olympic,,,Hera,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/58624
+434,,Justitia,iustitia,from_ocre,Female,Deity,Roman,Other,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/Justitia_person
+429,,Juventas,,from_ocre,Female,Deity,Roman,Other,,,Hebe,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/Juventas_person
+78,,Kabeiroi,,from_it,Male,Deity,,,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/kabeiroi_NEW
+33,,Keroessa,,"from_cnt,from_it",Female,Hero,Greek,,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/keroessa_person
+20,,Kore,,"from_cnt,from_it",Female,Deity,Greek,Underworld,,,"Persephone,Proserpina",,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/kore_person
+sub47,Kore Soteira,Kore,,,Female,Deity,Greek,Underworld,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/kore_person
+629,,Koronis,,from_cnt,Female,MythologicalFigure,Greek,,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/Koronis_person
+433,,Laetitia,,from_ocre,Female,Deity,Roman,Personification,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/Laetitia_person
+481,,Liberalitas,,from_ocre,Female,Deity,Roman,Personification,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/Liberalitas_person
+437,,Libertas,,from_ocre,Female,Deity,Roman,Personification,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/Libertas_person
+476,,Luna,moon,from_ocre,Female,Deity,Roman,Other,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/Moon_person
+480,,Lunus,,from_ocre,Male,Deity,Roman,Other,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/Lunus_person
+488,,Macedonia,,from_ocre,Female,Deity,Roman,Personification,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/Macedonia_person
+60,,Maenad,maenads,"from_cnt,from_it",Female,MythologicalFigure,,,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/maenad_person
+470,,Maia,,from_ocre,Female,Deity,Roman,Other,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/Maia_person
+79,,Mars,,"from_cnt,from_it",Male,Deity,Roman,Olympic,,,Ares,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/59284
+201,,Marsyas,,"from_cnt,from_it",Male,MythologicalFigure,Satyr-Silen,,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/marsyas_person
+61,,Medusa,,"from_it,from_ocre",Female,MythologicalFigure,Greek-Roman,,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/Medusa_person
+100,,Melikertes,,from_it,Male,Hero,,,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/melikertes_NEW
+345,,Melsas,,from_cnt,Male,Hero,CityFounder,,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/melsas_person
+346,,Mercury,,from_cnt,Male,Deity,Roman,Olympic,,,Hermes,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/58637
+347,,Mestos,nestos,from_cnt,Male,Deity,Greek,RiverGod,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/mestos_person
+348,,Minerva,,from_cnt,Female,Deity,Roman,Olympic,,,Athena,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/57060
+502,,Minotaur,,from_ocre,Male,MythologicalFigure,Greek-Roman,,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/Minotaur_person
+485,,Moesia,,from_ocre,Female,Deity,Roman,Personification,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/Moesia_person
+446,,Moneta,"monetae,tres monetae",from_ocre,Female,Deity,Roman,Personification,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/Monetae_person
+492,,Munificentia,,from_ocre,Female,Deity,Roman,Personification,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/Munificentia_person
+21,,Nemesis,,"from_cnt,from_it",Female,Deity,Greek,Other,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/59551
+554,,Nephthys,,from_ocre,Female,Deity,Egyptian,Other,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/Nephthys_person
+351,,Neptune,,from_cnt,Male,Deity,Roman,Olympic,,,Poseidon,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/59828
+624,,nereid,nereids,from_cnt,Female,Deity,Greek,Other,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/nereid_person
+22,,Nike,,"from_cnt,from_it",Female,Deity,Greek,Other,,,Victoria,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/60915
+477,,Nilus,nile,from_ocre,Male,Deity,Roman,RiverGod,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/Nilus_person
+444,,Nobilitas,,from_ocre,Female,Deity,Roman,Personification,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/Nobilitas_person
+486,,Noricum,,from_ocre,Male,Deity,Roman,Personification,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/Noricum_person
+23,,nymphs,nymph,"from_cnt,from_it",Female,Deity,,,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/nymph_person
+473,,Oceanus,ocean,from_ocre,Male,Deity,Roman,RiverGod,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/Ocean_person
+86,,Oiskos,,"from_cnt,from_it",Male,Deity,Greek,RiverGod,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/Oiskos_person
+622,,Orpheus,,from_cnt,Male,MythologicalFigure,Greek,,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/Orpheus_person
+80,,Pan,,"from_cnt,from_it",Male,Deity,Greek,Other,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/59726
+24,,Parthenos,,from_it,Female,Deity,,,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/parthenos_NEW
+442,,Parthia,,from_ocre,Female,Deity,Roman,Personification,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/Parthia_person
+479,,Patientia,,from_ocre,Female,Deity,Roman,Personification,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/Patientia_person
+81,,Pax,,"from_cnt,from_it",Female,Deity,Roman,Personification,,,Eirene,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/76227
+94,,Perinthos,,"from_cnt,from_it",Male,Hero,CityFounder,,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/perinthos_person
+505,,Perpetuitas,,from_ocre,Female,Deity,Roman,Personification,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/Perpetuitas_person
+25,,Persephone,,"from_cnt,from_it",Female,Deity,Greek,Underworld,,,"Kore,Proserpina",,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/59758
+101,,Perseus,,"from_cnt,from_it",Male,Hero,Greek,,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/59759
+489,,Phoenicia,,from_ocre,Female,Deity,Roman,Personification,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/Phoenicia_person
+487,,Phrygia,,from_ocre,Female,Deity,Roman,Personification,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/Phrygia_person
+431,,Pietas,,from_ocre,Female,Deity,Roman,Personification,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/Pietas_person
+368,,Pluto,,from_cnt,Male,Deity,Roman,Underworld,,,Hades,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/59809
+369,,Pollux,,from_cnt,Male,Deity,Greek-Roman,Other,,,"Dioscur,Polydeuces",,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/pollux_person
+370,,Polydeuces,polydeukes,from_cnt,Male,Deity,Greek,Other,,,"Dioscur,Pollux",,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/polydeuces_person
+616,,Pontos,,from_cnt,Male,Deity,Greek,Personification,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/pontos
+82,,Poseidon,,"from_cnt,from_it",Male,Deity,Greek,Olympic,,,Neptune,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/59828
+sub77,Poseidon Helikonios,Poseidon,,,Male,Deity,Greek,Olympic,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/59828
+sub78,Poseidon Hippios,Poseidon,,,Male,Deity,Greek,Olympic,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/59828
+sub79,Poseidon Kalauros,Poseidon,,,Male,Deity,Greek,Olympic,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/59828
+sub80,Poseidon Porthmios,Poseidon,,,Male,Deity,Greek,Olympic,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/59828
+83,,Priapos,,from_it,Male,Deity,,,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/priapos_NEW
+373,,Proserpina,,from_cnt,Female,Deity,Roman,Underworld,,,"Kore,Persephone",,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/59758
+102,,Protesilaos,,"from_cnt,from_it",Male,Hero,Greek,,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/protesilaos_person
+503,,Pudicitia,,from_ocre,Female,Deity,Roman,Personification,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/Pudiitia_person
+529,,Quies,,from_ocre,Female,Deity,Roman,Personification,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/Quies_person
+199,,Remus,,"from_cnt,from_it",Male,MythologicalFigure,Roman,CityFounder,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/60203
+541,,Respublica,res publica,from_ocre,Female,Deity,Roman,Personification,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/RespublicaVictory_person
+491,,Rhea Silvia,,from_ocre,Female,MythologicalFigure,Roman,,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/RheaSilvia_person
+469,,Rhenus,,from_ocre,Male,Deity,Roman,RiverGod,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/Rhenus_person
+26,,Roma,roma victrix,"from_cnt,from_it",Female,Deity,Roman,Personification,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/60208
+200,,Romulus,,"from_cnt,from_it",Male,MythologicalFigure,Roman,CityFounder,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/60209
+495,,Saeculum Frugiferum,,from_ocre,Male,Deity,Roman,Personification,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/SeaculumFrugiferum_person
+422,,Saturn,,from_ocre,Male,Deity,Roman,Other,,,Kronos,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/Saturn_person
+413,,satyr,"satyrs,silen,silens",from_cnt,Male,MythologicalFigure,,,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/60385
+525,,Savus,,from_ocre,Male,Deity,Roman,RiverGod,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/Savus_person
+490,,Scythia,,from_ocre,Female,Deity,Roman,Personification,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/Scythia_person
+498,,Season,seasons,from_ocre,Male,Deity,Roman,Personification,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/Seasons_person
+27,,Selene,,"from_cnt,from_it",Female,Deity,Greek,Other,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/selene_person
+28,,Serapis,sarapis,"from_cnt,from_it",Female,Deity,Egyptian,Other,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/60374
+452,,Sicilia,,from_ocre,Female,Deity,Roman,Personification,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/Sicilia_person
+202,,Silenos,,from_it,Male,MythologicalFigure,Satyr-Silen,,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/silenos_NEW
+524,,Siscia,,from_ocre,Female,Deity,Roman,Personification,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/Siscia_person
+475,,Sol,"sol invictus,sun",from_ocre,Male,Deity,Roman,Other,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/Sol_person
+427,,Spes,,from_ocre,Female,Deity,Roman,Personification,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/Spes_person
+87,,Strymon,,"from_cnt,from_it",Male,Deity,Greek,RiverGod,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/strymon_person
+29,,Syrinx,,from_it,Female,Deity,,,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/syrinx_NEW
+392,,Telephos,,from_cnt,Male,Hero,Greek,,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/telephos_person
+88,,Telesphoros,telesphorus,"from_cnt,from_it",Male,Deity,,,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/60691
+523,,Tempus,,from_ocre,Male,Deity,Roman,Other,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/Tempus_person
+30,,Thalassa,,"from_cnt,from_it",Female,Deity,Greek,Other,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/thalassa_person
+621,,Thanatus,,from_cnt,Male,Deity,Greek,Other,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/Thanatus_person
+31,,Themis,,from_it,Female,Deity,,,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/themis_NEW
+89,,Theos Megas,great god,"from_cnt,from_it",Male,Deity,Greek-Roman,Other,,,Great god,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/theos_megas_person
+396,,Tonzos,tonzus,from_cnt,Male,Deity,Greek,RiverGod,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/tonzos_person
+509,,Tranquillitas,,from_ocre,Female,Deity,Roman,Personification,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/Tranquillitas_person
+90,,Triptolemos,triptolemon,"from_cnt,from_it",Male,Deity,Greek,Other,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/triptolemos_person
+497,,Triton,,from_ocre,Male,Deity,Roman,Other,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/Triton_person
+585,,Tutela,,from_ocre,Female,Deity,Roman,Other,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/Tutela_person
+436,,Twins,,from_ocre,Male,Hero,CityFounder,,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/Twins_person
+32,,Tyche,tyche poleos,"from_cnt,from_it",Female,Deity,Greek,Other,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/58260
+403,,Venus,"venus genetrix,venus victrix",from_cnt,Female,Deity,Roman,Olympic,,,Aphrodite,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/56979
+426,,Vesta,,from_ocre,Female,Deity,Roman,Other,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/Vesta_person
+494,,Via Trajana,via traiana,from_ocre,Female,Deity,Roman,Personification,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/ViaTrajana_person
+404,,Victoria,,from_cnt,Female,Deity,Roman,Other,,,Nike,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/60915
+424,,Victory,victories,from_ocre,Female,Deity,Roman,Personification,,,Nike,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/Victory_person
+417,,Virtus,,from_ocre,Female,Deity,Roman,Personification,,,,,,http://www.dbis.cs.uni-frankfurt.de/cnt/id/Virtus_person
+406,,Vulcanus,vulcan,from_cnt,Male,Deity,Roman,Olympic,,,Hephaestos,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/58623
+91,,Zeus,zeus epikarpios,"from_cnt,from_it",Male,Deity,Greek,Olympic,,,Iupiter,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/58921
+sub81,Zeus Aetophoros,Zeus,,,Male,Deity,Greek,Olympic,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/58921
+sub82,Zeus Ammon,Zeus,,,Male,Deity,Greek,Olympic,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/58921
+sub83,Zeus Anthas,Zeus,,,Male,Deity,Greek,Olympic,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/58921
+sub84,Zeus Areios,Zeus,,,Male,Deity,Greek,Olympic,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/58921
+sub91,Zeus at Labraunda,Zeus,,,Male,Deity,Greek,Olympic,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/58921
+sub85,Zeus Basileus,Zeus,,,Male,Deity,Greek,Olympic,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/58921
+sub86,Zeus Dodonaios,Zeus,,,Male,Deity,Greek,Olympic,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/58921
+sub87,Zeus Homarios,Zeus,,,Male,Deity,Greek,Olympic,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/58921
+sub88,Zeus Ithomatas,Zeus,,,Male,Deity,Greek,Olympic,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/58921
+sub89,Zeus Karaios,Zeus,,,Male,Deity,Greek,Olympic,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/58921
+sub90,Zeus Keraunos,Zeus,,,Male,Deity,Greek,Olympic,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/58921
+sub92,Zeus Larasios,Zeus,,,Male,Deity,Greek,Olympic,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/58921
+sub93,Zeus Lydios,Zeus,,,Male,Deity,Greek,Olympic,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/58921
+sub94,Zeus Lykaios,Zeus,,,Male,Deity,Greek,Olympic,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/58921
+sub95,Zeus Monnitios,Zeus,,,Male,Deity,Greek,Olympic,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/58921
+sub96,Zeus Olympios,Zeus,,,Male,Deity,Greek,Olympic,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/58921
+sub97,Zeus Polieus,Zeus,,,Male,Deity,Greek,Olympic,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/58921
+sub98,Zeus Polioachos,Zeus,,,Male,Deity,Greek,Olympic,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/58921
+sub99,Zeus Salaminios,Zeus,,,Male,Deity,Greek,Olympic,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/58921
+sub100,Zeus Soter,Zeus,,,Male,Deity,Greek,Olympic,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/58921
+sub101,Zeus Tallaios,Zeus,,,Male,Deity,Greek,Olympic,,,,,,https://public.researchspace.org/resource/?uri=http://collection.britishmuseum.org/id/person-institution/58921
