@@ -86,7 +86,7 @@ $writer->flush();
 
 //output errors
 foreach ($findTypes as $k=>$v){
-	if ($k == 'error'){
+	if ($v == 'error'){
 		file_put_contents('errors.txt', $k, FILE_APPEND | LOCK_EX);
 	}
 }
