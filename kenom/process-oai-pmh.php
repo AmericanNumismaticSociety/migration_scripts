@@ -117,7 +117,10 @@ function read_oai($url, $writer){
 						break;
 					case 'http://ld.zdb-services.de/resource/organisations/DE-MUS-109513':
 						$nomisma_collection = 'http://nomisma.org/id/stadtmuseum_oldenburg';
-						break;						
+						break;
+					case 'http://ld.zdb-services.de/resource/organisations/DE-MUS-805310':
+						$nomisma_collection = 'http://nomisma.org/id/landesmuseum-vorgeschichte_halle';
+						break;
 				}
 				
 				$writer->startElement('nmo:NumismaticObject');
