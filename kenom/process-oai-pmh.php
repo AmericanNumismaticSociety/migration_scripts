@@ -12,8 +12,13 @@ $context = stream_context_create($options);
 libxml_set_streams_context($context);
 
 $records = array();
+$findspots = array();
 
+//production: harvest entire set
 $url = 'http://www.kenom.de/oai/?verb=ListRecords&metadataPrefix=lido&set=relation:nomisma.org:true';
+
+//test a single record
+//$url = 'https://www.kenom.de/oai/?verb=GetRecord&metadataPrefix=lido&identifier=record_DE-MUS-878719_kenom_122643';
 
 //generate RDF
 $writer = new XMLWriter();
@@ -39,14 +44,28 @@ $writer->writeAttribute('xmlns:doap', "http://usefulinc.com/ns/doap#");
 
 	read_oai($url, $writer);
 
+	//generate RDF for each findspot URI
+	foreach ($findspots as $uri=>$findspot){
+		$writer->startElement('geo:SpatialThing');
+			$writer->writeAttribute('rdf:about', $uri);
+			$writer->writeElement('foaf:name', $findspot['label']);
+			$writer->writeElement('geo:lat', $findspot['lat']);
+			$writer->writeElement('geo:long', $findspot['long']);
+		$writer->endElement();
+	}
+	
 $writer->endElement();
 $writer->flush();
+
+//var_dump($findspots);
 
 
 
 
 /****** FUNCTIONS ******/
 function read_oai($url, $writer){
+	GLOBAL $findspots;
+	
 	$doc = new DOMDocument();
 	if ($doc->load($url) === FALSE){
 		return "FAIL";
@@ -148,6 +167,36 @@ function read_oai($url, $writer){
 								break;
 						}
 					}
+					
+					//findspot
+					$placeNodes = $xpath->query("descendant::lido:eventSet/lido:event[lido:eventType/lido:conceptID = 'http://terminology.lido-schema.org/eventType/finding']/lido:eventPlace/lido:place");
+					
+					if ($placeNodes->length > 0){
+						$findspotURI = $placeNodes->item(0)->getElementsByTagNameNS('http://www.lido-schema.org', 'placeID')->item(0)->nodeValue;
+						
+						
+						//if the URI is a geonames URI, then proceed
+						if (preg_match('/^https?:\/\/www\.geonames\.org\/\d+$/', $findspotURI)){
+							//create property
+							$writer->startElement('nmo:hasFindspot');
+								$writer->writeAttribute('rdf:resource', $findspotURI);
+							$writer->endElement();
+							
+							//create a data object for the findspot URI, label, and coordinates so that each object is created only in the RDF export
+							if (!array_key_exists($findspotURI, $findspots)){
+								$label = $placeNodes->item(0)->getElementsByTagNameNS('http://www.lido-schema.org', 'namePlaceSet')->item(0)->getElementsByTagNameNS('http://www.lido-schema.org', 'appellationValue')->item(0)->nodeValue;
+								$coords = $placeNodes->item(0)->getElementsByTagNameNS('http://www.lido-schema.org', 'gml')->item(0)->getElementsByTagNameNS('http://www.opengis.net/gml', 'Point')->item(0)->getElementsByTagNameNS('http://www.opengis.net/gml', 'pos')->item(0)->nodeValue;
+								
+								$pieces = explode(' ', $coords);
+								$lat = $pieces[0];
+								$long = $pieces[1];
+								
+								//insert findspot data into the $findspots array
+								$findspots[$findspotURI] = array('label'=>$label, 'lat'=>$lat, 'long'=>$long);
+							}
+						}
+					}
+					
 					//images
 					$webResources = array();
 					$images = $xpath->query("descendant::lido:resourceSet/lido:resourceRepresentation[@lido:type='http://terminology.lido-schema.org/resourceRepresentation_type/preview_representation']/lido:linkResource", $node);
