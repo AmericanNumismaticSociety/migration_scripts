@@ -20,7 +20,7 @@ $hoards = array();
 $url = 'http://www.kenom.de/oai/?verb=ListRecords&metadataPrefix=lido&set=relation:nomisma.org:true';
 
 //test a single record
-//$url = 'https://www.kenom.de/oai/?verb=GetRecord&metadataPrefix=lido&identifier=record_DE-MUS-878719_kenom_122530';
+//$url = 'https://www.kenom.de/oai/?verb=GetRecord&metadataPrefix=lido&identifier=record_DE-MUS-805310_kenom_200083';
 
 //generate RDF
 $writer = new XMLWriter();
@@ -87,7 +87,8 @@ $writer->flush();
 //output errors
 foreach ($findTypes as $k=>$v){
 	if ($v == 'error'){
-		file_put_contents('errors.txt', $k, FILE_APPEND | LOCK_EX);
+		$error = $k . "\n";
+		file_put_contents('errors.txt', $error, FILE_APPEND | LOCK_EX);
 	}
 }
 
@@ -208,7 +209,7 @@ function read_oai($url, $writer){
 					
 					//findspot
 					//only process findspots for Thuringia coins so far, since they are the only ones that can be disambiguated between single find and hoard
-					if ($collection = 'http://ld.zdb-services.de/resource/organisations/DE-MUS-878719'){
+					if ($collection == 'http://ld.zdb-services.de/resource/organisations/DE-MUS-878719'){
 						$placeNodes = $xpath->query("descendant::lido:eventSet/lido:event[lido:eventType/lido:conceptID = 'http://terminology.lido-schema.org/eventType/finding']/lido:eventPlace/lido:place", $node);
 						
 						if ($placeNodes->length > 0){
@@ -282,8 +283,25 @@ function read_oai($url, $writer){
 												//if there's no classification response, there is some error between the fundkomplex URI in the object OAI-PMH and the prototype fundkomplex OAI-PMH feed
 												$findTypes[$fundkomplexURI] = 'error';
 												echo "No OAI-PMH response for {$fundkomplexURI}\n";
+												echo "OAI-PMH URL: {$komplexOAI}\n";
 											}
 										}										
+									} else {
+										//if the fundkomplex URI is already in the array
+										if ($findTypes[$fundkomplexURI] == 'hoard'){
+											echo "Matched hoard {$fundkomplexURI}\n";
+											
+											//insert dcterms:isPartOf into record
+											$writer->startElement('dcterms:isPartOf');
+												$writer->writeAttribute('rdf:resource', $fundkomplexURI);
+											$writer->endElement();
+										} elseif ($findTypes[$fundkomplexURI] == 'find'){
+											echo "Matched findspot {$findspotURI}\n";
+											
+											$writer->startElement('nmo:hasFindspot');
+												$writer->writeAttribute('rdf:resource', $findspotURI);
+											$writer->endElement();
+										}
 									}
 								}
 							}
