@@ -2,8 +2,8 @@
 
 /*****
  * Author: Ethan Gruber
- * Date May 1, 2017
- * Function: Process KENOM OAI-PMH feed with the LIDO metadataPrefix in order to generate Nomisma RDF for Roman coins
+ * Date August, 2019
+ * Function: Process KENOM OAI-PMH feed with the LIDO metadataPrefix in order to generate Nomisma RDF for coins
  *****/
 
 //libxml timeout
