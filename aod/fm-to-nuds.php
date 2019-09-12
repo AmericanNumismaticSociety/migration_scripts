@@ -40,8 +40,8 @@ set_time_limit(0);
 //the line below is for passing request parameters from the command line.
 //parse_str(implode('&', array_slice($argv, 1)), $_GET);
 //$csv_id = $_GET['id'];
-$csv_id = 'wwi-new';
-$file = file_get_contents($csv_id . ".csv");
+
+$file = file_get_contents("/tmp/fmexport-ww1.csv");
 $cleanFile = 'cleaned.csv';
 //escape conflicting XML characters
 $cleaned = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x80-\x9F]/u', '', preg_replace("[\x1D]", "|", str_replace('>', '&gt;', str_replace('<', '&lt;', str_replace('&', 'and', preg_replace("[\x0D]", "\n", $file))))));
@@ -86,9 +86,9 @@ if (($handle = fopen("cleaned.csv", "r")) !== FALSE) {
 			echo "{$row['accnum']} does not have an ID.\n";
 		} else {
 			$id = $citations[0];
-			$pieces = explode('.', $id);
-			$pop =array_pop($pieces);
-			$broader = implode('.', $pieces);
+			//$pieces = explode('.', $id);
+			//$pop =array_pop($pieces);
+			//$broader = implode('.', $pieces);
 			$xml = generate_nuds($row, $count);
 			//load DOMDocument
 			$dom = new DOMDocument('1.0', 'UTF-8');
@@ -99,7 +99,7 @@ if (($handle = fopen("cleaned.csv", "r")) !== FALSE) {
 				$dom->preserveWhiteSpace = FALSE;
 				$dom->formatOutput = TRUE;
 				//echo $dom->saveXML();
-				$dom->save('types/' . $broader . '.xml');
+				$dom->save('types/' . $id . '.xml');
 			}
 		}
 		$count++;
@@ -120,9 +120,9 @@ function generate_nuds($row, $count){
 	
 	//control
 	$xml = '<?xml version="1.0" encoding="UTF-8"?><nuds xmlns="http://nomisma.org/nuds" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:mets="http://www.loc.gov/METS/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" recordType="conceptual">';
-	$xml .= "<control><recordId>{$broader}</recordId>";
-	//$xml .= '<otherRecordId semantic="skos:broader">' . $broader . '</otherRecordId>';
-	$xml .= '<publicationStatus>approved</publicationStatus>';
+	$xml .= "<control><recordId>{$id}</recordId>";
+	$xml .= '<otherRecordId semantic="skos:broader">' . $broader . '</otherRecordId>';
+	$xml .= '<publicationStatus>approvedSubtype</publicationStatus>';
 	$xml .= '<maintenanceAgency><agencyName>American Numismatic Society</agencyName></maintenanceAgency>';
 	$xml .= '<maintenanceStatus>derived</maintenanceStatus>';
 	$xml .= '<maintenanceHistory><maintenanceEvent>';
@@ -132,7 +132,7 @@ function generate_nuds($row, $count){
 	$xml .= "<semanticDeclaration><prefix>skos</prefix><namespace>http://www.w3.org/2004/02/skos/core#</namespace></semanticDeclaration>";
 	$xml .= "</control>";
 	$xml .= '<descMeta>';
-	$xml .= '<title xml:lang="en">AoD ' . $broader . '</title>';
+	$xml .= '<title xml:lang="en">AoD ' . $id . '</title>';
 	//subjects
 	if (strlen(trim($row['series'])) > 0 || strlen(trim($row['subjevent'])) > 0 || strlen(trim($row['subjissuer'])) > 0 || strlen(trim($row['subjperson'])) > 0 || strlen(trim($row['subjplace'])) > 0){
 		$xml .= '<subjectSet>';
@@ -169,52 +169,18 @@ function generate_nuds($row, $count){
 		$xml .= '</subjectSet>';
 	}
 	//notes
-	/*if (strlen(trim($row['info'])) > 0){
+	//COMMENT OUT FOR PARENT TYPE
+	if (strlen(trim($row['info'])) > 0){
 		$infos = array_filter(explode('|', $row['info']));
 		$xml .= '<noteSet>';
 		foreach ($infos as $info){
 			$xml .= '<note>' . trim($info) . '</note>';
 		}
 		$xml .= '</noteSet>';
-	}*/
+	}
 
 	/************ typeDesc ***************/
 	$xml .= generate_typeDesc($row);
-
-	/***** PHYSICAL DESCRIPTION *****/
-	$xml .= '<physDesc>';
-
-	//dob
-	if (strlen(trim($row['dob'])) > 0){
-		$xml .= '<dateOnObject><date>' . trim($row['dob']) . '</date></dateOnObject>';
-	}
-
-	//create measurementsSet, if applicable
-	/*if ((is_numeric(trim($row['diameter'])) && trim($row['diameter']) > 0) || (is_numeric(trim($row['height'])) && trim($row['height']) > 0) || (is_numeric(trim($row['width'])) && trim($row['width']) > 0) || (is_numeric(trim($row['depth'])) && trim($row['depth']) > 0)){
-		$xml .= '<measurementsSet>';
-		//diameter
-		$diameter = trim($row['diameter']);
-		if (is_numeric($diameter) && $diameter > 0){
-			$xml .= '<diameter units="mm">' . $diameter . '</diameter>';
-		}
-		//height
-		$height = trim($row['height']);
-		if (is_numeric($height) && $height > 0){
-			$xml .= '<height units="mm">' . $height . '</height>';
-		}
-		//width
-		$width = trim($row['width']);
-		if (is_numeric($width) && $width > 0){
-			$xml .= '<width units="mm">' . $width . '</width>';
-		}
-		//depth
-		$depth = trim($row['depth']);
-		if (is_numeric($depth) && $depth > 0){
-			$xml .= '<thickness units="mm">' . $depth . '</thickness>';
-		}
-		$xml .= '</measurementsSet>';
-	}*/
-	$xml .= '</physDesc>';
 
 	/***** BIBLIOGRAPHIC DESCRIPTION *****/	
 	if (count($refs) > 0){		
@@ -265,15 +231,17 @@ function generate_typeDesc($row){
 	}
 	
 	//dates
-	$startdate_int = trim($row['startdate']) * 1;
-	$enddate_int = trim($row['enddate']) * 1;
-	$dob_int = trim($row['dob']) * 1;
-	
 	$date = '';
-	if (trim($row['startdate']) != '' || trim($row['enddate']) != ''){		
+	if (trim($row['startdate']) != '' || trim($row['enddate']) != ''){	
+	    $startdate_int = trim($row['startdate']) * 1;
+	    $enddate_int = trim($row['enddate']) * 1;
+	    
 		$date = get_date($startdate_int, $enddate_int);
-	} elseif (is_numeric(trim($row['dob']))) {
-		$date = get_date($dob_int, $dob_int);
+	} elseif (trim($row['dob']) != '') {
+	    $dob_int = trim($row['dob']) * 1;
+	    if (is_numeric($dob_int)){	        
+	        $date = get_date($dob_int, $dob_int);
+	    }
 	}
 	
 	//object type
@@ -323,18 +291,26 @@ function generate_typeDesc($row){
 			$objtype = ucfirst(strtolower(trim($row['objtype'])));
 	}
 	$xml = '<typeDesc>';
-	/*if (isset($objtype_uri)) {
+	
+	//COMMENT OUT FOR PARENT TYPE
+	if (isset($objtype_uri)) {
 		$xml .= '<objectType xlink:type="simple" xlink:href="' . $objtype_uri . '">' . $objtype . '</objectType>';
 	} else {
 		$xml .= '<objectType>' . $objtype . '</objectType>';
-	}*/
+	}
 	
 	//date
 	if (strlen($date) > 0){
 		$xml .= $date;
 	}
+	
+	if (strlen(trim($row['dob'])) > 0){
+	    $xml .= '<dateOnObject><date>' . trim($row['dob']) . '</date></dateOnObject>';
+	}
+	
 	//manufacture
-	/*if (count($manufactures) > 0){		
+	//COMMENT OUT FOR PARENT TYPE
+	if (count($manufactures) > 0){		
 		foreach ($manufactures as $manufacture){
 			$result = normalize_manufacture(trim($manufacture));
 			$certainty = substr($manufacture, -1) == '?' ? ' certainty="uncertain"' : '';
@@ -346,6 +322,7 @@ function generate_typeDesc($row){
 		}
 	}
 	//material
+	//COMMENT OUT FOR PARENT TYPE
 	if (count($materials) > 0){
 		foreach ($materials as $material){
 			$result = normalize_material(trim($material));
@@ -356,7 +333,7 @@ function generate_typeDesc($row){
 				$xml .= '<material>' . $result['label'] . '</material>';
 			}
 		}
-	}*/
+	}
 	//obverse
 	if (strlen($row['obverselegend']) > 0 || strlen($row['obversesymbol']) > 0 || strlen($row['obversetype']) > 0){
 		$xml .= '<obverse>';
