@@ -20,10 +20,11 @@ $recordCount = 1;
 foreach ($data as $row){
     
     if (strlen($row['URI']) > 0 && strlen($row['ID']) > 0){
-        echo "{$recordCount}\n";
+        
         $record = array();
         
         $uri = 'https://collections.mfa.org/objects/' . $row['ID'];
+        echo "{$recordCount}: {$uri}\n";
         
         $record['uri'] = $uri;
         $record['cointype'] = $row['URI'];
@@ -86,8 +87,7 @@ foreach ($data as $row){
                     $record['axis'] = $matches[1];
                 }
             }
-        }        
-        
+        }  
         //var_dump($record);        
         
         $recordCount++;
