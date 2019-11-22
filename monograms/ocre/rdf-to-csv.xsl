@@ -85,9 +85,15 @@
         <xsl:apply-templates select="dcterms:created"/>       
     </xsl:template>
     
-    <xsl:template match="skos:prefLabel|skos:definition|dcterms:source|foaf:depiction|dcterms:created">
+    <xsl:template match="skos:prefLabel|skos:definition|dcterms:source|dcterms:created">
         <col>
             <xsl:value-of select="if (@rdf:resource) then @rdf:resource else ."/>
+        </col>
+    </xsl:template>
+    
+    <xsl:template match="foaf:depiction">
+        <col>
+            <xsl:value-of select="concat('http://numismatics.org/symbolimages/ocre/', tokenize(@rdf:resource, '/')[last()], '.svg')"/>
         </col>
     </xsl:template>
     

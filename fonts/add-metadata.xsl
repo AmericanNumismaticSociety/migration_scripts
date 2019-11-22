@@ -26,7 +26,7 @@
             <cc:license rdf:resource="https://creativecommons.org/choose/mark/"/>
             
             <xsl:if test="not($filePieces[last() - 1] = 'ocre')">
-                <dc:creator rdf:resource=""/>
+                <dc:creator rdf:resource="https://orcid.org/0000-0001-7542-4252"/>
             </xsl:if>
         </cc:Work>
     </xsl:template>
