@@ -2,15 +2,19 @@
 
 /************************
  AUTHOR: Ethan Gruber
- MODIFIED: August, 2019
+ MODIFIED: December, 2019
  DESCRIPTION: Transform CSV linked to OCRE/CRRO URIs to RDF for ingest into Nomisma
  ************************/
 
 //set user agent
 ini_set('user_agent', 'Nomisma.org/PHP Harvesting');
 
-$data = generate_json("mfa.csv");
+CONST FINDSPOTS = array('http://www.wikidata.org/entity/Q137721'=>
+    array('label'=>'Naucratis', 'lat'=>'30.9', 'long'=>'30.616667', 'uri'=>
+        array('http://sws.geonames.org/351274/', 'https://pleiades.stoa.org/places/727169', 'http://nomisma.org/id/naucratis'))
+);
 
+$data = generate_json("mfa.csv");
 
 //generate an array of records for outputting
 $records = array();
@@ -18,7 +22,6 @@ $records = array();
 //process each line in a spreadsheet
 $recordCount = 1;
 foreach ($data as $row){
-    
     if (strlen($row['URI']) > 0 && strlen($row['ID']) > 0){
         
         $record = array();
@@ -27,18 +30,18 @@ foreach ($data as $row){
         echo "{$recordCount}: {$uri}\n";
         
         $record['uri'] = $uri;
-        $record['cointype'] = $row['URI'];
-        
-        if (strlen($row['Object No.']) > 0){
-            $record['objectnumber'] = $row['Object No.'];
-        } else {
-            echo "No ID for {$row['ID']}\n";
-        }
+        $record['cointype'] = $row['URI'];     
         
         if (strlen($row['Title']) > 0){
             $record['title'] = $row['Title'];
         } else {
             echo "No Title for {$row['ID']}\n";
+        }
+        
+        if (array_key_exists('Findspot', $row)){
+            if (preg_match('/^https?:\/\//', $row['Findspot'])){
+                $record['findspot'] = $row['Findspot'];
+            }
         }
         
         //initiate DOMDocument call to harvest image IDs and measurements from MFA HTML page
@@ -47,6 +50,12 @@ foreach ($data as $row){
         $dom = new DOMDocument();
         @$dom->loadHTML($html);
         $xpath = new DOMXpath($dom);
+        
+        //get accession number from page since trailing 0s have been dropped from the CSV
+        
+        $accnum = $xpath->query("//div[@class='detailField invnolineField']/span[@class='detailFieldValue']")->item(0)->nodeValue;
+        
+        $record['objectnumber'] = $accnum;
         
         $images = $xpath->query("//img[contains(@src, 'postagestamp')]");
         
@@ -99,6 +108,8 @@ generate_rdf($records);
 
 
 function generate_rdf($records){
+    //GLOBAL $findspots;
+    
     //start RDF/XML file
     //use XML writer to generate RDF
     $writer = new XMLWriter();
@@ -118,6 +129,9 @@ function generate_rdf($records){
     $writer->writeAttribute('xmlns:geo', "http://www.w3.org/2003/01/geo/wgs84_pos#");
     $writer->writeAttribute('xmlns:rdf', "http://www.w3.org/1999/02/22-rdf-syntax-ns#");
     $writer->writeAttribute('xmlns:void', "http://rdfs.org/ns/void#");
+    $writer->writeAttribute('xmlns:crm', "http://www.cidoc-crm.org/cidoc-crm/");
+    $writer->writeAttribute('xmlns:crmgeo', "http://www.ics.forth.gr/isl/CRMgeo/");
+    $writer->writeAttribute('xmlns:skos', "http://www.w3.org/2004/02/skos/core#");
     
     foreach ($records as $record){
         if (isset($record['cointype'])){
@@ -141,6 +155,21 @@ function generate_rdf($records){
                 if (isset($record['hoard'])){
                     $writer->startElement('dcterms:isPartOf');
                     $writer->writeAttribute('rdf:resource', $record['hoard']);
+                    $writer->endElement();
+                }
+                
+                //create the new Nomisma/ARIADNE compliant findspot data model
+                if (isset($record['findspot'])){
+                    $writer->startElement('nmo:hasFindspot');
+                        $writer->startElement('nmo:Find');
+                            $writer->startElement('crm:P7_took_place_at');
+                                $writer->startElement('E53_Place');
+                                    $writer->startElement('crm:P89_falls_within');
+                                        $writer->writeAttribute('rdf:resource', resolve_entity($record['findspot']));
+                                    $writer->endElement();
+                                $writer->endElement();
+                            $writer->endElement();
+                        $writer->endElement();
                     $writer->endElement();
                 }
                 
@@ -200,10 +229,80 @@ function generate_rdf($records){
         }
     }
     
+    //insert findspots
+    
+    foreach (FINDSPOTS as $uri=>$array){
+        $writer->startElement('crm:E53_Place');
+            $writer->writeAttribute('rdf:about', $uri);
+            
+            $writer->startElement('skos:prefLabel');
+                $writer->writeAttribute('xml:lang', 'en');
+                $writer->text($array['label']);
+            $writer->endElement();
+            
+            foreach ($array['uri'] as $match){
+                $writer->startElement('skos:exactMatch');
+                    $writer->writeAttribute('rdf:resource', $match);
+                $writer->endElement();
+            }
+            
+            //use WGS84 and CRMGeo properties
+            $writer->startElement('geo:location');
+                $writer->writeAttribute('rdf:resource', $uri . '#this');
+            $writer->endElement();
+            $writer->startElement('crm:P168_place_is_defined_by');
+                $writer->writeAttribute('rdf:resource', $uri . '#this');
+            $writer->endElement();
+            
+           
+            $writer->startElement('skos:inScheme');
+                $writer->writeAttribute('rdf:resource', 'http://www.wikidata.org/entity/');
+            $writer->endElement();
+            $writer->startElement('rdf:type');
+                $writer->writeAttribute('rdf:resource', 'http://www.w3.org/2004/02/skos/core#Concept');
+            $writer->endElement();
+        $writer->endElement();
+        
+        //SpatialThing
+        $writer->startElement('crmgeo:SP5_Geometric_Place_Expression');
+            $writer->writeAttribute('rdf:about', $uri . '#this');
+            $writer->startElement('rdf:type');
+                $writer->writeAttribute('rdf:resource', 'http://www.w3.org/2003/01/geo/wgs84_pos#SpatialThing');
+            $writer->endElement();
+            
+            $writer->startElement('geo:lat');
+               $writer->writeAttribute('rdf:datatype', 'http://www.w3.org/2001/XMLSchema#decimal');
+               $writer->text($array['lat']);
+            $writer->endElement();
+            $writer->startElement('geo:long');
+                $writer->writeAttribute('rdf:datatype', 'http://www.w3.org/2001/XMLSchema#decimal');
+                $writer->text($array['long']);
+            $writer->endElement();
+            
+            $writer->startElement('crmgeo:asWKT');
+                $writer->writeAttribute('rdf:datatype', 'http://www.opengis.net/ont/geosparql#wktLiteral');
+                $writer->text('Point(' . $array['long'] . ' ' . $array['lat'] . ')');
+            $writer->endElement();
+        $writer->endElement();
+    }
+    
     //end RDF file
     $writer->endElement();
     $writer->flush();
 }
+
+//perform lookup to resolve URI to Wikidata entity 
+function resolve_entity($uri){    
+    
+    foreach (FINDSPOTS as $wikidata=>$array){
+        foreach ($array['uri'] as $match){
+            if ($match == $uri){
+                return $wikidata;
+            }
+        }
+    }
+}
+
 
 //generate csv
 function generate_csv($records, $project){
