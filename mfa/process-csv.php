@@ -163,7 +163,7 @@ function generate_rdf($records){
                     $writer->startElement('nmo:hasFindspot');
                         $writer->startElement('nmo:Find');
                             $writer->startElement('crm:P7_took_place_at');
-                                $writer->startElement('E53_Place');
+                                $writer->startElement('crm:E53_Place');
                                     $writer->startElement('crm:P89_falls_within');
                                         $writer->writeAttribute('rdf:resource', resolve_entity($record['findspot']));
                                     $writer->endElement();
