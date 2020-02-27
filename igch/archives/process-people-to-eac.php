@@ -158,6 +158,11 @@ function generate_eac($row, $count){
                 
                 if (strlen($row['Wikidata URI']) > 0){
                     $entities[] = $row['Wikidata URI'];
+                    
+                    $matches = read_wikidata($row['Wikidata URI']);
+                    foreach ($matches as $match){
+                        $entities[] = $match;
+                    }
                 }
                 
                 foreach (array_unique($entities) as $uri){
@@ -276,6 +281,49 @@ function read_viaf($uri){
         }
     }
     
+    return $matches;
+}
+
+function read_wikidata($uri){
+    $matches = array();
+    
+    $pieces = explode('/', $uri);
+    
+    $url = "https://www.wikidata.org/w/api.php?action=wbgetclaims&entity={$pieces[4]}&format=json";
+    $result = file_get_contents($url);
+    $json = json_decode($result);
+    
+    foreach ($json->claims as $prop=>$array){
+        switch ($prop){
+            case 'P213':
+                $matches[] = 'http://isni.org/' . str_replace(' ', '', $array[0]->mainsnak->datavalue->value);
+                break;
+            case 'P214':
+                $matches[] = 'http://viaf.org/viaf/' . $array[0]->mainsnak->datavalue->value;
+                break;
+            case 'P227':
+                $matches[] = 'http://d-nb.info/gnd/' . $array[0]->mainsnak->datavalue->value;
+                break;
+            case 'P245':
+                $matches[] = 'http://vocab.getty.edu/ulan/' . $array[0]->mainsnak->datavalue->value;
+                break;
+            case 'P244':
+                $matches[] = 'http://id.loc.gov/authorities/names/' . $array[0]->mainsnak->datavalue->value;
+                break;
+            case 'P268':
+                $matches[] = 'http://catalogue.bnf.fr/ark:/12148/cb' . $array[0]->mainsnak->datavalue->value;
+                break;
+            case 'P269':
+                $matches[] = 'http://www.idref.fr/' . $array[0]->mainsnak->datavalue->value;
+                break;
+            case 'P1225':
+                $matches[] = 'https://catalog.archives.gov/id/' . $array[0]->mainsnak->datavalue->value;
+                break;
+            case 'P3430':
+                $matches[] = 'http://n2t.net/ark:/99166/' . $array[0]->mainsnak->datavalue->value;
+                break;
+        }
+    }
     return $matches;
 }
 
