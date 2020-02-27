@@ -26,8 +26,8 @@ function generate_eac($row, $count){
     
     $doc = new XMLWriter();
     
-    $doc->openUri('php://output');
-    //$doc->openUri('eac/' . $recordId . '.xml');
+    //$doc->openUri('php://output');
+    $doc->openUri('eac/' . $recordId . '.xml');
     $doc->setIndent(true);
     //now we need to define our Indent string,which is basically how many blank spaces we want to have for the indent
     $doc->setIndentString("    ");
@@ -251,6 +251,8 @@ function generate_eac($row, $count){
     //close file
     $doc->endDocument();
     $doc->flush();
+    
+    echo "Wrote {$recordId}\n";
 }
 
 //read justlinks JSON from VIAF
@@ -344,13 +346,15 @@ function read_snac($uri){
     
     $json = json_decode($result);
     
-    foreach ($json->constellation->sameAsRelations as $rel){
-        $match = $rel->uri;
-        
-        if (strpos($match, 'wikipedia') === FALSE){
-            $matches[] = $match;
+    if (property_exists($json->constellation, 'sameAsRelations')){
+        foreach ($json->constellation->sameAsRelations as $rel){
+            $match = $rel->uri;
+            
+            if (strpos($match, 'wikipedia') === FALSE){
+                $matches[] = $match;
+            }
         }
-    }
+    }    
     
     return $matches;
 }
