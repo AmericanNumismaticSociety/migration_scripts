@@ -30,9 +30,38 @@ foreach ($objects as $id=>$array){
 /***** FUNCTIONS *****/
 function generate_tei ($id, $array){
     
+    //generate a human-readable title from file metadata
     $title = generate_title($array['hoard'], $array['files']);   
     
-    echo $title . "\n";
+    $doc = new XMLWriter();
+    
+    $doc->openUri('php://output');
+    //$doc->openUri('tei/' . $id . '.xml');
+    $doc->setIndent(true);
+    //now we need to define our Indent string,which is basically how many blank spaces we want to have for the indent
+    $doc->setIndentString("    ");
+    
+    $doc->startDocument('1.0','UTF-8');
+    
+    //start TEI file
+    $doc->startElement('TEI');
+        $doc->writeAttribute('xmlns', 'http://www.tei-c.org/ns/1.0');
+        $doc->writeAttribute('xmlns:xsi', 'http://www.w3.org/2001/XMLSchema-instance');
+        $doc->writeAttribute('xsi:schemaLocation', 'http://www.tei-c.org/ns/1.0 http://www.tei-c.org/release/xml/tei/custom/schema/xsd/tei_all.xsd');
+        $doc->writeAttribute('xml:id', $id);
+        
+        //TEI Header
+        $doc->startElement('teiHeader');
+        
+        $doc->endElement();
+        
+    $doc->endElement();
+    
+    //close file
+    $doc->endDocument();
+    $doc->flush();
+    
+    echo "Wrote {$id}\n";
 }
 
 //parse metadata pieces in order to generate a standardized human-readable title
@@ -164,7 +193,7 @@ function generate_object($data, $row){
     
     $id = $row['Archival Record ID'];
     
-    
+    $object['id'] = $id;
     $object['hoard'] = "http://coinhoards.org/id/" . $row['Coin Hoard ID'];    
     
     //re-iterate through each row looking for tif files that match the ID pattern
