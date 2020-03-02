@@ -9,6 +9,8 @@
 ini_set("allow_url_fopen", 1);
 
 $data = generate_json('https://docs.google.com/spreadsheets/d/e/2PACX-1vTRQbc1C_jdWLdV7jehdctKs7_BJG1TrOEGllRQhge-bXkBIeyEVEpS0cS-4vjmAsmqlYsOvaFzWH5J/pub?output=csv');
+$people = generate_json('xeac-people.csv');
+
 $objects = array();
 
 foreach($data as $row){    
@@ -27,37 +29,133 @@ foreach ($objects as $id=>$array){
 
 /***** FUNCTIONS *****/
 function generate_tei ($id, $array){
+    
+    $title = generate_title($array['hoard'], $array['files']);   
+    
+    echo $title . "\n";
+}
+
+//parse metadata pieces in order to generate a standardized human-readable title
+function generate_title($uri, $files){
     $types = array();
     $authors = array();
     $recipients = array();
     $dates = array();
     
-    foreach($array['files'] as $file){
-        if (array_key_exists('type', $file)){
-            if (!in_array($file['type'], $types)){
-                $types[] = $file['type'];
+    foreach($files as $file){
+        
+        if ($file['public'] == TRUE){
+            if (array_key_exists('type', $file)){
+                if (strlen($file['type']) > 0 && !in_array($file['type'], $types)){
+                    $types[] = $file['type'];
+                }
             }
-        }
-        if (array_key_exists('author', $file)){
-            if (!in_array($file['author'], $authors)){
-                $authors[] = $file['author'];
+            if (array_key_exists('author', $file)){
+                if (strlen($file['author']) > 0 && !in_array($file['author'], $authors)){
+                    $authors[] = $file['author'];
+                }
             }
-        }
-        if (array_key_exists('recipient', $file)){
-            if (!in_array($file['recipient'], $recipients)){
-                $recipients[] = $file['recipient'];
+            if (array_key_exists('recipient', $file)){
+                if (strlen($file['recipient']) > 0 && !in_array($file['recipient'], $recipients)){
+                    $recipients[] = $file['recipient'];
+                }
             }
-        }
-        if (array_key_exists('date', $file)){
-            if (!in_array($file['date'], $dates)){
-                $dates[] = $file['date'];
+            if (array_key_exists('date', $file)){
+                if (strlen($file['date']) > 0 && !in_array($file['date'], $dates)){
+                    $dates[] = $file['date'];
+                }
             }
         }
     }
     
-    $type = (count($types) == 0 ? 'Misc.' : implode('/', $types));
+    $title = (count($types) == 0 ? 'Misc.' : implode('/', $types));
     
-    echo $type . "\n";
+    if (count($authors) > 0 || count($recipients) > 0){
+        if (count($authors) >= 1 || count($recipients) >= 1){
+            $title .= ' of ';
+        }
+        
+        if (count($authors) >= 1){
+            $names = array();
+            foreach ($authors as $a){
+                $names[] = normalize_uri($a);
+            }
+            
+            $title .= implode('/', $names);
+            
+            unset($names);
+        }
+        //sep
+        if (count($authors) >= 1 && count($recipients) >= 1){
+            $title .= ' and ';
+        }
+        
+        if (count($recipients) >= 1) {
+            $names = array();
+            foreach ($recipients as $r){
+                $names[] = normalize_uri($r);
+            }
+            
+            $title .= implode('/', $names);
+            
+            unset($names);
+        }
+    }
+    
+    $title .= ' about ';
+    
+    //parse IGCH URI
+    switch($uri){
+        case (strpos($uri, 'igch') !== FALSE):
+            $num = preg_replace('/^http:\/\/.*\/igch([0-9]{4})$/', '$1', $uri);
+            $title .= 'IGCH ' . ltrim($num, '0');
+            break;
+        case (strpos($uri, 'ch.') !== FALSE):
+            $pieces = explode('.', str_replace('http://coinhoards.org/id/', '', $uri));
+            switch($pieces[1]){
+                case ('1'):
+                    $vol = 'I';
+                    break;
+                case ('2'):
+                    $vol = 'II';
+                    break;
+                case ('3'):
+                    $vol = 'III';
+                    break;
+                case ('4'):
+                    $vol = 'IV';
+                    break;
+                case ('5'):
+                    $vol = 'V';
+                    break;
+                case ('6'):
+                    $vol = 'VI';
+                    break;
+            }
+            
+            $title .= "Coin Hoards {$vol} {$pieces[2]}";
+    }
+    
+    if (count($dates) == 1){
+        $title .= " (" . safe_strtotime($dates[0]) . ")";
+    }
+    
+    return $title;
+}
+
+function normalize_uri ($uri){
+    GLOBAL $people;
+    
+    foreach ($people as $row){
+        if ($row['uri'] == $uri){
+            if (strpos($row['name'], ',') !== FALSE){
+                $pieces = explode(',', $row['name']);
+                return $pieces[0];
+            } else {
+                return $row['name'];
+            }
+        }
+    }
 }
 
 
@@ -104,6 +202,12 @@ function generate_object($data, $row){
             }
             if (strlen($page['Other Person 6']) > 0){
                 $file['person6'] = $page['Other Person 6'];
+            }
+            
+            if ($page['Public'] == 'no'){
+                $file['public'] = false;
+            } else {
+                $file['public'] = true;
             }
             
             $object['files'][] = $file;
