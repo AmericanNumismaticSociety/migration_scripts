@@ -29,14 +29,57 @@ foreach ($objects as $id=>$array){
 
 /***** FUNCTIONS *****/
 function generate_tei ($id, $array){
-    
+        
     //generate a human-readable title from file metadata
-    $title = generate_title($array['hoard'], $array['files']);   
+    $title = generate_title($array['hoard'], $array['files']);
+    
+    $types = array();
+    $authors = array();
+    $agents = array();
+    $dates = array();
+    
+    foreach($array['files'] as $file){
+        
+        if ($file['public'] == TRUE){
+            if (array_key_exists('type', $file)){
+                if (strlen($file['type']) > 0 && !in_array($file['type'], $types)){
+                    $types[] = $file['type'];
+                }
+            }
+            if (array_key_exists('author', $file)){
+                if (strlen($file['author']) > 0 && !in_array($file['author'], $authors)){
+                    $authors[] = $file['author'];
+                    
+                    if (!in_array($file['author'], $agents)){
+                        $agents[] = $file['author'];
+                    }
+                    
+                }
+            }            
+            if (array_key_exists('recipient', $file)){
+                if (strlen($file['recipient']) > 0 && !in_array($file['recipient'], $agents)){
+                    $agents[] = $file['recipient'];
+                }
+            }
+            if (array_key_exists('otherPeople', $file)){                
+                foreach($file['otherPeople'] as $person){
+                    if (strlen($person) > 0 && !in_array($person, $agents)){                        
+                        $agents[] = $person;
+                    }
+                }
+            }
+            if (array_key_exists('date', $file)){
+                if (strlen($file['date']) > 0 && !in_array($file['date'], $dates)){
+                    $dates[] = $file['date'];
+                }
+            }
+        }
+    }
     
     $doc = new XMLWriter();
     
-    $doc->openUri('php://output');
-    //$doc->openUri('tei/' . $id . '.xml');
+    //$doc->openUri('php://output');
+    $doc->openUri('tei/' . $id . '.xml');
     $doc->setIndent(true);
     //now we need to define our Indent string,which is basically how many blank spaces we want to have for the indent
     $doc->setIndentString("    ");
@@ -52,9 +95,203 @@ function generate_tei ($id, $array){
         
         //TEI Header
         $doc->startElement('teiHeader');
-        
+            $doc->startElement('fileDesc');
+                $doc->startElement('titleStmt');
+                    $doc->writeElement('title', $title);
+                $doc->endElement();
+                
+                foreach ($authors as $author){
+                    $element = ($author == 'http://numismatics.org/authority/p_norrit_co' ? 'corpName' : 'persName');
+                    
+                    $doc->startElement('author');
+                        $doc->startElement($element);
+                            $doc->writeAttribute('ref', $author);
+                            $doc->text(normalize_uri($author));
+                        $doc->endElement();
+                    $doc->endElement();
+                }
+                
+                $doc->startElement('publicationStmt');
+                    $doc->startElement('publisher');
+                        $doc->writeElement('name', 'American Numismatic Society');
+                        $doc->startElement('idno');
+                            $doc->writeAttribute('type', 'URI');
+                            $doc->text('http://numismatics.org/authority/american_numismatic_society');
+                        $doc->endElement();
+                    $doc->endElement();
+                    $doc->writeElement('pubPlace', 'New York (N.Y.)');
+                $doc->endElement();
+                
+                $doc->startElement('sourceDesc');                    
+                    //conditional for generating a paragraph or more complex manuscript metadata
+                    if (count($types) == 1 && ($types[0] == 'Correspondence' || $types[0] == 'Notes')){
+                        $doc->startElement('msDesc');
+                            $doc->startElement('msIdentifier');
+                                $doc->writeElement('idno', $id);
+                            $doc->endElement();
+                            
+                            if (count($authors) > 0 || count($dates) > 0){
+                                $doc->startElement('msContents');
+                                if (count($authors) > 0){
+                                    $doc->startElement('msItemStruct');
+                                    foreach ($authors as $author){
+                                        $element = ($author == 'http://numismatics.org/authority/p_norrit_co' ? 'corpName' : 'persName');
+                                        
+                                        $doc->startElement('author');
+                                            $doc->startElement($element);
+                                                $doc->writeAttribute('ref', $author);
+                                                $doc->text(normalize_uri($author));
+                                            $doc->endElement();
+                                        $doc->endElement();
+                                    }
+                                    $doc->endElement();
+                                }
+                                
+                                if (count($dates) > 0){
+                                    $doc->startElement('history');
+                                        $doc->startElement('origin');
+                                            $doc->startElement('date');
+                                            
+                                            //evaluate single date vs date range
+                                            if (count($dates) == 1){
+                                                $doc->writeAttribute('when', $dates[0]);
+                                                $doc->text(safe_strtotime($dates[0]));
+                                            } elseif (count($dates) > 1){
+                                                asort($dates);
+                                                $doc->writeAttribute('from', $dates[0]);
+                                                $doc->writeAttribute('to', $dates[count($dates)-1]);
+                                                $doc->text(safe_strtotime($dates[0]) . ' - ' . safe_strtotime($dates[count($dates)-1]));
+                                            }
+                                            
+                                            $doc->endElement();                                            
+                                        $doc->endElement();
+                                    $doc->endElement();
+                                }                                
+                                $doc->endElement();    
+                            }
+                                                      
+                        $doc->endElement();
+                    } else {
+                        $doc->writeElement('p', 'Archival record from the Inventory of Greek Coin Hoards and Coin Hoards folders in the American Numismatic Society.');
+                    }                      
+                //end sourceDesc
+                $doc->endElement();
+            //end fileDesc
+            $doc->endElement();
+            
+            //profileDesc (general document metadata)
+            $doc->startElement('profileDesc');
+                $doc->startElement('langUsage');
+                    $doc->startElement('language');
+                        $doc->writeAttribute('ident', 'en');
+                        $doc->text('English');
+                    $doc->endElement();
+                $doc->endElement();
+                
+                $doc->startElement('textClass');
+                    //parse types in AAT
+                    foreach ($types as $type){
+                        $doc->startElement('classCode');
+                        $doc->writeAttribute('scheme', 'http://vocab.getty.edu/aat/');
+                        switch ($type){
+                            case 'Correspondence':
+                                $doc->text('300026877');                               
+                                break;
+                            case 'Hoard Photographs':
+                                $doc->text('300046300');
+                                break;
+                            case 'Notes':
+                                $doc->text('300265639');
+                                break;
+                            case 'Invoice':
+                                $doc->text('300027568');
+                                break;
+                        }
+                        $doc->endElement();
+                    }
+                    
+                    //subjects
+                    $doc->startElement('keywords');
+                        $doc->writeAttribute('scheme', 'nmo:Hoard');
+                        $doc->startElement('term');
+                            $doc->writeAttribute('ref', $array['hoard']);
+                            $doc->text(normalize_hoard($array['hoard']));                        
+                        $doc->endElement();
+                    $doc->endElement();
+                    
+                    if (count($agents) > 0){
+                        $doc->startElement('particDesc');
+                        if (in_array('http://numismatics.org/authority/p_norrit_co', $agents) || in_array('http://numismatics.org/authority/american_numismatic_society', $agents)){
+                            $doc->startElement('listOrg');
+                            foreach($agents as $agent){
+                                $doc->startElement('org');
+                                    $doc->startElement('orgName');
+                                        $doc->writeAttribute('ref', $agent);
+                                        $doc->text(normalize_uri($agent));
+                                    $doc->endElement();
+                                $doc->endElement();
+                            }
+                            $doc->endElement();
+                        } else {
+                            $doc->startElement('listPerson');
+                            foreach($agents as $agent){
+                                $doc->startElement('person');
+                                    $doc->startElement('persName');
+                                        $doc->writeAttribute('ref', $agent);
+                                        $doc->text(normalize_uri($agent));
+                                    $doc->endElement();
+                                $doc->endElement();
+                            }
+                            $doc->endElement();
+                        }
+                        $doc->endElement();
+                    }
+                
+                $doc->endElement();
+            //end profileDesc
+            $doc->endElement();
+            
+            $doc->startElement('revisionDesc');
+                $doc->startElement('change');
+                $doc->writeAttribute('when', substr(date(DATE_W3C), 0, 10));
+                    $doc->text('Generated TEI file from Google spreadsheet of IGCH archival records ' .
+                        '(https://docs.google.com/spreadsheets/d/e/2PACX-1vTRQbc1C_jdWLdV7jehdctKs7_BJG1TrOEGllRQhge-bXkBIeyEVEpS0cS-4vjmAsmqlYsOvaFzWH5J/pubhtml).');
+                $doc->endElement();
+            $doc->endElement();
+            
+        //end TEI Header
         $doc->endElement();
         
+        //create facsimilies
+        foreach ($array['files'] as $file){
+            $filename = str_replace('.tif', '', $file['filename']);
+            
+            //get the dimensions of the image
+            $path = "/e/IGCH Archives/archive/{$filename}.jpg";
+            
+            if (file_exists($path)) {
+                $size = getimagesize($path);
+                
+                $width = $size[0];
+                $height = $size[1];
+                
+                $doc->startElement('facsimile');
+                    $doc->writeAttribute('xml:id', $filename);
+                    $doc->writeAttribute('style', 'depiction');
+                    
+                    $doc->startElement('media');
+                        $doc->writeAttribute('url', "http://images.numismatics.org/archivesimages%2Farchive%2F{$filename}.jpg");
+                        $doc->writeAttribute('n', $file['type']);
+                        $doc->writeAttribute('mimeType', 'image/jpeg');
+                        $doc->writeAttribute('type', 'IIIFService');
+                        $doc->writeAttribute('height', "{$height}px");
+                        $doc->writeAttribute('width', "{$width}px");
+                    $doc->endElement();
+                $doc->endElement();
+            }
+        }    
+        
+    //end TEI file
     $doc->endElement();
     
     //close file
@@ -107,7 +344,7 @@ function generate_title($uri, $files){
         if (count($authors) >= 1){
             $names = array();
             foreach ($authors as $a){
-                $names[] = normalize_uri($a);
+                $names[] = normalize_uri_commas($a);
             }
             
             $title .= implode('/', $names);
@@ -122,7 +359,7 @@ function generate_title($uri, $files){
         if (count($recipients) >= 1) {
             $names = array();
             foreach ($recipients as $r){
-                $names[] = normalize_uri($r);
+                $names[] = normalize_uri_commas($r);
             }
             
             $title .= implode('/', $names);
@@ -134,11 +371,20 @@ function generate_title($uri, $files){
     $title .= ' about ';
     
     //parse IGCH URI
+    $title .= normalize_hoard($uri);
+    
+    if (count($dates) == 1){
+        $title .= " (" . safe_strtotime($dates[0]) . ")";
+    }
+    
+    return $title;
+}
+
+function normalize_hoard($uri){
     switch($uri){
         case (strpos($uri, 'igch') !== FALSE):
             $num = preg_replace('/^http:\/\/.*\/igch([0-9]{4})$/', '$1', $uri);
-            $title .= 'IGCH ' . ltrim($num, '0');
-            break;
+            return 'IGCH ' . ltrim($num, '0');
         case (strpos($uri, 'ch.') !== FALSE):
             $pieces = explode('.', str_replace('http://coinhoards.org/id/', '', $uri));
             switch($pieces[1]){
@@ -162,17 +408,11 @@ function generate_title($uri, $files){
                     break;
             }
             
-            $title .= "Coin Hoards {$vol} {$pieces[2]}";
+            return "Coin Hoards {$vol} {$pieces[2]}";
     }
-    
-    if (count($dates) == 1){
-        $title .= " (" . safe_strtotime($dates[0]) . ")";
-    }
-    
-    return $title;
 }
 
-function normalize_uri ($uri){
+function normalize_uri_commas ($uri){
     GLOBAL $people;
     
     foreach ($people as $row){
@@ -187,6 +427,15 @@ function normalize_uri ($uri){
     }
 }
 
+function normalize_uri ($uri){
+    GLOBAL $people;
+    
+    foreach ($people as $row){
+        if ($row['uri'] == $uri){
+            return $row['name'];
+        }
+    }
+}
 
 function generate_object($data, $row){
     $object = array();
@@ -215,22 +464,22 @@ function generate_object($data, $row){
                 $file['recipient'] = $page['Document Recipient'];
             }
             if (strlen($page['Other Person 1']) > 0){
-                $file['person1'] = $page['Other Person 1'];
+                $file['otherPeople'][] = $page['Other Person 1'];
             }
             if (strlen($page['Other Person 2']) > 0){
-                $file['person2'] = $page['Other Person 2'];
+                $file['otherPeople'][] = $page['Other Person 2'];
             }
             if (strlen($page['Other Person 3']) > 0){
-                $file['person3'] = $page['Other Person 3'];
+                $file['otherPeople'][] = $page['Other Person 3'];
             }
             if (strlen($page['Other Person 4']) > 0){
-                $file['person4'] = $page['Other Person 4'];
+                $file['otherPeople'][] = $page['Other Person 4'];
             }
             if (strlen($page['Other Person 5']) > 0){
-                $file['person5'] = $page['Other Person 5'];
+                $file['otherPeople'][] = $page['Other Person 5'];
             }
             if (strlen($page['Other Person 6']) > 0){
-                $file['person6'] = $page['Other Person 6'];
+                $file['otherPeople'][] = $page['Other Person 6'];
             }
             
             if ($page['Public'] == 'no'){
