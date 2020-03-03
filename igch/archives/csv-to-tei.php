@@ -264,31 +264,38 @@ function generate_tei ($id, $array){
         
         //create facsimilies
         foreach ($array['files'] as $file){
-            $filename = str_replace('.tif', '', $file['filename']);
-            
-            //get the dimensions of the image
-            $path = "/e/IGCH Archives/archive/{$filename}.jpg";
-            
-            if (file_exists($path)) {
-                $size = getimagesize($path);
+            if ($file['public'] == TRUE){
+                $filename = str_replace('.tif', '', $file['filename']);
                 
-                $width = $size[0];
-                $height = $size[1];
+                //get the dimensions of the image
+                $path = "/e/IGCH Archives/archive/{$filename}.jpg";
                 
-                $doc->startElement('facsimile');
-                    $doc->writeAttribute('xml:id', $filename);
-                    $doc->writeAttribute('style', 'depiction');
+                if (file_exists($path)) {
+                    $size = getimagesize($path);
                     
-                    $doc->startElement('media');
-                        $doc->writeAttribute('url', "http://images.numismatics.org/archivesimages%2Farchive%2F{$filename}.jpg");
-                        $doc->writeAttribute('n', $file['type']);
-                        $doc->writeAttribute('mimeType', 'image/jpeg');
-                        $doc->writeAttribute('type', 'IIIFService');
-                        $doc->writeAttribute('height', "{$height}px");
-                        $doc->writeAttribute('width', "{$width}px");
+                    $width = $size[0];
+                    $height = $size[1];
+                    
+                    $doc->startElement('facsimile');
+                        $doc->writeAttribute('xml:id', $filename);
+                        $doc->writeAttribute('style', 'depiction');
+                        
+                        $doc->startElement('media');
+                            $doc->writeAttribute('url', "http://images.numismatics.org/archivesimages%2Farchive%2F{$filename}.jpg");
+                            if (array_key_exists('type', $file)){
+                                $doc->writeAttribute('n', $file['type']);
+                            }
+                            
+                            $doc->writeAttribute('mimeType', 'image/jpeg');
+                            $doc->writeAttribute('type', 'IIIFService');
+                            $doc->writeAttribute('height', "{$height}px");
+                            $doc->writeAttribute('width', "{$width}px");
+                        $doc->endElement();
                     $doc->endElement();
-                $doc->endElement();
-            }
+                } else {
+                    echo "File {$filename} not found\n";
+                } 
+            }            
         }    
         
     //end TEI file
