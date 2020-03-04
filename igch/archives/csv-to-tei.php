@@ -516,19 +516,24 @@ function generate_object($data, $row){
 
 //handle xsd:date before 1970 (https://stackoverflow.com/questions/33581012/create-date-object-in-php-for-dates-before-1970-in-certain-format)
 function safe_strtotime($string) {
-    $pattern = "F j, Y";
-    
-    if(!preg_match("/\d{4}/", $string, $match)) return null; //year must be in YYYY form
-    $year = intval($match[0]);//converting the year to integer
-    if($year >= 1970) return date($pattern, strtotime($string));//the year is after 1970 - no problems even for Windows
-    if(stristr(PHP_OS, "WIN") && !stristr(PHP_OS, "DARWIN")) //OS seems to be Windows, not Unix nor Mac
-    {
-        $diff = 1975 - $year;//calculating the difference between 1975 and the year
-        $new_year = $year + $diff;//year + diff = new_year will be for sure > 1970
-        $new_date = date($pattern, strtotime(str_replace($year, $new_year, $string)));//replacing the year with the new_year, try strtotime, rendering the date
-        return str_replace($new_year, $year, $new_date);//returning the date with the correct year
+    //evaluate xsd:gYear vs. xsd:date
+    if (is_numeric($string)){
+        return $string;
+    } else {
+        $pattern = "F j, Y";
+        
+        if(!preg_match("/\d{4}/", $string, $match)) return null; //year must be in YYYY form
+        $year = intval($match[0]);//converting the year to integer
+        if($year >= 1970) return date($pattern, strtotime($string));//the year is after 1970 - no problems even for Windows
+        if(stristr(PHP_OS, "WIN") && !stristr(PHP_OS, "DARWIN")) //OS seems to be Windows, not Unix nor Mac
+        {
+            $diff = 1975 - $year;//calculating the difference between 1975 and the year
+            $new_year = $year + $diff;//year + diff = new_year will be for sure > 1970
+            $new_date = date($pattern, strtotime(str_replace($year, $new_year, $string)));//replacing the year with the new_year, try strtotime, rendering the date
+            return str_replace($new_year, $year, $new_date);//returning the date with the correct year
+        }
+        return date($pattern, strtotime($string));//do normal strtotime
     }
-    return date($pattern, strtotime($string));//do normal strtotime
 }
 
 //CSV processing functions
