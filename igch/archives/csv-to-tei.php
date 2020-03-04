@@ -98,18 +98,20 @@ function generate_tei ($id, $array){
             $doc->startElement('fileDesc');
                 $doc->startElement('titleStmt');
                     $doc->writeElement('title', $title);
-                $doc->endElement();
                 
-                foreach ($authors as $author){
-                    $element = ($author == 'http://numismatics.org/authority/p_norrit_co' ? 'corpName' : 'persName');
-                    
-                    $doc->startElement('author');
-                        $doc->startElement($element);
-                            $doc->writeAttribute('ref', $author);
-                            $doc->text(normalize_uri($author));
+                    foreach ($authors as $author){
+                        $element = ($author == 'http://numismatics.org/authority/p_norrit_co' ? 'corpName' : 'persName');
+                        
+                        $doc->startElement('author');
+                            $doc->startElement($element);
+                                $doc->writeAttribute('ref', $author);
+                                $doc->text(normalize_uri($author));
+                            $doc->endElement();
                         $doc->endElement();
-                    $doc->endElement();
-                }
+                    }
+                
+                //end titleStmt               
+                $doc->endElement();
                 
                 $doc->startElement('publicationStmt');
                     $doc->startElement('publisher');
@@ -130,7 +132,7 @@ function generate_tei ($id, $array){
                                 $doc->writeElement('idno', $id);
                             $doc->endElement();
                             
-                            if (count($authors) > 0 || count($dates) > 0){
+                            if (count($authors) > 0){
                                 $doc->startElement('msContents');
                                 if (count($authors) > 0){
                                     $doc->startElement('msItemStruct');
@@ -145,30 +147,31 @@ function generate_tei ($id, $array){
                                         $doc->endElement();
                                     }
                                     $doc->endElement();
-                                }
-                                
-                                if (count($dates) > 0){
-                                    $doc->startElement('history');
-                                        $doc->startElement('origin');
-                                            $doc->startElement('date');
-                                            
-                                            //evaluate single date vs date range
-                                            if (count($dates) == 1){
-                                                $doc->writeAttribute('when', $dates[0]);
-                                                $doc->text(safe_strtotime($dates[0]));
-                                            } elseif (count($dates) > 1){
-                                                asort($dates);
-                                                $doc->writeAttribute('from', $dates[0]);
-                                                $doc->writeAttribute('to', $dates[count($dates)-1]);
-                                                $doc->text(safe_strtotime($dates[0]) . ' - ' . safe_strtotime($dates[count($dates)-1]));
-                                            }
-                                            
-                                            $doc->endElement();                                            
-                                        $doc->endElement();
-                                    $doc->endElement();
-                                }                                
+                                }                            
                                 $doc->endElement();    
                             }
+                            
+                            //history
+                            if (count($dates) > 0){
+                                $doc->startElement('history');
+                                    $doc->startElement('origin');
+                                        $doc->startElement('date');
+                                        
+                                        //evaluate single date vs date range
+                                        if (count($dates) == 1){
+                                            $doc->writeAttribute('when', $dates[0]);
+                                            $doc->text(safe_strtotime($dates[0]));
+                                        } elseif (count($dates) > 1){
+                                            asort($dates);
+                                            $doc->writeAttribute('from', $dates[0]);
+                                            $doc->writeAttribute('to', $dates[count($dates)-1]);
+                                            $doc->text(safe_strtotime($dates[0]) . ' - ' . safe_strtotime($dates[count($dates)-1]));
+                                        }
+                                        
+                                        $doc->endElement();
+                                    $doc->endElement();
+                                $doc->endElement();
+                            } 
                                                       
                         $doc->endElement();
                     } else {
@@ -187,6 +190,34 @@ function generate_tei ($id, $array){
                         $doc->text('English');
                     $doc->endElement();
                 $doc->endElement();
+                
+                if (count($agents) > 0){
+                    $doc->startElement('particDesc');
+                    if (in_array('http://numismatics.org/authority/p_norrit_co', $agents) || in_array('http://numismatics.org/authority/american_numismatic_society', $agents)){
+                        $doc->startElement('listOrg');
+                        foreach($agents as $agent){
+                            $doc->startElement('org');
+                                $doc->startElement('orgName');
+                                    $doc->writeAttribute('ref', $agent);
+                                    $doc->text(normalize_uri($agent));
+                                $doc->endElement();
+                            $doc->endElement();
+                        }
+                        $doc->endElement();
+                    } else {
+                        $doc->startElement('listPerson');
+                        foreach($agents as $agent){
+                            $doc->startElement('person');
+                                $doc->startElement('persName');
+                                    $doc->writeAttribute('ref', $agent);
+                                    $doc->text(normalize_uri($agent));
+                                $doc->endElement();
+                            $doc->endElement();
+                        }
+                        $doc->endElement();
+                    }
+                    $doc->endElement();
+                }
                 
                 $doc->startElement('textClass');
                     //parse types in AAT
@@ -217,36 +248,7 @@ function generate_tei ($id, $array){
                             $doc->writeAttribute('ref', $array['hoard']);
                             $doc->text(normalize_hoard($array['hoard']));                        
                         $doc->endElement();
-                    $doc->endElement();
-                    
-                    if (count($agents) > 0){
-                        $doc->startElement('particDesc');
-                        if (in_array('http://numismatics.org/authority/p_norrit_co', $agents) || in_array('http://numismatics.org/authority/american_numismatic_society', $agents)){
-                            $doc->startElement('listOrg');
-                            foreach($agents as $agent){
-                                $doc->startElement('org');
-                                    $doc->startElement('orgName');
-                                        $doc->writeAttribute('ref', $agent);
-                                        $doc->text(normalize_uri($agent));
-                                    $doc->endElement();
-                                $doc->endElement();
-                            }
-                            $doc->endElement();
-                        } else {
-                            $doc->startElement('listPerson');
-                            foreach($agents as $agent){
-                                $doc->startElement('person');
-                                    $doc->startElement('persName');
-                                        $doc->writeAttribute('ref', $agent);
-                                        $doc->text(normalize_uri($agent));
-                                    $doc->endElement();
-                                $doc->endElement();
-                            }
-                            $doc->endElement();
-                        }
-                        $doc->endElement();
-                    }
-                
+                    $doc->endElement();                
                 $doc->endElement();
             //end profileDesc
             $doc->endElement();
@@ -263,7 +265,7 @@ function generate_tei ($id, $array){
         $doc->endElement();
         
         //create facsimilies
-        foreach ($array['files'] as $file){
+        foreach ($array['files'] as $k=>$file){
             if ($file['public'] == TRUE){
                 $filename = str_replace('.tif', '', $file['filename']);
                 
@@ -277,8 +279,17 @@ function generate_tei ($id, $array){
                     $height = $size[1];
                     
                     $doc->startElement('facsimile');
-                        $doc->writeAttribute('xml:id', $filename);
-                        $doc->writeAttribute('style', 'depiction');
+                        if (strpos('_', $filename) !== FALSE){
+                            $doc->writeAttribute('xml:id', $filename);
+                        } else {
+                            $doc->writeAttribute('xml:id', $filename . '_001');
+                        }
+                        
+                        
+                        //designate first file as depiction
+                        if ($k == 0){
+                            $doc->writeAttribute('style', 'depiction');
+                        }                        
                         
                         $doc->startElement('media');
                             $doc->writeAttribute('url', "http://images.numismatics.org/archivesimages%2Farchive%2F{$filename}.jpg");
