@@ -113,6 +113,7 @@ function generate_tei ($id, $array){
                 //end titleStmt               
                 $doc->endElement();
                 
+                //these items probably shouldn't have a publisher
                 $doc->startElement('publicationStmt');
                     $doc->startElement('publisher');
                         $doc->writeElement('name', 'American Numismatic Society');
@@ -402,7 +403,7 @@ function normalize_hoard($uri){
     switch($uri){
         case (strpos($uri, 'igch') !== FALSE):
             $num = preg_replace('/^http:\/\/.*\/igch([0-9]{4})$/', '$1', $uri);
-            return 'IGCH ' . ltrim($num, '0');
+            return 'IGCH ' . $num;
         case (strpos($uri, 'ch.') !== FALSE):
             $pieces = explode('.', str_replace('http://coinhoards.org/id/', '', $uri));
             switch($pieces[1]){
