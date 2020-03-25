@@ -1,234 +1,255 @@
 <?php 
   /**** 
   * Author: Ethan Gruber
-  * Date: April 2018
-  * Function: Transform CSV for IGCH Hellenistic Hoards into NUDS-Hoard XML 
+  * Date: March 2020
+  * Function: Transform CSV files from Google Shhets into NUDS-Hoard XML 
   ****/
 
-$contents = generate_json('https://docs.google.com/spreadsheets/d/e/2PACX-1vTxvKZJTXq0ztK_K8J5RYd0R6aXIqRr1qUAeqm3bgSIB3jhe9SxDmJcO6oqEHG70VAR8o0lJcKSUiEv/pub?output=csv');
+$contents_sheet = generate_json('https://docs.google.com/spreadsheets/d/e/2PACX-1vS4u59ilkRmFMFaABssQMrR5OEjvQYt0IcwVmK5xaJmlIfjyNmKhH2mRIM7ExV8F6RqcDqaJdgYbjC8/pub?output=csv');
 $counts = generate_json('https://docs.google.com/spreadsheets/d/e/2PACX-1vTr01VFU1jNLPm_YPZ4RAEKlIppeAGDOR56Go3uW0rfMC6ZEjyzmQ3BgbKDcOJbjjQOfDR_NR6tg4Zt/pub?output=csv');
-$findspots = generate_json('https://docs.google.com/spreadsheets/d/e/2PACX-1vQeIbUxRU-CpMfzSM6eU22Mn4VyhdRmNtMNUEfkHegVAQLEkblX0OFJlUNyouZBDao_clG1c9xS15Y1/pub?output=csv');
-$depositDates = generate_json('https://docs.google.com/spreadsheets/d/e/2PACX-1vTI1-N57bT5PxIen4dafjV3MoSQa-4gV5ZVQNstLB4FeTkIuT8CcRfe9f8o9MmkQoE4iM1izCtbpDDw/pub?output=csv');
-$refNotes = generate_json('https://docs.google.com/spreadsheets/d/e/2PACX-1vSye6cSV45CuOpVDvYDaUrABoP7W7CesN_lTlZo9G4ydfBh_kbEUuaWXq3ZiBkEPkojyAyI0B46zYPW/pub?output=csv');
+//$findspots = generate_json('https://docs.google.com/spreadsheets/d/e/2PACX-1vQeIbUxRU-CpMfzSM6eU22Mn4VyhdRmNtMNUEfkHegVAQLEkblX0OFJlUNyouZBDao_clG1c9xS15Y1/pub?output=csv');
+//$depositDates = generate_json('https://docs.google.com/spreadsheets/d/e/2PACX-1vTI1-N57bT5PxIen4dafjV3MoSQa-4gV5ZVQNstLB4FeTkIuT8CcRfe9f8o9MmkQoE4iM1izCtbpDDw/pub?output=csv');
+//$refNotes = generate_json('https://docs.google.com/spreadsheets/d/e/2PACX-1vSye6cSV45CuOpVDvYDaUrABoP7W7CesN_lTlZo9G4ydfBh_kbEUuaWXq3ZiBkEPkojyAyI0B46zYPW/pub?output=csv');
+
+//restructure the contents so that they can be more easily accessed from the the process below without constant reiteration through all lines
+$contents = array();
+foreach ($contents_sheet as $row){
+    $contents[$row['id']][] = $row;
+}
+
 $hoards = array();
 
 //associative array of Nomisma IDs and preferred labels
 $nomisma = array();
 
-foreach($counts as $hoard){
-	if (strlen($hoard['id']) > 0){
-		$id = trim($hoard['id']);
-		
-		$record = array();
-		
-		//handle counts
-		if (strlen($hoard['total count']) && is_numeric(trim($hoard['total count']))){
-			$record['total'] = (int)$hoard['total count'];
-		}
-		if (strlen($hoard['min count']) && is_numeric(trim($hoard['min count']))){
-			$record['min'] = (int)$hoard['min count'];
-		}
-		if (strlen($hoard['max count']) && is_numeric(trim($hoard['max count']))){
-			$record['max'] = (int)$hoard['max count'];
-		}
-		if (trim($hoard['approximate']) == 'yes'){
-			$record['is_approximate'] = true;
-		}
-		if (strlen($hoard['notes']) > 0){
-			$record['content_notes'] = str_replace('Contents: ', '', $hoard['notes']);
-		}
-		
-		//extract deposit dates
-		foreach ($depositDates as $date){
-			if ($date['id'] == $id){
-				$record['deposit']['fromDate'] = (int) $date['fromDate'];
-				$record['deposit']['toDate'] = (int) $date['toDate'];
-			}
-		}
-		
-		//extract discovery and find information
-		foreach ($findspots as $findspot){
-			if ($findspot['id'] == $id){
-				//findspots
-				$record['findspot']['desc'] = $findspot['value'];
-				if (strlen($findspot['geonames_place']) > 0){
-					$record['findspot']['label'] = $findspot['geonames_place'];
-				}
-				if (strlen($findspot['geonames_uri']) > 0){
-					$record['findspot']['uri'] = $findspot['geonames_uri'];
-				}
-				
-				//discovery
-				if (is_numeric($findspot['fromDate']) || is_numeric($findspot['toDate'])){
-					//if both are numeric, then it is a date range
-					if (is_numeric($findspot['fromDate']) && is_numeric($findspot['toDate'])){
-						$record['discovery']['fromDate'] = $findspot['fromDate'];
-						$record['discovery']['toDate'] = $findspot['toDate'];
-						
-						//certainty: approximate takes precedence over uncertain
-						if ($findspot['fromDate_approximate'] == 'TRUE'){
-							$record['discovery']['fromDate_certainty'] = 'approximate';
-						} elseif ($findspot['fromDate_uncertain'] == 'TRUE'){
-							$record['discovery']['fromDate_certainty'] = 'uncertain';
-						}
-						
-						if ($findspot['toDate_approximate'] == 'TRUE'){
-							$record['discovery']['toDate_certainty'] = 'approximate';
-						} elseif ($findspot['toDate_uncertain'] == 'TRUE'){
-							$record['discovery']['toDate_certainty'] = 'uncertain';
-						}
-						
-						
-					} elseif (is_numeric($findspot['fromDate']) && !is_numeric($findspot['toDate'])){
-						$record['discovery']['date'] = $findspot['fromDate'];	
-						//certainty: approximate takes precedence over uncertain
-						if ($findspot['fromDate_approximate'] == 'TRUE'){
-							$record['discovery']['date_certainty'] = 'approximate';
-						} elseif ($findspot['fromDate_uncertain'] == 'TRUE'){
-							$record['discovery']['date_certainty'] = 'uncertain';
-						}
-					} elseif (!is_numeric($findspot['fromDate']) && is_numeric($findspot['toDate'])){
-						$record['discovery']['notAfter'] = $findspot['toDate'];
-						if ($findspot['toDate_approximate'] == 'TRUE'){
-							$record['discovery']['date_certainty'] = 'approximate';
-						} elseif ($findspot['toDate_uncertain'] == 'TRUE'){
-							$record['discovery']['date_certainty'] = 'uncertain';
-						}
-					}
-				}
-			}
-		}
-		
-		//disposition, notes, refs
-		$record['notes'] = array();
-		$record['refs'] = array();
-		foreach ($refNotes as $row){
-			if ($row['id'] == $id){
-				if ($row['type'] == 'disposition'){
-					$record['disposition'] = trim($row['value']);
-				} elseif ($row['type'] == 'note'){
-					$record['notes'][] = trim($row['value']);
-				} elseif ($row['type'] == 'ref'){
-					$record['refs'][] = trim($row['value']);
-				}				
-			}
-		}
-		
-		//reconstruct the contents into an associative array
-		foreach ($contents as $row){
-			//ignore blank rows
-			if ($row['id'] == $id){
-				$content = array();
-				
-				if (is_numeric($row['count'])){					
-					$content['count'] = $row['count'];
-				}
-				if (is_numeric($row['min count'])){
-					$content['minCount'] = $row['min count'];
-				}
-				if (is_numeric($row['max count'])){
-					$content['maxCount'] = $row['max count'];
-				}
-				//certainty
-				if ($row['count approximate'] == 'TRUE'){
-					$content['certainty'] = 'approximate';
-				} elseif ($row['count uncertain'] == 'TRUE'){
-					$content['certainty'] = 'uncertain';
-				}
-				
-				//typeDesc
-				if (strlen($row['nomisma id (region)']) > 0){
-					$content['region_uri'] = trim($row['nomisma id (region)']);
-				}
-				if ($row['region uncertain'] == 'TRUE'){
-					$content['region_uncertain'] = true;
-				}
-				if (strlen($row['nomisma id (mint)']) > 0){
-					$content['mint_uri'] = trim($row['nomisma id (mint)']);
-				}
-				if ($row['mint uncertain'] == 'TRUE'){
-					$content['mint_uncertain'] = true;
-				}
-				if (strlen($row['nomisma id (denomination)']) > 0){
-					$content['denomination_uri'] = trim($row['nomisma id (denomination)']);
-				}
-				if (strlen($row['denomination uncertain']) == 'TRUE'){
-					$content['denomination_uncertain'] = true;
-				}
-				if (strlen($row['desc3 (material 1)']) > 0){
-					$content['material_uri'] = 'http://nomisma.org/id/' . trim($row['desc3 (material 1)']);
-				}
-				if (strlen($row['nomisma id (authority)']) > 0){
-					$content['authority_uri'] = trim($row['nomisma id (authority)']);
-				}
-				if ($row['authority uncertain'] == 'TRUE'){
-					$content['authority_uncertain'] = true;
-				}
-				if (strlen($row['nomisma id (dynasty)']) > 0){
-					$content['dynasty_uri'] = trim($row['nomisma id (dynasty)']);
-				}
-				if (strlen($row['general type desc.']) > 0){
-					$content['desc'] = trim($row['general type desc.']);
-				}
-				if (strlen($row['obv_type']) > 0){
-					$content['obverse']['type'] = trim($row['obv_type']);
-				}
-				if (strlen($row['rev_type']) > 0){
-					$content['reverse']['type'] = trim($row['rev_type']);
-				}
-				if (strlen($row['rev_legend']) > 0){
-					$content['reverse']['legend'] = trim($row['rev_legend']);
-				}
-				if (is_numeric($row['from_date']) && is_numeric($row['to_date'])){
-					$content['fromDate'] = (int) $row['from_date'];
-					$content['toDate'] = (int) $row['to_date'];
-				}
-				
-				//refs
-				if (strlen($row['ref1']) > 0){
-					$content['refs']['ref1'] = $row['ref1'];
-				}
-				if (strlen($row['ref2']) > 0){
-					$content['refs']['ref2'] = $row['ref2'];
-				}
-				if (strlen($row['ref3']) > 0){
-					$content['refs']['ref3'] = $row['ref3'];
-				}
-				if (strlen($row['ref4']) > 0){
-					$content['refs']['ref4'] = $row['ref4'];
-				}
-				if (strlen($row['ref5']) > 0){
-					$content['refs']['ref5'] = $row['ref5'];
-				}
-				if (strlen($row['nomisma id (ref1)']) > 0){
-					$content['refs']['uri'] = $row['nomisma id (ref1)'];
-				}
-				
-				$record['contents'][] = $content;
-			}
-		}
-		
-		//add hoard record into master hoards array
-		$hoards[$id] = $record;
-	}
-}
-
-//var_dump($hoards);
 
 $count = 0;
-foreach ($hoards as $k=>$v){
-	//var_dump($v);
-	echo "Writing {$k}\n";
-	generate_nuds($k, $v);		
-	$count++;
+
+foreach($counts as $hoard){
+    if (strlen($hoard['id']) > 0 && $count <= 1){
+        $id = trim($hoard['id']);
+        if ($count == 1){
+            $hoards[$id] = process_hoard($hoard, $contents[$id]);
+        }
+        
+        $count++;
+    }
 }
+
+var_dump($hoards);
+
+$count = 0;
+/*foreach ($hoards as $k=>$v){
+	//var_dump($v);
+	
+    if ($count < 1){
+        echo "Writing {$k}\n";
+        generate_nuds($k, $v);	
+    }
+	$count++;
+}*/
 
 
 /***** FUNCTIONS *****/
+function process_hoard($hoard, $contents){
+    $id = trim($hoard['id']);
+    
+    $record = array();
+    
+    //handle counts
+    if (strlen($hoard['total count']) && is_numeric(trim($hoard['total count']))){
+        $record['total'] = (int)$hoard['total count'];
+    }
+    if (strlen($hoard['min count']) && is_numeric(trim($hoard['min count']))){
+        $record['min'] = (int)$hoard['min count'];
+    }
+    if (strlen($hoard['max count']) && is_numeric(trim($hoard['max count']))){
+        $record['max'] = (int)$hoard['max count'];
+    }
+    if (trim($hoard['approximate']) == 'yes'){
+        $record['is_approximate'] = true;
+    }
+    $record['content_notes'] = $hoard['contents'] . (strlen($hoard['notes']) > 0 ? ': ' . $hoard['notes'] : '');
+    
+    //extract deposit dates
+    /*foreach ($depositDates as $date){
+     if ($date['id'] == $id){
+     $record['deposit']['fromDate'] = (int) $date['fromDate'];
+     $record['deposit']['toDate'] = (int) $date['toDate'];
+     }
+     }*/
+    
+    //extract discovery and find information
+    /*foreach ($findspots as $findspot){
+     if ($findspot['id'] == $id){
+     //findspots
+     $record['findspot']['desc'] = $findspot['value'];
+     if (strlen($findspot['geonames_place']) > 0){
+     $record['findspot']['label'] = $findspot['geonames_place'];
+     }
+     if (strlen($findspot['geonames_uri']) > 0){
+     $record['findspot']['uri'] = $findspot['geonames_uri'];
+     }
+     
+     //discovery
+     if (is_numeric($findspot['fromDate']) || is_numeric($findspot['toDate'])){
+     //if both are numeric, then it is a date range
+     if (is_numeric($findspot['fromDate']) && is_numeric($findspot['toDate'])){
+     $record['discovery']['fromDate'] = $findspot['fromDate'];
+     $record['discovery']['toDate'] = $findspot['toDate'];
+     
+     //certainty: approximate takes precedence over uncertain
+     if ($findspot['fromDate_approximate'] == 'TRUE'){
+     $record['discovery']['fromDate_certainty'] = 'approximate';
+     } elseif ($findspot['fromDate_uncertain'] == 'TRUE'){
+     $record['discovery']['fromDate_certainty'] = 'uncertain';
+     }
+     
+     if ($findspot['toDate_approximate'] == 'TRUE'){
+     $record['discovery']['toDate_certainty'] = 'approximate';
+     } elseif ($findspot['toDate_uncertain'] == 'TRUE'){
+     $record['discovery']['toDate_certainty'] = 'uncertain';
+     }
+     
+     
+     } elseif (is_numeric($findspot['fromDate']) && !is_numeric($findspot['toDate'])){
+     $record['discovery']['date'] = $findspot['fromDate'];
+     //certainty: approximate takes precedence over uncertain
+     if ($findspot['fromDate_approximate'] == 'TRUE'){
+     $record['discovery']['date_certainty'] = 'approximate';
+     } elseif ($findspot['fromDate_uncertain'] == 'TRUE'){
+     $record['discovery']['date_certainty'] = 'uncertain';
+     }
+     } elseif (!is_numeric($findspot['fromDate']) && is_numeric($findspot['toDate'])){
+     $record['discovery']['notAfter'] = $findspot['toDate'];
+     if ($findspot['toDate_approximate'] == 'TRUE'){
+     $record['discovery']['date_certainty'] = 'approximate';
+     } elseif ($findspot['toDate_uncertain'] == 'TRUE'){
+     $record['discovery']['date_certainty'] = 'uncertain';
+     }
+     }
+     }
+     }
+     }*/
+    
+    //disposition, notes, refs
+    /*$record['notes'] = array();
+     $record['refs'] = array();
+     foreach ($refNotes as $row){
+     if ($row['id'] == $id){
+     if ($row['type'] == 'disposition'){
+     $record['disposition'] = trim($row['value']);
+     } elseif ($row['type'] == 'note'){
+     $record['notes'][] = trim($row['value']);
+     } elseif ($row['type'] == 'ref'){
+     $record['refs'][] = trim($row['value']);
+     }
+     }
+     }*/
+    
+    //reconstruct the contents into an associative array
+    foreach ($contents as $row){
+        //ignore blank rows
+        if ($row['id'] == $id){
+            $content = array();
+            
+            if (is_numeric($row['count'])){
+                $content['count'] = $row['count'];
+            }
+            if (is_numeric($row['min count'])){
+                $content['minCount'] = $row['min count'];
+            }
+            if (is_numeric($row['max count'])){
+                $content['maxCount'] = $row['max count'];
+            }
+            //certainty
+            if ($row['count approximate'] == 'TRUE'){
+                $content['certainty'] = 'approximate';
+            } elseif ($row['count uncertain'] == 'TRUE'){
+                $content['certainty'] = 'uncertain';
+            }
+            
+            //typeDesc
+            foreach ($row as $k=>$v){
+                if (strlen($v) > 0){
+                    switch($k){
+                        case 'general type desc.':
+                            $content['desc'] = $v;
+                            break;
+                        case 'obv_type':
+                            $content['obverse']['type'] = $v;
+                            break;
+                        case 'rev_type':
+                            $content['reverse']['type'] = $v;
+                            break;
+                        case 'rev_legend':
+                            $content['reverse']['legend'] = $v;
+                            break;
+                        case 'dob':
+                            $content['dob'] = $v;
+                            break;
+                        case strpos($k, 'Mint') !== FALSE:
+                            $content['mints'][] = $v;
+                            break;
+                        case strpos($k, 'Region') !== FALSE:
+                            $content['regions'][] = $v;
+                            break;
+                        case strpos($k, 'Authority') !== FALSE || strpos($k, 'Dynasty') !== FALSE:
+                            $content['authorities'][] = $v;
+                            break;
+                        case strpos($k, 'Material') !== FALSE:
+                            $content['materials'][] = $v;
+                            break;
+                        case strpos($k, 'Denominations') !== FALSE:
+                            $content['denominations'][] = $v;
+                            break;
+                        case strpos($k, 'ref') !== FALSE:
+                            if (!preg_match('/^Svoronos\s\d/', $v)){
+                                $content['refs'][] = $v;
+                            }                            
+                            break;
+                        case strpos($k, 'Coin Type') !== FALSE:
+                            $types = explode('|', $v);
+                            
+                            foreach ($types as $type){
+                                $content['coinTypes'][] = $type;
+                            }
+                            break;
+                        case "Editor's notes":
+                            $content['note'] = $v;
+                            break;
+                    }
+                }
+            }
+            
+            if ($row['mint uncertain'] == TRUE){
+                $content['mints']['uncertain'] = true;
+            }
+            if ($row['region uncertain'] == TRUE){
+                $content['regions']['uncertain'] = true;
+            }
+            if ($row['authority uncertain'] == TRUE){
+                $content['authorities']['uncertain'] = true;
+            }
+            
+            if (strlen($row['from_date']) > 0 && strlen($row['to_date']) > 0){
+                $content['fromDate'] = $row['from_date'];
+                $content['toDate'] = $row['to_date'];
+            }
+            
+            
+            $record['contents'][] = $content;
+        }
+    }
+    
+    //add hoard record into master hoards array
+    return $record;
+}
+
 function generate_nuds($recordId, $hoard){
 	$writer = new XMLWriter();  
-	$writer->openURI("nuds/{$recordId}.xml");  
-	//$writer->openURI('php://output');
+	//$writer->openURI("nuds/{$recordId}.xml");  
+	$writer->openURI('php://output');
 	$writer->setIndent(true);
 	$writer->setIndentString("    ");
 	$writer->startDocument('1.0','UTF-8');

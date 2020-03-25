@@ -2,8 +2,8 @@
 
 error_reporting(0);
 
-$data = generate_json('coins.csv');
-$filename = 'bm-svoronos.rdf';
+$data = generate_json('philip_ii.csv');
+$filename = 'bm-lerider.rdf';
 
 //use XML writer to generate RDF
 $writer = new XMLWriter();
