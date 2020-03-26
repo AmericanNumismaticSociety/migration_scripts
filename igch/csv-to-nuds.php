@@ -21,14 +21,14 @@ $hoards = array();
 
 //associative array of Nomisma IDs and preferred labels
 $nomisma = array();
-
+$coinTypes = array();
 
 $count = 0;
 
 foreach($counts as $hoard){
-    if (strlen($hoard['id']) > 0 && $count <= 1){
+    if (strlen($hoard['id']) > 0 && $count <= 1592){
         $id = trim($hoard['id']);
-        if ($count == 1){
+        if ($count == 1592){
             $hoards[$id] = process_hoard($hoard, $contents[$id]);
         }
         
@@ -36,18 +36,15 @@ foreach($counts as $hoard){
     }
 }
 
-var_dump($hoards);
+//var_dump($hoards);
 
 $count = 0;
-/*foreach ($hoards as $k=>$v){
+foreach ($hoards as $k=>$v){
 	//var_dump($v);
-	
-    if ($count < 1){
-        echo "Writing {$k}\n";
-        generate_nuds($k, $v);	
-    }
+    echo "Writing {$k}\n";
+    generate_nuds($k, $v);	
 	$count++;
-}*/
+}
 
 
 /***** FUNCTIONS *****/
@@ -212,7 +209,7 @@ function process_hoard($hoard, $contents){
                             $types = explode('|', $v);
                             
                             foreach ($types as $type){
-                                $content['coinTypes'][] = $type;
+                                $content['coinTypes'][] = trim($type);
                             }
                             break;
                         case "Editor's notes":
@@ -295,7 +292,7 @@ function generate_nuds($recordId, $hoard){
 			$writer->endElement();
 		
 			//noteSet
-			if (count($hoard['notes']) > 0){
+			if (array_key_exists('notes', $hoard)){
 				$writer->startElement('noteSet');
 				foreach ($hoard['notes'] as $note){
 					$writer->writeElement('note', $note);
@@ -306,6 +303,7 @@ function generate_nuds($recordId, $hoard){
 			//hoardDesc = nuds:findspotDesc
 			$writer->startElement('hoardDesc');			
 				//findspot
+			if (array_key_exists('findspot', $hoard)){
 				$writer->startElement('findspot');
 					$writer->startElement('description');
 						$writer->writeAttribute('xml:lang', 'en');
@@ -320,8 +318,10 @@ function generate_nuds($recordId, $hoard){
 						$writer->endElement();
 					}						
 				$writer->endElement();
+			}
 				
 				//deposit
+			if (array_key_exists('deposit', $hoard)){
 				$writer->startElement('deposit');
 					if ($hoard['deposit']['fromDate'] == $hoard['deposit']['toDate']){
 						$writer->startElement('date');
@@ -341,7 +341,8 @@ function generate_nuds($recordId, $hoard){
 						$writer->endElement();
 					}
 				$writer->endElement();
-				
+			}
+			
 				//discovery
 				if (array_key_exists('discovery', $hoard)){
 					$writer->startElement('discovery');
@@ -446,7 +447,7 @@ function generate_nuds($recordId, $hoard){
 			}
 			
 			//refDesc
-			if (count($hoard['refs']) > 0){
+			if (array_key_exists('refs', $hoard)){
 				$writer->startElement('refDesc');
 					foreach ($hoard['refs'] as $ref){
 						$writer->writeElement('reference', $ref);
@@ -464,8 +465,71 @@ function generate_nuds($recordId, $hoard){
 
 //generate the content element from metadata in the content row (typeDesc and refDesc
 function generate_content($writer, $content){
-	//begin with typeDesc
-	$writer->startElement('nuds:typeDesc');
+    GLOBAL $coinTypes;
+    $contentTypes = array();
+    
+	//begin with typeDesc	
+    //if there is a single coin type URI, then use that as the typeDesc
+    if (array_key_exists('coinTypes', $content)){
+        $uncertain = count($content['coinTypes']) == 1 ? false : true;
+        
+        foreach ($content['coinTypes'] as $uri){
+            if (array_key_exists($uri, $coinTypes)){
+                $coinType = array('label'=>$coinTypes[$uri]['label'], 'uri'=>$coinTypes[$uri]['uri'], 'uncertain'=>$uncertain);
+                $contentTypes[] = $coinType;
+            } else {
+                $file_headers = @get_headers($uri);		      
+                if ($file_headers[0] == 'HTTP/1.1 200 OK'){
+                    echo "Found {$uri}\n";
+                    //generate the title from the NUDS
+                    $typeData = get_type_data($uri);
+                    $coinTypes[$uri] = array('uri'=>$uri, 'label'=>$typeData['label'], 'data'=>$typeData['data']);                    
+                    $coinType = array('label'=>$typeData['label'], 'uri'=>$uri, 'uncertain'=>$uncertain);
+                    $contentTypes[$uri] = $coinType;
+                } elseif ($file_headers[0] == 'HTTP/1.1 303 See Other'){
+                    //redirect Svoronos references to CPE URIs
+                    $newuri = str_replace('Location: ', '', $file_headers[7]);
+                    echo "Matching: {$uri} -> {$newuri}\n";
+                    
+                    //generate the title from the NUDS
+                    $typeData = get_type_data($newuri);
+                    $coinTypes[$uri] = array('uri'=>$newuri, 'label'=>$typeData['label'], 'data'=>$typeData['data']);                    
+                    $coinType = array('label'=>$typeData['label'], 'uri'=>$newuri, 'uncertain'=>$uncertain);
+                    $contentTypes[$uri] = $coinType;
+                }
+            }
+        }
+        
+        if (count($contentTypes) == 1){
+            $writer->startElement('nuds:typeDesc');
+                $writer->writeAttribute('xlink:type', 'simple');
+                $writer->writeAttribute('xlink:href', $contentTypes[0]['uri']);
+            $writer->endElement();
+        } else {      
+            //overwrite content array with the typeDesc metadata extracted from canonical sources
+            $content = parse_typeDesc($contentTypes);
+            
+            generate_typeDesc($writer, $content);
+        }
+    } else {
+        generate_typeDesc($writer, $content);        
+    }
+	
+	//refDesc
+	if (array_key_exists('refs', $content)){
+		if (count($content['refs']) > 0){
+			$writer->startElement('nuds:refDesc');
+				foreach($content['refs'] as $ref){					
+				    $writer->writeElement('nuds:reference', $ref);
+				}
+			$writer->endElement();
+		}	
+	}
+}
+
+//generate typeDesc from metadata either stored from the row or extracted from JSON-LD remotely
+function generate_typeDesc($writer, $content){
+    $writer->startElement('nuds:typeDesc');
 		//order elements to be compatible with the NUDS schema
 		
 		//date
@@ -493,110 +557,43 @@ function generate_content($writer, $content){
 			
 		}*/
 	
-		if (array_key_exists('denomination_uri', $content)){
-			$pieces = explode('|', $content['denomination_uri']);
-			foreach ($pieces as $uri){
-				$uri = trim($uri);
+		if (array_key_exists('denominations', $content)){    			
+			foreach ($content['denominations'] as $uri){
 				$label = get_label($uri);
-				if (isset($label)){
-					$writer->startElement('nuds:denomination');
-						$writer->writeAttribute('xlink:type', 'simple');
-						$writer->writeAttribute('xlink:href', $uri);
-						if (array_key_exists('denomination_uncertain', $content)){
-							$writer->writeAttribute('certainty', 'uncertain');
-						}
-						$writer->text($label);
-					$writer->endElement();
-				}
-			}
-		}
-		
-		if (array_key_exists('material_uri', $content)){
-			$label = get_label($content['material_uri']);
-			if (isset($label)){
-				$writer->startElement('nuds:material');
+				$writer->startElement('nuds:denomination');
 				$writer->writeAttribute('xlink:type', 'simple');
-				$writer->writeAttribute('xlink:href', $content['material_uri']);
+				$writer->writeAttribute('xlink:href', $uri);
+				if (array_key_exists('denomination_uncertain', $content)){
+				    $writer->writeAttribute('certainty', 'uncertain');
+				}
 				$writer->text($label);
 				$writer->endElement();
 			}
 		}
 		
+		if (array_key_exists('materials', $content)){
+		    foreach ($content['materials'] as $uri){
+		        $label = get_label($uri);
+		        $writer->startElement('nuds:material');
+    		        $writer->writeAttribute('xlink:type', 'simple');
+    		        $writer->writeAttribute('xlink:href', $uri);
+    		        $writer->text($label);
+		        $writer->endElement();
+		    }
+			
+		}
+		
 		//authority
-		if (array_key_exists('authority_uri', $content) || array_key_exists('dynasty_uri', $content)){
+		if (array_key_exists('authorities', $content)){
 			$writer->startElement('nuds:authority');
-			if (array_key_exists('authority_uri', $content)){
-				$pieces = explode('|', $content['authority_uri']);
-				foreach ($pieces as $uri){
-					$uri = trim($uri);
-					$label = get_label($uri);
-					if (isset($label)){
-						$writer->startElement('nuds:persname');
-						$writer->writeAttribute('xlink:type', 'simple');
-						$writer->writeAttribute('xlink:role', 'authority');
-						$writer->writeAttribute('xlink:href', $uri);
-						if (array_key_exists('authority_uncertain', $content)){
-							$writer->writeAttribute('certainty', 'uncertain');
-						}
-						$writer->text($label);
-						$writer->endElement();
-					}
-				}
-			}
-			if (array_key_exists('dynasty_uri', $content)){
-				$label = get_label($content['dynasty_uri']);
-				if (isset($label)){
-					$writer->startElement('nuds:famname');
-						$writer->writeAttribute('xlink:type', 'simple');
-						$writer->writeAttribute('xlink:role', 'dynasty');
-						$writer->writeAttribute('xlink:href', $content['dynasty_uri']);
-						$writer->text($label);
-					$writer->endElement();
-				}
-			}
+			
 			$writer->endElement();
 		}
 		
 		//geographic
-		if (array_key_exists('mint_uri', $content) || array_key_exists('region_uri', $content)){
+		if (array_key_exists('mints', $content) || array_key_exists('regions', $content)){
 			$writer->startElement('nuds:geographic');
-				if (array_key_exists('mint_uri', $content)){
-					$pieces = explode('|', $content['mint_uri']);
-					foreach ($pieces as $uri){
-						$uri = trim($uri);
-						$label = get_label($uri);
-						if (isset($label)){
-							$writer->startElement('nuds:geogname');
-								$writer->writeAttribute('xlink:type', 'simple');
-								$writer->writeAttribute('xlink:role', 'mint');
-								$writer->writeAttribute('xlink:href', $uri);
-								if (array_key_exists('mint_uncertain', $content)){
-									$writer->writeAttribute('certainty', 'uncertain');
-								}
-								$writer->text($label);
-							$writer->endElement();
-						}		
-					}
-								
-				}
-				if (array_key_exists('region_uri', $content)){
-					$pieces = explode('|', $content['region_uri']);
-					foreach ($pieces as $uri){
-						$uri = trim($uri);
-						$label = get_label($uri);
-						if (isset($label)){
-							$writer->startElement('nuds:geogname');
-								$writer->writeAttribute('xlink:type', 'simple');
-								$writer->writeAttribute('xlink:role', 'mint');
-								$writer->writeAttribute('xlink:href', $uri);
-								if (array_key_exists('region_uncertain', $content)){
-									$writer->writeAttribute('certainty', 'uncertain');
-								}
-								$writer->text($label);
-							$writer->endElement();
-						}
-					}
-				}
+				
 			$writer->endElement();
 		}
 		
@@ -610,32 +607,6 @@ function generate_content($writer, $content){
 		}
 	//end typeDesc
 	$writer->endElement();
-	
-	//refDesc
-	if (array_key_exists('refs', $content)){
-		if (count($content['refs']) > 0){
-			$writer->startElement('nuds:refDesc');
-				foreach($content['refs'] as $k=>$v){					
-					if ($k == 'uri'){
-						$label = get_label($v);	
-						
-						$writer->startElement('nuds:reference');
-							$writer->writeAttribute('xlink:arcrole', 'nmo:hasTypeSeriesItem');
-							$writer->writeAttribute('xlink:href', $v);
-							$writer->text($label);
-						$writer->endElement();
-					} else {
-						//if there's a URI and the key is ref1, then skip the reference
-						if (array_key_exists('uri', $content['refs']) && $k == 'ref1'){
-							
-						} else {
-							$writer->writeElement('nuds:reference', $v);
-						}
-					}
-				}
-			$writer->endElement();
-		}	
-	}
 }
 
 //generate obverse or reverse description
@@ -700,6 +671,103 @@ function number_pad($number,$n) {
 		$gYear = '-' . str_pad($bcNum,$n,"0",STR_PAD_LEFT);
 	}
 	return $gYear;
+}
+
+/*
+ * Parse the Nomisma JSON-LD for the coin type to extract title and metadata
+ */
+function get_type_data($uri){
+    $typeData = array();
+    //get the NUDS XML URL based on domain
+    $string = file_get_contents($uri . '.jsonld');
+    $json = json_decode($string, true);
+    
+    $label = $json["@graph"][0]["skos:prefLabel"][0]["@value"];
+    
+    $typeData['label'] = $label;
+    $typeData['data'] = $json["@graph"][0];
+
+    return $typeData;
+    
+}
+
+//parse the JSON-LD data from each associated type to extract a unique list of entities and values
+function parse_typeDesc ($types){
+    GLOBAL $coinTypes;
+    
+    $content = array();
+    
+    $authorities = array();
+    $denominations = array();
+    $materials = array();
+    $mints = array();
+    $regions = array();
+    
+    foreach ($types as $type){
+        foreach ($coinTypes[$type['uri']]['data'] as $k=>$v){
+            if ($k == 'nmo:hasAuthority'){
+                foreach ($v as $array){
+                    $uri = $array["@id"];
+                    if (!in_array($uri, $authorities)){
+                        $authorities[] = $uri;
+                    }
+                }               
+            }
+            if ($k == 'nmo:hasDenomination'){
+                foreach ($v as $array){
+                    $uri = $array["@id"];
+                    if (!in_array($uri, $denominations)){
+                        $denominations[] = $uri;
+                    }
+                }
+            }
+            if ($k == 'nmo:hasMaterial'){
+                foreach ($v as $array){
+                    $uri = $array["@id"];
+                    if (!in_array($uri, $materials)){
+                       $materials[] = $uri;
+                    }
+                }
+            }
+            if ($k == 'nmo:hasMint'){
+                foreach ($v as $array){
+                    $uri = $array["@id"];
+                    if (!in_array($uri, $mints)){
+                       $mints[] = $uri;
+                    }
+                }
+            }
+            if ($k == 'nmo:hasRegion'){
+                foreach ($v as $array){
+                    $uri = $array["@id"];
+                    if (!in_array($uri, $regions)){
+                        $mints[] = $uri;
+                    }
+                }
+            }
+        }
+    }
+    
+    
+    //populate the content array to be returned
+    if (count($authorities) > 0){
+        $content['authorities'] = $authorities;
+    }
+    if (count($denominations) > 0){
+        $content['denominations'] = $denominations;
+    }
+    if (count($materials) > 0){
+        $content['materials'] = $materials;
+    }
+    if (count($mints) > 0){
+        $content['mints'] = $mints;
+    }
+    if (count($regions) > 0){
+        $content['regions'] = $regions;
+    }
+    
+    return $content;
+    
 }
 
 //parse CSV
