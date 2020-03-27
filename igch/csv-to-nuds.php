@@ -2,14 +2,14 @@
   /**** 
   * Author: Ethan Gruber
   * Date: March 2020
-  * Function: Transform CSV files from Google Shhets into NUDS-Hoard XML 
+  * Function: Transform CSV files from Google Sheets into NUDS-Hoard XML 
   ****/
 
 $contents_sheet = generate_json('https://docs.google.com/spreadsheets/d/e/2PACX-1vS4u59ilkRmFMFaABssQMrR5OEjvQYt0IcwVmK5xaJmlIfjyNmKhH2mRIM7ExV8F6RqcDqaJdgYbjC8/pub?output=csv');
 $counts = generate_json('https://docs.google.com/spreadsheets/d/e/2PACX-1vTr01VFU1jNLPm_YPZ4RAEKlIppeAGDOR56Go3uW0rfMC6ZEjyzmQ3BgbKDcOJbjjQOfDR_NR6tg4Zt/pub?output=csv');
 //$findspots = generate_json('https://docs.google.com/spreadsheets/d/e/2PACX-1vQeIbUxRU-CpMfzSM6eU22Mn4VyhdRmNtMNUEfkHegVAQLEkblX0OFJlUNyouZBDao_clG1c9xS15Y1/pub?output=csv');
-//$depositDates = generate_json('https://docs.google.com/spreadsheets/d/e/2PACX-1vTI1-N57bT5PxIen4dafjV3MoSQa-4gV5ZVQNstLB4FeTkIuT8CcRfe9f8o9MmkQoE4iM1izCtbpDDw/pub?output=csv');
-//$refNotes = generate_json('https://docs.google.com/spreadsheets/d/e/2PACX-1vSye6cSV45CuOpVDvYDaUrABoP7W7CesN_lTlZo9G4ydfBh_kbEUuaWXq3ZiBkEPkojyAyI0B46zYPW/pub?output=csv');
+$depositDates = generate_json('https://docs.google.com/spreadsheets/d/e/2PACX-1vTI1-N57bT5PxIen4dafjV3MoSQa-4gV5ZVQNstLB4FeTkIuT8CcRfe9f8o9MmkQoE4iM1izCtbpDDw/pub?output=csv');
+$refNotes = generate_json('https://docs.google.com/spreadsheets/d/e/2PACX-1vSye6cSV45CuOpVDvYDaUrABoP7W7CesN_lTlZo9G4ydfBh_kbEUuaWXq3ZiBkEPkojyAyI0B46zYPW/pub?output=csv');
 
 //restructure the contents so that they can be more easily accessed from the the process below without constant reiteration through all lines
 $contents = array();
@@ -26,9 +26,9 @@ $coinTypes = array();
 $count = 0;
 
 foreach($counts as $hoard){
-    if (strlen($hoard['id']) > 0 && $count <= 1592){
+    if (strlen($hoard['id']) > 0 && $count <= 1680){
         $id = trim($hoard['id']);
-        if ($count == 1592){
+        if ($count == 1680){
             $hoards[$id] = process_hoard($hoard, $contents[$id]);
         }
         
@@ -46,9 +46,14 @@ foreach ($hoards as $k=>$v){
 	$count++;
 }
 
+//var_dump($nomisma);
+
 
 /***** FUNCTIONS *****/
 function process_hoard($hoard, $contents){
+    GLOBAL $refNotes;
+    GLOBAL $depositDates;
+    
     $id = trim($hoard['id']);
     
     $record = array();
@@ -69,12 +74,13 @@ function process_hoard($hoard, $contents){
     $record['content_notes'] = $hoard['contents'] . (strlen($hoard['notes']) > 0 ? ': ' . $hoard['notes'] : '');
     
     //extract deposit dates
-    /*foreach ($depositDates as $date){
-     if ($date['id'] == $id){
-     $record['deposit']['fromDate'] = (int) $date['fromDate'];
-     $record['deposit']['toDate'] = (int) $date['toDate'];
-     }
-     }*/
+    foreach ($depositDates as $date){
+        if ($date['id'] == $id){
+            $record['deposit']['fromDate'] = (int) $date['fromDate'];
+            $record['deposit']['toDate'] = (int) $date['toDate'];
+            break;
+        }
+    }
     
     //extract discovery and find information
     /*foreach ($findspots as $findspot){
@@ -130,19 +136,17 @@ function process_hoard($hoard, $contents){
      }*/
     
     //disposition, notes, refs
-    /*$record['notes'] = array();
-     $record['refs'] = array();
-     foreach ($refNotes as $row){
-     if ($row['id'] == $id){
-     if ($row['type'] == 'disposition'){
-     $record['disposition'] = trim($row['value']);
-     } elseif ($row['type'] == 'note'){
-     $record['notes'][] = trim($row['value']);
-     } elseif ($row['type'] == 'ref'){
-     $record['refs'][] = trim($row['value']);
-     }
-     }
-     }*/
+    foreach ($refNotes as $row){
+        if ($row['id'] == $id){
+            if ($row['type'] == 'disposition'){
+                $record['disposition'] = trim($row['value']);
+            } elseif ($row['type'] == 'note'){
+                $record['notes'][] = trim($row['value']);
+            } elseif ($row['type'] == 'ref'){
+                $record['refs'][] = trim($row['value']);
+            }
+        }
+    }
     
     //reconstruct the contents into an associative array
     foreach ($contents as $row){
@@ -168,6 +172,7 @@ function process_hoard($hoard, $contents){
             
             //typeDesc
             foreach ($row as $k=>$v){
+                $v = trim($v);
                 if (strlen($v) > 0){
                     switch($k){
                         case 'general type desc.':
@@ -197,11 +202,11 @@ function process_hoard($hoard, $contents){
                         case strpos($k, 'Material') !== FALSE:
                             $content['materials'][] = $v;
                             break;
-                        case strpos($k, 'Denominations') !== FALSE:
+                        case strpos($k, 'Denomination') !== FALSE:
                             $content['denominations'][] = $v;
                             break;
                         case strpos($k, 'ref') !== FALSE:
-                            if (!preg_match('/^Svoronos\s\d/', $v)){
+                            if (!preg_match('/^Svoronos\s\d+$/', $v)){
                                 $content['refs'][] = $v;
                             }                            
                             break;
@@ -228,6 +233,12 @@ function process_hoard($hoard, $contents){
             if ($row['authority uncertain'] == TRUE){
                 $content['authorities']['uncertain'] = true;
             }
+            if ($row['denomination uncertain'] == TRUE){
+                $content['denominations']['uncertain'] = true;
+            }
+            if ($row['material uncertain'] == TRUE){
+                $content['materials']['uncertain'] = true;
+            }
             
             if (strlen($row['from_date']) > 0 && strlen($row['to_date']) > 0){
                 $content['fromDate'] = $row['from_date'];
@@ -243,6 +254,9 @@ function process_hoard($hoard, $contents){
     return $record;
 }
 
+/*****
+ * FUNCTIONS FOR GENERATING NUDS 
+ *****/
 function generate_nuds($recordId, $hoard){
 	$writer = new XMLWriter();  
 	//$writer->openURI("nuds/{$recordId}.xml");  
@@ -279,7 +293,8 @@ function generate_nuds($recordId, $hoard){
 				$writer->endElement();
 			$writer->endElement();
 			$writer->startElement('rightsStmt');
-				$writer->writeElement('copyrightHolder', 'American Numismatic Society');				
+				$writer->writeElement('copyrightHolder', 'American Numismatic Society');
+				$writer->writeElement('license', 'http://opendatacommons.org/licenses/odbl/');
 			$writer->endElement();
 		//end control
 		$writer->endElement();
@@ -422,7 +437,7 @@ function generate_nuds($recordId, $hoard){
 						//coin or coinGrp
 						if (array_key_exists('count', $content) && (int)$content['count'] == 1){
 							$writer->startElement('coin');
-							generate_content($writer, $content);
+							parse_content($writer, $content);
 							$writer->endElement();
 						} else {
 							$writer->startElement('coinGrp');
@@ -438,7 +453,7 @@ function generate_nuds($recordId, $hoard){
 								if (array_key_exists('certainty', $content)){
 									$writer->writeAttribute('certainty', $content['certainty']);
 								}
-								generate_content($writer, $content);
+								parse_content($writer, $content);
 							$writer->endElement();							
 						}
 					}
@@ -461,70 +476,6 @@ function generate_nuds($recordId, $hoard){
 	$writer->endElement();	
 	//end document
 	return $writer->flush();
-}
-
-//generate the content element from metadata in the content row (typeDesc and refDesc
-function generate_content($writer, $content){
-    GLOBAL $coinTypes;
-    $contentTypes = array();
-    
-	//begin with typeDesc	
-    //if there is a single coin type URI, then use that as the typeDesc
-    if (array_key_exists('coinTypes', $content)){
-        $uncertain = count($content['coinTypes']) == 1 ? false : true;
-        
-        foreach ($content['coinTypes'] as $uri){
-            if (array_key_exists($uri, $coinTypes)){
-                $coinType = array('label'=>$coinTypes[$uri]['label'], 'uri'=>$coinTypes[$uri]['uri'], 'uncertain'=>$uncertain);
-                $contentTypes[] = $coinType;
-            } else {
-                $file_headers = @get_headers($uri);		      
-                if ($file_headers[0] == 'HTTP/1.1 200 OK'){
-                    echo "Found {$uri}\n";
-                    //generate the title from the NUDS
-                    $typeData = get_type_data($uri);
-                    $coinTypes[$uri] = array('uri'=>$uri, 'label'=>$typeData['label'], 'data'=>$typeData['data']);                    
-                    $coinType = array('label'=>$typeData['label'], 'uri'=>$uri, 'uncertain'=>$uncertain);
-                    $contentTypes[$uri] = $coinType;
-                } elseif ($file_headers[0] == 'HTTP/1.1 303 See Other'){
-                    //redirect Svoronos references to CPE URIs
-                    $newuri = str_replace('Location: ', '', $file_headers[7]);
-                    echo "Matching: {$uri} -> {$newuri}\n";
-                    
-                    //generate the title from the NUDS
-                    $typeData = get_type_data($newuri);
-                    $coinTypes[$uri] = array('uri'=>$newuri, 'label'=>$typeData['label'], 'data'=>$typeData['data']);                    
-                    $coinType = array('label'=>$typeData['label'], 'uri'=>$newuri, 'uncertain'=>$uncertain);
-                    $contentTypes[$uri] = $coinType;
-                }
-            }
-        }
-        
-        if (count($contentTypes) == 1){
-            $writer->startElement('nuds:typeDesc');
-                $writer->writeAttribute('xlink:type', 'simple');
-                $writer->writeAttribute('xlink:href', $contentTypes[0]['uri']);
-            $writer->endElement();
-        } else {      
-            //overwrite content array with the typeDesc metadata extracted from canonical sources
-            $content = parse_typeDesc($contentTypes);
-            
-            generate_typeDesc($writer, $content);
-        }
-    } else {
-        generate_typeDesc($writer, $content);        
-    }
-	
-	//refDesc
-	if (array_key_exists('refs', $content)){
-		if (count($content['refs']) > 0){
-			$writer->startElement('nuds:refDesc');
-				foreach($content['refs'] as $ref){					
-				    $writer->writeElement('nuds:reference', $ref);
-				}
-			$writer->endElement();
-		}	
-	}
 }
 
 //generate typeDesc from metadata either stored from the row or extracted from JSON-LD remotely
@@ -557,27 +508,33 @@ function generate_typeDesc($writer, $content){
 			
 		}*/
 	
-		if (array_key_exists('denominations', $content)){    			
+		if (array_key_exists('denominations', $content)){
+		    $uncertain = (array_key_exists('uncertain', $content['denominations']) || count($content['denominations']) > 1) ? true : false;
+		    
 			foreach ($content['denominations'] as $uri){
-				$label = get_label($uri);
+				$nm = get_nomisma_data($uri);
 				$writer->startElement('nuds:denomination');
-				$writer->writeAttribute('xlink:type', 'simple');
-				$writer->writeAttribute('xlink:href', $uri);
-				if (array_key_exists('denomination_uncertain', $content)){
-				    $writer->writeAttribute('certainty', 'uncertain');
-				}
-				$writer->text($label);
+    				$writer->writeAttribute('xlink:type', 'simple');
+    				$writer->writeAttribute('xlink:href', $uri);
+    				if ($uncertain == true){
+    				    $writer->writeAttribute('certainty', 'http://nomisma.org/id/uncertain_value');
+    				}
+				$writer->text($nm['label']);
 				$writer->endElement();
 			}
 		}
 		
 		if (array_key_exists('materials', $content)){
+		    $uncertain = (array_key_exists('uncertain', $content['materials']) || count($content['materials']) > 1) ? true : false;
 		    foreach ($content['materials'] as $uri){
-		        $label = get_label($uri);
+		        $nm = get_nomisma_data($uri);
 		        $writer->startElement('nuds:material');
     		        $writer->writeAttribute('xlink:type', 'simple');
     		        $writer->writeAttribute('xlink:href', $uri);
-    		        $writer->text($label);
+    		        if ($uncertain == true){
+    		            $writer->writeAttribute('certainty', 'http://nomisma.org/id/uncertain_value');
+    		        }
+    		        $writer->text($nm['label']);
 		        $writer->endElement();
 		    }
 			
@@ -585,15 +542,67 @@ function generate_typeDesc($writer, $content){
 		
 		//authority
 		if (array_key_exists('authorities', $content)){
-			$writer->startElement('nuds:authority');
-			
-			$writer->endElement();
+		    $uncertain = (array_key_exists('uncertain', $content['authorities'])) ? true : false;
+            
+            $writer->startElement('nuds:authority');
+            foreach ($content['authorities'] as $uri){
+                $nm = get_nomisma_data($uri);
+                if ($nm['type'] == 'http://xmlns.com/foaf/0.1/Person'){
+                    $element = 'nuds:persname';
+                } elseif ($nm['type'] == 'http://xmlns.com/foaf/0.1/Organization'){
+                    $element = 'nuds:corpname';
+                } elseif ($nm['type'] == 'http://www.rdaregistry.info/Elements/c/Family'){
+                    $element = 'nuds:famname';
+                }
+                
+                $writer->startElement($element);
+                    $writer->writeAttribute('xlink:type', 'simple');
+                    $writer->writeAttribute('xlink:role', 'authority');
+                    $writer->writeAttribute('xlink:href', $uri);
+                    if ($uncertain == true){
+                        $writer->writeAttribute('certainty', 'http://nomisma.org/id/uncertain_value');
+                    }
+                    $writer->text($nm['label']);
+                $writer->endElement();
+            }
+            $writer->endElement();
 		}
 		
 		//geographic
 		if (array_key_exists('mints', $content) || array_key_exists('regions', $content)){
 			$writer->startElement('nuds:geographic');
-				
+			if (array_key_exists('mints', $content)){
+			    $uncertain = (array_key_exists('uncertain', $content['mints']) || count($content['mints']) > 1) ? true : false;
+			    
+			    foreach ($content['mints'] as $uri){
+			        $nm = get_nomisma_data($uri);
+			        $writer->startElement('nuds:geogname');
+    			        $writer->writeAttribute('xlink:type', 'simple');
+    			        $writer->writeAttribute('xlink:role', 'mint');
+    			        $writer->writeAttribute('xlink:href', $uri);
+    			        if ($uncertain == true){
+    			            $writer->writeAttribute('certainty', 'http://nomisma.org/id/uncertain_value');
+    			        }
+    			        $writer->text($nm['label']);
+			        $writer->endElement();
+			    }
+			}
+			if (array_key_exists('regions', $content)){
+			    $uncertain = (array_key_exists('uncertain', $content['regions']) || count($content['regions']) > 1) ? true : false;
+			    
+			    foreach ($content['regions'] as $uri){
+			        $nm = get_nomisma_data($uri);
+			        $writer->startElement('nuds:geogname');
+    			        $writer->writeAttribute('xlink:type', 'simple');
+    			        $writer->writeAttribute('xlink:role', 'region');
+    			        $writer->writeAttribute('xlink:href', $uri);
+    			        if ($uncertain == true){
+    			            $writer->writeAttribute('certainty', 'http://nomisma.org/id/uncertain_value');
+    			        }
+    			        $writer->text($nm['label']);
+			        $writer->endElement();
+			    }
+			}
 			$writer->endElement();
 		}
 		
@@ -626,52 +635,127 @@ function generate_side($writer, $side, $arr){
 	$writer->endElement();
 }
 
+/*****
+ * parse content data object in order to generate a typeDesc for a coin or coinGrp
+ *****/
+//generate the content element from metadata in the content row (typeDesc and refDesc
+function parse_content($writer, $content){
+    GLOBAL $coinTypes;
+    $contentTypes = array();
+    
+    if (array_key_exists('refs', $content)){
+        $refs = $content['refs'];
+    }
+    
+    //begin with typeDesc
+    //if there is a single coin type URI, then use that as the typeDesc
+    if (array_key_exists('coinTypes', $content)){
+        $uncertain = count($content['coinTypes']) == 1 ? false : true;
+        
+        foreach ($content['coinTypes'] as $uri){
+            if (array_key_exists($uri, $coinTypes)){
+                $coinType = array('label'=>$coinTypes[$uri]['label'], 'uri'=>$coinTypes[$uri]['uri'], 'uncertain'=>$uncertain);
+                $contentTypes[$uri] = $coinType;
+            } else {
+                $file_headers = @get_headers($uri);
+                if ($file_headers[0] == 'HTTP/1.1 200 OK'){
+                    //echo "Found {$uri}\n";
+                    //generate the title from the NUDS
+                    $typeData = get_type_data($uri);
+                    $coinTypes[$uri] = array('uri'=>$uri, 'label'=>$typeData['label'], 'data'=>$typeData['data']);
+                    $coinType = array('label'=>$typeData['label'], 'uri'=>$uri, 'uncertain'=>$uncertain);
+                    $contentTypes[$uri] = $coinType;
+                } elseif ($file_headers[0] == 'HTTP/1.1 303 See Other'){
+                    //redirect Svoronos references to CPE URIs
+                    $newuri = str_replace('Location: ', '', $file_headers[7]);
+                    //echo "Matching: {$uri} -> {$newuri}\n";
+                    
+                    //generate the title from the NUDS
+                    $typeData = get_type_data($newuri);
+                    $coinTypes[$uri] = array('uri'=>$newuri, 'label'=>$typeData['label'], 'data'=>$typeData['data']);
+                    $coinType = array('label'=>$typeData['label'], 'uri'=>$newuri, 'uncertain'=>$uncertain);
+                    $contentTypes[$uri] = $coinType;
+                }
+            }
+        }
+        
+        if (count($contentTypes) == 1){
+            $writer->startElement('nuds:typeDesc');
+                $writer->writeAttribute('xlink:type', 'simple');
+                $writer->writeAttribute('xlink:href', array_values($contentTypes)[0]['uri']);
+            $writer->endElement();
+        } else {
+            //overwrite content array with the typeDesc metadata extracted from canonical sources
+            $content = parse_coinTypes($contentTypes);
+            generate_typeDesc($writer, $content);
+        }
+    } else {
+        generate_typeDesc($writer, $content);
+    }
+    
+    //refDesc
+    if (isset($refs) || count($contentTypes) > 0){
+        $writer->startElement('nuds:refDesc');
+        if (isset($refs)){
+            foreach($refs as $ref){
+                $writer->writeElement('nuds:reference', $ref);
+            }
+        }        
+        foreach ($contentTypes as $type){
+            $writer->startElement('nuds:reference');
+                $writer->writeAttribute('xlink:arcrole', 'nmo:hasTypeSeriesItem');
+                $writer->writeAttribute('xlink:type', 'simple');
+                $writer->writeAttribute('xlink:href', $type['uri']);    
+                $writer->text($type['label']);
+            $writer->endElement();            
+        }
+        $writer->endElement();
+    }
+    
+    unset($refs);
+}
+
 //get label from Nomisma JSON API
-function get_label($uri){
+function get_nomisma_data($uri){
 	GLOBAL $nomisma;
 	
-	if (array_key_exists($uri, $nomisma)){
-		return $nomisma[$uri];
-	} else {
-		//get label from Nomisma API
-		$json = file_get_contents('http://nomisma.org/apis/getLabel?uri=' . $uri . '&format=json');
-		$obj = json_decode($json);
-		
-		if (strlen($obj->label) > 0){
-			$nomisma[$uri] = $obj->label;
-			return $obj->label;
-		} else {
-			echo "Error: {$uri} is invalid\n";
-			return null;
-		}		
+	if (preg_match('/^http:\/\/nomisma.org\/id\//', $uri)){
+	    $nm = array();
+	    
+	    if (array_key_exists($uri, $nomisma)){
+	        return $nomisma[$uri];
+	    } else {
+	        //get label and class from Nomisma JSON-LD
+	        $string = file_get_contents($uri . '.jsonld');
+	        $json = json_decode($string, true);
+	        
+	        //$label = $json["@graph"][0]["skos:prefLabel"][0]["@value"];
+	        
+	        foreach ($json as $obj){
+	            if ($obj["@id"] == $uri){
+	                //get the English label
+	                foreach ($obj["http://www.w3.org/2004/02/skos/core#prefLabel"] as $prefLabel){
+	                    if ($prefLabel["@language"] == 'en'){
+	                        $nm['label'] = $prefLabel["@value"];
+	                        break;
+	                    }
+	                }
+	                foreach ($obj["@type"] as $class){
+	                    if ($class != 'http://www.w3.org/2004/02/skos/core#Concept'){
+	                        $nm['type'] = $class;
+	                    }
+	                }
+	                
+	                $nomisma[$uri] = $nm;
+	                return $nm;
+	            }
+	        }
+	    }
 	}
+	
+	
 }
 
-//generate human-readable date based on the integer value
-function get_date_textual($year){
-	$textual_date = '';
-	//display start date
-	if($year < 0){
-		$textual_date .= abs($year) . ' B.C.';
-	} elseif ($year > 0) {
-		if ($year <= 600){
-			$textual_date .= 'A.D. ';
-		}
-		$textual_date .= $year;
-	}
-	return $textual_date;
-}
-
-//pad integer value from Filemaker to create a year that meets the xs:gYear specification
-function number_pad($number,$n) {
-	if ($number > 0){
-		$gYear = str_pad((int) $number,$n,"0",STR_PAD_LEFT);
-	} elseif ($number < 0) {
-		$bcNum = (int)abs($number);
-		$gYear = '-' . str_pad($bcNum,$n,"0",STR_PAD_LEFT);
-	}
-	return $gYear;
-}
 
 /*
  * Parse the Nomisma JSON-LD for the coin type to extract title and metadata
@@ -692,7 +776,7 @@ function get_type_data($uri){
 }
 
 //parse the JSON-LD data from each associated type to extract a unique list of entities and values
-function parse_typeDesc ($types){
+function parse_coinTypes ($types){
     GLOBAL $coinTypes;
     
     $content = array();
@@ -702,9 +786,10 @@ function parse_typeDesc ($types){
     $materials = array();
     $mints = array();
     $regions = array();
+    $dates = array();
     
-    foreach ($types as $type){
-        foreach ($coinTypes[$type['uri']]['data'] as $k=>$v){
+    foreach ($types as $originalType=>$type){
+        foreach ($coinTypes[$originalType]['data'] as $k=>$v){
             if ($k == 'nmo:hasAuthority'){
                 foreach ($v as $array){
                     $uri = $array["@id"];
@@ -745,6 +830,11 @@ function parse_typeDesc ($types){
                     }
                 }
             }
+            if ($k == 'nmo:hasStartDate' || $k == 'nmo:hasEndDate'){
+                foreach ($v as $array){
+                    $dates[] = (int) $array["@value"];
+                }
+            }
         }
     }
     
@@ -766,9 +856,49 @@ function parse_typeDesc ($types){
         $content['regions'] = $regions;
     }
     
-    return $content;
+    //sort dates and return the earliest and latest possible dates
+    asort($dates);    
+    if (count($dates) > 0){        
+        $content['fromDate'] = $dates[0];
+        $content['toDate'] = $dates[count($dates) - 1];
+    }
     
+    return $content;    
 }
+
+/*****
+ * Date Parsing
+ *****/
+
+//generate human-readable date based on the integer value
+function get_date_textual($year){
+    $textual_date = '';
+    //display start date
+    if($year < 0){
+        $textual_date .= abs($year) . ' B.C.';
+    } elseif ($year > 0) {
+        if ($year <= 600){
+            $textual_date .= 'A.D. ';
+        }
+        $textual_date .= $year;
+    }
+    return $textual_date;
+}
+
+//pad integer value from Filemaker to create a year that meets the xs:gYear specification
+function number_pad($number,$n) {
+    if ($number > 0){
+        $gYear = str_pad((int) $number,$n,"0",STR_PAD_LEFT);
+    } elseif ($number < 0) {
+        $bcNum = (int)abs($number);
+        $gYear = '-' . str_pad($bcNum,$n,"0",STR_PAD_LEFT);
+    }
+    return $gYear;
+}
+
+/*****
+ * CSV Parsing
+ *****/
 
 //parse CSV
 function generate_json($doc){
