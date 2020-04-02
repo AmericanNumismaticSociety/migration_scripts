@@ -275,6 +275,7 @@ function generate_nuds($recordId, $hoard){
 		$writer->writeAttribute('xmlns:xlink', "http://www.w3.org/1999/xlink");  
 		$writer->writeAttribute('xmlns:nuds', "http://nomisma.org/nuds");  
 		$writer->writeAttribute('xmlns:mods', "http://www.loc.gov/mods/v3");
+		$writer->writeAttribute('xmlns:gml', "http://www.opengis.net/gml");
 		$writer->writeAttribute('xmlns:xsi', "http://www.w3.org/2001/XMLSchema-instance");	 
 		//begin control
 		$writer->startElement('control');  
