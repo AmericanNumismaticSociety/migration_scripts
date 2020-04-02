@@ -7,7 +7,7 @@
 
 $contents_sheet = generate_json('https://docs.google.com/spreadsheets/d/e/2PACX-1vS4u59ilkRmFMFaABssQMrR5OEjvQYt0IcwVmK5xaJmlIfjyNmKhH2mRIM7ExV8F6RqcDqaJdgYbjC8/pub?output=csv');
 $counts = generate_json('https://docs.google.com/spreadsheets/d/e/2PACX-1vTr01VFU1jNLPm_YPZ4RAEKlIppeAGDOR56Go3uW0rfMC6ZEjyzmQ3BgbKDcOJbjjQOfDR_NR6tg4Zt/pub?output=csv');
-//$findspots = generate_json('https://docs.google.com/spreadsheets/d/e/2PACX-1vQeIbUxRU-CpMfzSM6eU22Mn4VyhdRmNtMNUEfkHegVAQLEkblX0OFJlUNyouZBDao_clG1c9xS15Y1/pub?output=csv');
+$findspots = generate_json('https://docs.google.com/spreadsheets/d/e/2PACX-1vR9SerPnG1ITct4EyaUIk6pUqQIgZ6iWqHnJg7o3kz0XTWukq45HxqFNhSFKtQz4BgJub2nDl40FYWz/pub?output=csv');
 $depositDates = generate_json('https://docs.google.com/spreadsheets/d/e/2PACX-1vTI1-N57bT5PxIen4dafjV3MoSQa-4gV5ZVQNstLB4FeTkIuT8CcRfe9f8o9MmkQoE4iM1izCtbpDDw/pub?output=csv');
 $refNotes = generate_json('https://docs.google.com/spreadsheets/d/e/2PACX-1vSye6cSV45CuOpVDvYDaUrABoP7W7CesN_lTlZo9G4ydfBh_kbEUuaWXq3ZiBkEPkojyAyI0B46zYPW/pub?output=csv');
 
@@ -53,6 +53,7 @@ foreach ($hoards as $k=>$v){
 function process_hoard($hoard, $contents){
     GLOBAL $refNotes;
     GLOBAL $depositDates;
+    GLOBAL $findspots;
     
     $id = trim($hoard['id']);
     
@@ -83,57 +84,60 @@ function process_hoard($hoard, $contents){
     }
     
     //extract discovery and find information
-    /*foreach ($findspots as $findspot){
-     if ($findspot['id'] == $id){
-     //findspots
-     $record['findspot']['desc'] = $findspot['value'];
-     if (strlen($findspot['geonames_place']) > 0){
-     $record['findspot']['label'] = $findspot['geonames_place'];
-     }
-     if (strlen($findspot['geonames_uri']) > 0){
-     $record['findspot']['uri'] = $findspot['geonames_uri'];
-     }
-     
-     //discovery
-     if (is_numeric($findspot['fromDate']) || is_numeric($findspot['toDate'])){
-     //if both are numeric, then it is a date range
-     if (is_numeric($findspot['fromDate']) && is_numeric($findspot['toDate'])){
-     $record['discovery']['fromDate'] = $findspot['fromDate'];
-     $record['discovery']['toDate'] = $findspot['toDate'];
-     
-     //certainty: approximate takes precedence over uncertain
-     if ($findspot['fromDate_approximate'] == 'TRUE'){
-     $record['discovery']['fromDate_certainty'] = 'approximate';
-     } elseif ($findspot['fromDate_uncertain'] == 'TRUE'){
-     $record['discovery']['fromDate_certainty'] = 'uncertain';
-     }
-     
-     if ($findspot['toDate_approximate'] == 'TRUE'){
-     $record['discovery']['toDate_certainty'] = 'approximate';
-     } elseif ($findspot['toDate_uncertain'] == 'TRUE'){
-     $record['discovery']['toDate_certainty'] = 'uncertain';
-     }
-     
-     
-     } elseif (is_numeric($findspot['fromDate']) && !is_numeric($findspot['toDate'])){
-     $record['discovery']['date'] = $findspot['fromDate'];
-     //certainty: approximate takes precedence over uncertain
-     if ($findspot['fromDate_approximate'] == 'TRUE'){
-     $record['discovery']['date_certainty'] = 'approximate';
-     } elseif ($findspot['fromDate_uncertain'] == 'TRUE'){
-     $record['discovery']['date_certainty'] = 'uncertain';
-     }
-     } elseif (!is_numeric($findspot['fromDate']) && is_numeric($findspot['toDate'])){
-     $record['discovery']['notAfter'] = $findspot['toDate'];
-     if ($findspot['toDate_approximate'] == 'TRUE'){
-     $record['discovery']['date_certainty'] = 'approximate';
-     } elseif ($findspot['toDate_uncertain'] == 'TRUE'){
-     $record['discovery']['date_certainty'] = 'uncertain';
-     }
-     }
-     }
-     }
-     }*/
+    foreach ($findspots as $findspot){
+        if ($findspot['id'] == $id){
+            //findspots
+            $record['findspot']['desc'] = $findspot['value'];
+            if (strlen($findspot['Place Name']) > 0){
+                $record['findspot']['label'] = $findspot['Place Name'];
+            }
+            if (strlen($findspot['Canonical Geonames URI']) > 0){
+                $record['findspot']['uri'] = $findspot['Canonical Geonames URI'];
+            }
+            if (strlen($findspot['GML-compliant Coordinates']) > 0){
+                $record['findspot']['coords'] = $findspot['GML-compliant Coordinates'];
+            }
+            
+            //discovery
+            if (is_numeric($findspot['fromDate']) || is_numeric($findspot['toDate'])){
+                //if both are numeric, then it is a date range
+                if (is_numeric($findspot['fromDate']) && is_numeric($findspot['toDate'])){
+                    $record['discovery']['fromDate'] = $findspot['fromDate'];
+                    $record['discovery']['toDate'] = $findspot['toDate'];
+                    
+                    //certainty: approximate takes precedence over uncertain
+                    if ($findspot['fromDate_approximate'] == 'TRUE'){
+                        $record['discovery']['fromDate_certainty'] = 'approximate';
+                    } elseif ($findspot['fromDate_uncertain'] == 'TRUE'){
+                        $record['discovery']['fromDate_certainty'] = 'uncertain';
+                    }
+                    
+                    if ($findspot['toDate_approximate'] == 'TRUE'){
+                        $record['discovery']['toDate_certainty'] = 'approximate';
+                    } elseif ($findspot['toDate_uncertain'] == 'TRUE'){
+                        $record['discovery']['toDate_certainty'] = 'uncertain';
+                    }
+                    
+                    
+                } elseif (is_numeric($findspot['fromDate']) && !is_numeric($findspot['toDate'])){
+                    $record['discovery']['date'] = $findspot['fromDate'];
+                    //certainty: approximate takes precedence over uncertain
+                    if ($findspot['fromDate_approximate'] == 'TRUE'){
+                        $record['discovery']['date_certainty'] = 'approximate';
+                    } elseif ($findspot['fromDate_uncertain'] == 'TRUE'){
+                        $record['discovery']['date_certainty'] = 'uncertain';
+                    }
+                } elseif (!is_numeric($findspot['fromDate']) && is_numeric($findspot['toDate'])){
+                    $record['discovery']['notAfter'] = $findspot['toDate'];
+                    if ($findspot['toDate_approximate'] == 'TRUE'){
+                        $record['discovery']['date_certainty'] = 'approximate';
+                    } elseif ($findspot['toDate_uncertain'] == 'TRUE'){
+                        $record['discovery']['date_certainty'] = 'uncertain';
+                    }
+                }
+            }
+        }
+    }
     
     //disposition, notes, refs
     foreach ($refNotes as $row){
@@ -259,8 +263,8 @@ function process_hoard($hoard, $contents){
  *****/
 function generate_nuds($recordId, $hoard){
 	$writer = new XMLWriter();  
-	//$writer->openURI("nuds/{$recordId}.xml");  
-	$writer->openURI('php://output');
+	$writer->openURI("nuds/{$recordId}.xml");  
+	//$writer->openURI('php://output');
 	$writer->setIndent(true);
 	$writer->setIndentString("    ");
 	$writer->startDocument('1.0','UTF-8');
@@ -325,12 +329,27 @@ function generate_nuds($recordId, $hoard){
 						$writer->text($hoard['findspot']['desc']);
 					$writer->endElement();
 					if (array_key_exists('label', $hoard['findspot']) && array_key_exists('uri', $hoard['findspot'])){
-						$writer->startElement('geogname');
-							$writer->writeAttribute('xlink:type', 'simple');
-							$writer->writeAttribute('xlink:role', 'findspot');
-							$writer->writeAttribute('xlink:href', $hoard['findspot']['uri']);
-							$writer->text($hoard['findspot']['label']);
-						$writer->endElement();
+					    $writer->startElement('fallsWithin');
+                            if (array_key_exists('coords', $hoard['findspot'])){
+                                $writer->startElement('gml:location');
+                                if (strpos($hoard['findspot']['coords'], ' ') !== FALSE){                                    
+                                    $writer->startElement('gml:Polygon');
+                                        $writer->writeElement('gml:coordinates', $hoard['findspot']['coords']);
+                                    $writer->endElement();
+                                } else {
+                                    $writer->startElement('gml:Point');
+                                        $writer->writeElement('gml:coordinates', $hoard['findspot']['coords']);
+                                    $writer->endElement();
+                                }
+                                $writer->endElement();
+                            }					    
+        					$writer->startElement('geogname');
+        						$writer->writeAttribute('xlink:type', 'simple');
+        						$writer->writeAttribute('xlink:role', 'findspot');
+        						$writer->writeAttribute('xlink:href', $hoard['findspot']['uri']);
+        						$writer->text($hoard['findspot']['label']);
+        					$writer->endElement();
+    					$writer->endElement();
 					}						
 				$writer->endElement();
 			}
