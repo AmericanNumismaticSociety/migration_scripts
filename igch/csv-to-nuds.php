@@ -26,17 +26,13 @@ $coinTypes = array();
 $count = 0;
 
 foreach($counts as $hoard){
-    if (strlen($hoard['id']) > 0 && $count <= 1680){
+    if (strlen($hoard['id']) > 0){
         $id = trim($hoard['id']);
-        if ($count == 1680){
-            $hoards[$id] = process_hoard($hoard, $contents[$id]);
-        }
+        $hoards[$id] = process_hoard($hoard, $contents[$id]);
         
         $count++;
     }
 }
-
-//var_dump($hoards);
 
 $count = 0;
 foreach ($hoards as $k=>$v){
@@ -253,7 +249,6 @@ function process_hoard($hoard, $contents){
             $record['contents'][] = $content;
         }
     }
-    
     //add hoard record into master hoards array
     return $record;
 }
@@ -532,30 +527,34 @@ function generate_typeDesc($writer, $content){
 		    $uncertain = (array_key_exists('uncertain', $content['denominations']) || count($content['denominations']) > 1) ? true : false;
 		    
 			foreach ($content['denominations'] as $uri){
-				$nm = get_nomisma_data($uri);
-				$writer->startElement('nuds:denomination');
-    				$writer->writeAttribute('xlink:type', 'simple');
-    				$writer->writeAttribute('xlink:href', $uri);
-    				if ($uncertain == true){
-    				    $writer->writeAttribute('certainty', 'http://nomisma.org/id/uncertain_value');
-    				}
-				$writer->text($nm['label']);
-				$writer->endElement();
+			    if (strpos($uri, 'http') !== FALSE){
+    			    $nm = get_nomisma_data($uri);
+    				$writer->startElement('nuds:denomination');
+        				$writer->writeAttribute('xlink:type', 'simple');
+        				$writer->writeAttribute('xlink:href', $uri);
+        				if ($uncertain == true){
+        				    $writer->writeAttribute('certainty', 'http://nomisma.org/id/uncertain_value');
+        				}
+    				$writer->text($nm['label']);
+    				$writer->endElement();    
+			    }				
 			}
 		}
 		
 		if (array_key_exists('materials', $content)){
 		    $uncertain = (array_key_exists('uncertain', $content['materials']) || count($content['materials']) > 1) ? true : false;
 		    foreach ($content['materials'] as $uri){
-		        $nm = get_nomisma_data($uri);
-		        $writer->startElement('nuds:material');
-    		        $writer->writeAttribute('xlink:type', 'simple');
-    		        $writer->writeAttribute('xlink:href', $uri);
-    		        if ($uncertain == true){
-    		            $writer->writeAttribute('certainty', 'http://nomisma.org/id/uncertain_value');
-    		        }
-    		        $writer->text($nm['label']);
-		        $writer->endElement();
+		        if (strpos($uri, 'http') !== FALSE){
+    		        $nm = get_nomisma_data($uri);
+    		        $writer->startElement('nuds:material');
+        		        $writer->writeAttribute('xlink:type', 'simple');
+        		        $writer->writeAttribute('xlink:href', $uri);
+        		        if ($uncertain == true){
+        		            $writer->writeAttribute('certainty', 'http://nomisma.org/id/uncertain_value');
+        		        }
+        		        $writer->text($nm['label']);
+    		        $writer->endElement();
+		        }
 		    }
 			
 		}
@@ -566,24 +565,28 @@ function generate_typeDesc($writer, $content){
             
             $writer->startElement('nuds:authority');
             foreach ($content['authorities'] as $uri){
-                $nm = get_nomisma_data($uri);
-                if ($nm['type'] == 'http://xmlns.com/foaf/0.1/Person'){
-                    $element = 'nuds:persname';
-                } elseif ($nm['type'] == 'http://xmlns.com/foaf/0.1/Organization'){
-                    $element = 'nuds:corpname';
-                } elseif ($nm['type'] == 'http://www.rdaregistry.info/Elements/c/Family'){
-                    $element = 'nuds:famname';
-                }
-                
-                $writer->startElement($element);
-                    $writer->writeAttribute('xlink:type', 'simple');
-                    $writer->writeAttribute('xlink:role', 'authority');
-                    $writer->writeAttribute('xlink:href', $uri);
-                    if ($uncertain == true){
-                        $writer->writeAttribute('certainty', 'http://nomisma.org/id/uncertain_value');
+                if (strpos($uri, 'http') !== FALSE){
+                    $nm = get_nomisma_data($uri);
+                    if ($nm['type'] == 'http://xmlns.com/foaf/0.1/Person'){
+                        $element = 'nuds:persname';
+                    } elseif ($nm['type'] == 'http://xmlns.com/foaf/0.1/Organization'){
+                        $element = 'nuds:corpname';
+                    } elseif ($nm['type'] == 'http://www.rdaregistry.info/Elements/c/Family'){
+                        $element = 'nuds:famname';
+                    } else {
+                        $element = 'nuds:persname';
                     }
-                    $writer->text($nm['label']);
-                $writer->endElement();
+                    
+                    $writer->startElement($element);
+                        $writer->writeAttribute('xlink:type', 'simple');
+                        $writer->writeAttribute('xlink:role', 'authority');
+                        $writer->writeAttribute('xlink:href', $uri);
+                        if ($uncertain == true){
+                            $writer->writeAttribute('certainty', 'http://nomisma.org/id/uncertain_value');
+                        }
+                        $writer->text($nm['label']);
+                    $writer->endElement();
+                }
             }
             $writer->endElement();
 		}
@@ -595,32 +598,36 @@ function generate_typeDesc($writer, $content){
 			    $uncertain = (array_key_exists('uncertain', $content['mints']) || count($content['mints']) > 1) ? true : false;
 			    
 			    foreach ($content['mints'] as $uri){
-			        $nm = get_nomisma_data($uri);
-			        $writer->startElement('nuds:geogname');
-    			        $writer->writeAttribute('xlink:type', 'simple');
-    			        $writer->writeAttribute('xlink:role', 'mint');
-    			        $writer->writeAttribute('xlink:href', $uri);
-    			        if ($uncertain == true){
-    			            $writer->writeAttribute('certainty', 'http://nomisma.org/id/uncertain_value');
-    			        }
-    			        $writer->text($nm['label']);
-			        $writer->endElement();
+			        if (strpos($uri, 'http') !== FALSE){
+    			        $nm = get_nomisma_data($uri);
+    			        $writer->startElement('nuds:geogname');
+        			        $writer->writeAttribute('xlink:type', 'simple');
+        			        $writer->writeAttribute('xlink:role', 'mint');
+        			        $writer->writeAttribute('xlink:href', $uri);
+        			        if ($uncertain == true){
+        			            $writer->writeAttribute('certainty', 'http://nomisma.org/id/uncertain_value');
+        			        }
+        			        $writer->text($nm['label']);
+    			        $writer->endElement();
+    			    }
 			    }
 			}
 			if (array_key_exists('regions', $content)){
 			    $uncertain = (array_key_exists('uncertain', $content['regions']) || count($content['regions']) > 1) ? true : false;
 			    
 			    foreach ($content['regions'] as $uri){
-			        $nm = get_nomisma_data($uri);
-			        $writer->startElement('nuds:geogname');
-    			        $writer->writeAttribute('xlink:type', 'simple');
-    			        $writer->writeAttribute('xlink:role', 'region');
-    			        $writer->writeAttribute('xlink:href', $uri);
-    			        if ($uncertain == true){
-    			            $writer->writeAttribute('certainty', 'http://nomisma.org/id/uncertain_value');
-    			        }
-    			        $writer->text($nm['label']);
-			        $writer->endElement();
+			        if (strpos($uri, 'http') !== FALSE){
+    			        $nm = get_nomisma_data($uri);
+    			        $writer->startElement('nuds:geogname');
+        			        $writer->writeAttribute('xlink:type', 'simple');
+        			        $writer->writeAttribute('xlink:role', 'region');
+        			        $writer->writeAttribute('xlink:href', $uri);
+        			        if ($uncertain == true){
+        			            $writer->writeAttribute('certainty', 'http://nomisma.org/id/uncertain_value');
+        			        }
+        			        $writer->text($nm['label']);
+    			        $writer->endElement();
+    			    }
 			    }
 			}
 			$writer->endElement();
