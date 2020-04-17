@@ -9,7 +9,7 @@ $ordered = array();
 
 $fh = fopen('files.list','r');
 while ($line = fgets($fh)) {
-    $files[] = str_replace('monogram.houghtonii.', '', $line);
+    $files[] = str_replace('monogram.lorber.', '', $line);
 }
 fclose($fh);
 
@@ -23,9 +23,9 @@ foreach ($files as $id){
 asort($ordered);
 //var_dump($ordered);
 
-$file = "new2.list";
+$file = "new.list";
 foreach ($ordered as $k=>$v){
-    $id = 'monogram.houghtonii.' . $k;
+    $id = 'monogram.lorber.' . $k;
     file_put_contents($file, $id, FILE_APPEND);
 }
 ?>

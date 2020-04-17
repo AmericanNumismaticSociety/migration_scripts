@@ -11,6 +11,8 @@ $findspots = generate_json('https://docs.google.com/spreadsheets/d/e/2PACX-1vR9S
 $depositDates = generate_json('https://docs.google.com/spreadsheets/d/e/2PACX-1vTI1-N57bT5PxIen4dafjV3MoSQa-4gV5ZVQNstLB4FeTkIuT8CcRfe9f8o9MmkQoE4iM1izCtbpDDw/pub?output=csv');
 $refNotes = generate_json('https://docs.google.com/spreadsheets/d/e/2PACX-1vSye6cSV45CuOpVDvYDaUrABoP7W7CesN_lTlZo9G4ydfBh_kbEUuaWXq3ZiBkEPkojyAyI0B46zYPW/pub?output=csv');
 
+$pleiades = generate_json('https://docs.google.com/spreadsheets/d/e/2PACX-1vR9SerPnG1ITct4EyaUIk6pUqQIgZ6iWqHnJg7o3kz0XTWukq45HxqFNhSFKtQz4BgJub2nDl40FYWz/pub?gid=1657889724&single=true&output=csv');
+
 //restructure the contents so that they can be more easily accessed from the the process below without constant reiteration through all lines
 $contents = array();
 foreach ($contents_sheet as $row){
@@ -28,7 +30,11 @@ $count = 0;
 foreach($counts as $hoard){
     if (strlen($hoard['id']) > 0){
         $id = trim($hoard['id']);
-        $hoards[$id] = process_hoard($hoard, $contents[$id]);
+        
+        if ($id == 'igch0001'){
+            $hoards[$id] = process_hoard($hoard, $contents[$id]);
+        }
+        
         
         $count++;
     }
@@ -93,6 +99,28 @@ function process_hoard($hoard, $contents){
             if (strlen($findspot['GML-compliant Coordinates']) > 0){
                 $record['findspot']['coords'] = $findspot['GML-compliant Coordinates'];
             }
+            if (strlen($findspot['AAT URI']) > 0){
+                $record['findspot']['type']['uri'] = $findspot['AAT URI'];
+                $record['findspot']['type']['label'] = $findspot['AAT Label'];
+            }
+            
+            //split Pleiades URIs, if applicable
+            if (strlen($findspot['Pleiades URI']) > 0){
+                if (strpos($findspot['Pleiades URI'], '|') !== FALSE){
+                    $pieces = explode("|", $findspot['Pleiades URI']);
+                    
+                    foreach ($pieces as $piece){
+                        $record['findspot']['pleiades'][] = trim($piece);
+                    }
+                } else {
+                    $record['findspot']['pleiades'][] = trim($findspot['Pleiades URI']);
+                }
+                
+            }
+            if (strlen($findspot['Period']) > 0){
+                $record['period'] = $findspot['Period'];
+            }
+            
             
             //discovery
             if (is_numeric($findspot['fromDate']) || is_numeric($findspot['toDate'])){
@@ -103,15 +131,15 @@ function process_hoard($hoard, $contents){
                     
                     //certainty: approximate takes precedence over uncertain
                     if ($findspot['fromDate_approximate'] == 'TRUE'){
-                        $record['discovery']['fromDate_certainty'] = 'approximate';
+                        $record['discovery']['fromDate_certainty'] = 'http://nomisma.org/id/approximate_value';
                     } elseif ($findspot['fromDate_uncertain'] == 'TRUE'){
-                        $record['discovery']['fromDate_certainty'] = 'uncertain';
+                        $record['discovery']['fromDate_certainty'] = 'http://nomisma.org/id/uncertain_value';
                     }
                     
                     if ($findspot['toDate_approximate'] == 'TRUE'){
-                        $record['discovery']['toDate_certainty'] = 'approximate';
+                        $record['discovery']['toDate_certainty'] = 'http://nomisma.org/id/approximate_value';
                     } elseif ($findspot['toDate_uncertain'] == 'TRUE'){
-                        $record['discovery']['toDate_certainty'] = 'uncertain';
+                        $record['discovery']['toDate_certainty'] = 'http://nomisma.org/id/uncertain_value';
                     }
                     
                     
@@ -119,16 +147,16 @@ function process_hoard($hoard, $contents){
                     $record['discovery']['date'] = $findspot['fromDate'];
                     //certainty: approximate takes precedence over uncertain
                     if ($findspot['fromDate_approximate'] == 'TRUE'){
-                        $record['discovery']['date_certainty'] = 'approximate';
+                        $record['discovery']['date_certainty'] = 'http://nomisma.org/id/approximate_value';
                     } elseif ($findspot['fromDate_uncertain'] == 'TRUE'){
-                        $record['discovery']['date_certainty'] = 'uncertain';
+                        $record['discovery']['date_certainty'] = 'http://nomisma.org/id/uncertain_value';
                     }
                 } elseif (!is_numeric($findspot['fromDate']) && is_numeric($findspot['toDate'])){
                     $record['discovery']['notAfter'] = $findspot['toDate'];
                     if ($findspot['toDate_approximate'] == 'TRUE'){
-                        $record['discovery']['date_certainty'] = 'approximate';
+                        $record['discovery']['date_certainty'] = 'http://nomisma.org/id/approximate_value';
                     } elseif ($findspot['toDate_uncertain'] == 'TRUE'){
-                        $record['discovery']['date_certainty'] = 'uncertain';
+                        $record['discovery']['date_certainty'] = 'http://nomisma.org/id/uncertain_value';
                     }
                 }
             }
@@ -165,9 +193,9 @@ function process_hoard($hoard, $contents){
             }
             //certainty
             if ($row['count approximate'] == 'TRUE'){
-                $content['certainty'] = 'approximate';
+                $content['certainty'] = 'http://nomisma.org/id/approximate_value';
             } elseif ($row['count uncertain'] == 'TRUE'){
-                $content['certainty'] = 'uncertain';
+                $content['certainty'] = 'http://nomisma.org/id/uncertain_value';
             }
             
             //typeDesc
@@ -258,8 +286,8 @@ function process_hoard($hoard, $contents){
  *****/
 function generate_nuds($recordId, $hoard){
 	$writer = new XMLWriter();  
-	$writer->openURI("nuds/{$recordId}.xml");  
-	//$writer->openURI('php://output');
+	//$writer->openURI("nuds/{$recordId}.xml");  
+	$writer->openURI('php://output');
 	$writer->setIndent(true);
 	$writer->setIndentString("    ");
 	$writer->startDocument('1.0','UTF-8');
@@ -315,6 +343,31 @@ function generate_nuds($recordId, $hoard){
 				$writer->endElement();
 			}
 			
+			if (array_key_exists('period', $hoard)){
+    		    $writer->startElement('subjectSet');
+    		      $writer->startElement('subject');
+    		          $writer->writeAttribute('localType', 'period');
+    		          $writer->writeAttribute('xlink:type', 'simple');
+    		          $writer->writeAttribute('xlink:href', $hoard['period']);
+    		          
+    		          switch($hoard['period']){
+    		              case 'http://nomisma.org/id/archaic_greece':
+    		                  $label = 'Archaic Greece';
+    		                  break;
+    		              case 'http://nomisma.org/id/classical_greece':
+    		                  $label = 'Classical Greece';
+    		                  break;
+    		              case 'http://nomisma.org/id/hellenistic_greece':
+    		                  $label = 'Hellenistic Period';
+    		                  break;
+    		          }
+    		          $writer->text($label);
+    		      $writer->endElement();
+    		    $writer->endElement();
+    		    
+    		    unset($label);
+			}
+			
 			//hoardDesc = nuds:findspotDesc
 			$writer->startElement('hoardDesc');			
 				//findspot
@@ -324,7 +377,7 @@ function generate_nuds($recordId, $hoard){
 						$writer->writeAttribute('xml:lang', 'en');
 						$writer->text($hoard['findspot']['desc']);
 					$writer->endElement();
-					if (array_key_exists('label', $hoard['findspot']) && array_key_exists('uri', $hoard['findspot'])){
+					if ((array_key_exists('label', $hoard['findspot']) && array_key_exists('uri', $hoard['findspot'])) || array_key_exists('pleiades', $hoard['findspot'])){
 					    $writer->startElement('fallsWithin');
                             if (array_key_exists('coords', $hoard['findspot'])){
                                 $writer->startElement('gml:location');
@@ -338,13 +391,62 @@ function generate_nuds($recordId, $hoard){
                                     $writer->endElement();
                                 }
                                 $writer->endElement();
-                            }					    
-        					$writer->startElement('geogname');
-        						$writer->writeAttribute('xlink:type', 'simple');
-        						$writer->writeAttribute('xlink:role', 'findspot');
-        						$writer->writeAttribute('xlink:href', $hoard['findspot']['uri']);
-        						$writer->text($hoard['findspot']['label']);
-        					$writer->endElement();
+                            }                            
+                            
+                            if (array_key_exists('uri', $hoard['findspot'])){                                
+                                //if there's more than one Geonames URI:
+                                if (strpos($hoard['findspot']['uri'], '|') !== FALSE){
+                                    $uris = explode("|", $hoard['findspot']['uri']);
+                                    $labels = explode("|", $hoard['findspot']['label']);
+                                    
+                                    foreach ($uris as $k=>$uri){
+                                        $writer->startElement('geogname');
+                                            $writer->writeAttribute('xlink:type', 'simple');
+                                            $writer->writeAttribute('xlink:role', 'findspot');
+                                            $writer->writeAttribute('xlink:href', $uri);
+                                            $writer->writeAttribute('certainty', 'http://nomisma.org/id/uncertain_value');
+                                            $writer->text($labels[$k]);
+                                        $writer->endElement();
+                                    }
+                                } else {
+                                    $writer->startElement('geogname');
+                                        $writer->writeAttribute('xlink:type', 'simple');
+                                        $writer->writeAttribute('xlink:role', 'findspot');
+                                        $writer->writeAttribute('xlink:href', $hoard['findspot']['uri']);
+                                        $writer->text($hoard['findspot']['label']);
+                                    $writer->endElement();
+                                }
+                            }
+                            
+                            //Pleiades URI
+                            if (array_key_exists('pleiades', $hoard['findspot'])){
+                                $uncertain = (count($hoard['findspot']['pleiades']) > 1) ? true : false;
+                                
+                                foreach ($hoard['findspot']['pleiades'] as $uri){
+                                    $writer->startElement('geogname');
+                                        $writer->writeAttribute('xlink:type', 'simple');
+                                        $writer->writeAttribute('xlink:role', 'ancient_place');
+                                        $writer->writeAttribute('xlink:href', $uri);
+                                        if ($uncertain == true){
+                                            $writer->writeAttribute('certainty', 'http://nomisma.org/id/uncertain_value');
+                                        }
+                                        
+                                        $label = get_pleiades_label($uri);
+                                        $writer->text($label);
+                                        
+                                    $writer->endElement();
+                                }
+                            }
+                            
+        					//feature type
+        					if (array_key_exists('type', $hoard['findspot'])){
+        					    $writer->startElement('type');
+            					    $writer->writeAttribute('xlink:type', 'simple');
+            					    $writer->writeAttribute('xlink:href', $hoard['findspot']['type']['uri']);
+            					    $writer->text($hoard['findspot']['type']['label']);
+        					    $writer->endElement();
+        					}
+        					
     					$writer->endElement();
 					}						
 				$writer->endElement();
@@ -740,6 +842,17 @@ function parse_content($writer, $content){
     }
     
     unset($refs);
+}
+
+//ready the Pleiades lookup to get the label
+function get_pleiades_label($uri){
+    GLOBAL $pleiades;
+    
+    foreach ($pleiades as $row){
+        if ($row['uri'] == $uri){
+            return $row['label'];
+        }
+    }
 }
 
 //get label from Nomisma JSON API
