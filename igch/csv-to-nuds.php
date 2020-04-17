@@ -31,10 +31,7 @@ foreach($counts as $hoard){
     if (strlen($hoard['id']) > 0){
         $id = trim($hoard['id']);
         
-        if ($id == 'igch0001'){
-            $hoards[$id] = process_hoard($hoard, $contents[$id]);
-        }
-        
+        $hoards[$id] = process_hoard($hoard, $contents[$id]);
         
         $count++;
     }
@@ -286,8 +283,8 @@ function process_hoard($hoard, $contents){
  *****/
 function generate_nuds($recordId, $hoard){
 	$writer = new XMLWriter();  
-	//$writer->openURI("nuds/{$recordId}.xml");  
-	$writer->openURI('php://output');
+	$writer->openURI("nuds/{$recordId}.xml");  
+	//$writer->openURI('php://output');
 	$writer->setIndent(true);
 	$writer->setIndentString("    ");
 	$writer->startDocument('1.0','UTF-8');
