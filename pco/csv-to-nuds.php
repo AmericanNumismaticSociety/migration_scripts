@@ -7,7 +7,7 @@
  * 2. Svoronos 1904 numbers that direct to Lorber numbers
  *****/
 
-$data = generate_json('https://docs.google.com/spreadsheets/d/e/2PACX-1vQ6KOO3NMCVf8YebxKYXF1g5x-r3n1mDoSXkz7RPecj-UFWkezPnmDS6UzkLqGdAMZuJGo4FgoiYHug/pub?output=csv');
+$data = generate_json('https://docs.google.com/spreadsheets/d/e/2PACX-1vQFHZHiQCr1MNrnZC9Rca1UbpawQDC86E-laoySz4cADKWgQxL0gOGCDJy531HiQQ82xbSroyZpldsl/pub?output=csv');
 $deities = generate_json('https://docs.google.com/spreadsheet/pub?hl=en_US&hl=en_US&key=0Avp6BVZhfwHAdHk2ZXBuX0RYMEZzUlNJUkZOLXRUTmc&single=true&gid=0&output=csv');
 $stylesheet = generate_json('https://docs.google.com/spreadsheets/d/e/2PACX-1vQ9dm5-zYlLzEm_URfzguJhQr_VT0Xt5uh7qAQTK23YKzwNUvyRQO0LgcihP18h4JRTVD41C-6PZf9c/pub?output=csv');
 
@@ -35,6 +35,7 @@ function generate_nuds($row, $count){
 	
 	$uri_space = 'http://numismatics.org/pco/id/';	
 	$recordId = trim($row['Lorber no.']);
+	$typeNumber = explode('.', $recordId)[2];
 	
 	if (strlen($recordId) > 0){
 		echo "Processing {$recordId}\n";
@@ -70,16 +71,19 @@ function generate_nuds($row, $count){
 				
 				//handle semantic relation with other record
 				if (isset($svoronosIDs)){
-				    foreach ($svoronosIDs as $id){				        
-				        $svoronosID = 'svoronos-1904.' . normalizeID($id);
-    				    $doc->startElement('otherRecordId');
-    						$doc->writeAttribute('semantic', 'dcterms:replaces');
-    						$doc->text($svoronosID);
-    					$doc->endElement();
-    					$doc->startElement('otherRecordId');
-    						$doc->writeAttribute('semantic', 'skos:exactMatch');
-    						$doc->text($uri_space . $svoronosID);
-    					$doc->endElement(); 
+				    foreach ($svoronosIDs as $id){
+				        //only create URIs for Svoronos numbers from the original printed volume
+				        if (strpos($id, 'Addenda') === FALSE){
+    				        $svoronosID = 'svoronos-1904.' . normalizeID($id);
+        				    $doc->startElement('otherRecordId');
+        						$doc->writeAttribute('semantic', 'dcterms:replaces');
+        						$doc->text($svoronosID);
+        					$doc->endElement();
+        					$doc->startElement('otherRecordId');
+        						$doc->writeAttribute('semantic', 'skos:exactMatch');
+        						$doc->text($uri_space . $svoronosID);
+        					$doc->endElement();  
+				        }
 				    }
 				}
 				
@@ -98,7 +102,7 @@ function generate_nuds($row, $count){
 				//insert typeNumber just to capture the num.
 				$doc->startElement('otherRecordId');
     				$doc->writeAttribute('localType', 'typeNumber');
-    				$doc->text(str_replace('cpe.1_1.', '', $recordId));
+    				$doc->text($typeNumber);
     			$doc->endElement();	
 				
 				//handle subtype hierarchy
@@ -173,6 +177,9 @@ function generate_nuds($row, $count){
 			    case '1_1':
 			        $vol = 'Vol. I, Part 1';
 			        break;
+			    case '1_2':
+			        $vol = 'Vol. I, Part II';
+			        break;
 			}
 			
 			$doc->startElement('title');
@@ -181,14 +188,8 @@ function generate_nuds($row, $count){
 			$doc->endElement();
 			
 			/***** NOTES *****/
-			/*if (strlen(trim($row['Mint Note'])) > 0 || strlen(trim($row['Note'])) > 0){
+			if (strlen(trim($row['Note'])) > 0){
 				$doc->startElement('noteSet');
-				if (strlen(trim($row['Mint Note'])) > 0){
-					$doc->startElement('note');
-						$doc->writeAttribute('xml:lang', 'en');
-						$doc->text(trim($row['Mint Note']));
-					$doc->endElement();
-				}
 				if (strlen(trim($row['Note'])) > 0){
 					$doc->startElement('note');
 						$doc->writeAttribute('xml:lang', 'en');
@@ -196,7 +197,7 @@ function generate_nuds($row, $count){
 					$doc->endElement();
 				}
 				$doc->endElement();
-			}*/
+			}
 			
 			/***** TYPEDESC *****/
 			$doc->startElement('typeDesc');
@@ -260,7 +261,7 @@ function generate_nuds($row, $count){
 					        $content = processUri($uri);
 					    }
 						
-						$doc->startElement($content['element']);
+						$doc->startElement('denomination');
 						$doc->writeAttribute('xlink:type', 'simple');
 						$doc->writeAttribute('xlink:href', $uri);
 						if($uncertainty == true){
@@ -284,14 +285,14 @@ function generate_nuds($row, $count){
 						if (substr($val, -1) == '?'){
 							$uri = substr($val, 0, -1);
 							$uncertainty = true;
-							$content = processUri($uri);
+							$content = ($uri);
 						} else {
 							$uri =  $val;
 							$uncertainty = false;
 							$content = processUri($uri);
 						}
 						
-						$doc->startElement($content['element']);
+						$doc->startElement('material');
 						$doc->writeAttribute('xlink:type', 'simple');
 						$doc->writeAttribute('xlink:href', $uri);
 						if($uncertainty == true){
@@ -687,19 +688,33 @@ function generate_nuds($row, $count){
 				    
 				    if (isset($svoronosIDs)){
     				    foreach ($svoronosIDs as $id){
-    				        $svoronosID = 'svoronos-1904.' . normalizeID($id);
-    				        
-    				        $doc->startElement('reference');
-        				        $doc->writeAttribute('xlink:type', 'simple');
-        				        $doc->writeAttribute('xlink:href', $uri_space . $svoronosID);
-        				        $doc->startElement('tei:title');
-        				            $doc->writeAttribute('key', 'http://nomisma.org/id/svoronos-1904');
-        				            $doc->text('Svoronos (1904-1908)');
-    				            $doc->endElement();
-        				        $doc->startElement('tei:idno');
-        				            $doc->text($id);
-    				            $doc->endElement();
-    				        $doc->endElement();
+    				        //create a simple text reference for addenda items
+    				        if (strpos($id, 'Addenda') !== FALSE){
+    				            $doc->startElement('reference');
+        				            $doc->startElement('tei:title');
+        				                $doc->text('Svoronos (1904-1908)');
+        				            $doc->endElement();
+        				            $doc->startElement('tei:idno');
+        				                $doc->text($id);
+        				            $doc->endElement();
+    				            $doc->endElement();    
+    				        } else {
+    				            //otherwise, link to the URI
+    				            
+        				        $svoronosID = 'svoronos-1904.' . normalizeID($id);
+        				        
+        				        $doc->startElement('reference');
+            				        $doc->writeAttribute('xlink:type', 'simple');
+            				        $doc->writeAttribute('xlink:href', $uri_space . $svoronosID);
+            				        $doc->startElement('tei:title');
+            				            $doc->writeAttribute('key', 'http://nomisma.org/id/svoronos-1904');
+            				            $doc->text('Svoronos (1904-1908)');
+        				            $doc->endElement();
+            				        $doc->startElement('tei:idno');
+            				            $doc->text($id);
+        				            $doc->endElement();
+        				        $doc->endElement();    
+    				        }
     				    }    				    
     				}
     				//Price references
