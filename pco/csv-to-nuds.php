@@ -73,7 +73,7 @@ function generate_nuds($row, $count){
 				if (isset($svoronosIDs)){
 				    foreach ($svoronosIDs as $id){
 				        //only create URIs for Svoronos numbers from the original printed volume
-				        if (strpos($id, 'Addenda') === FALSE){
+				        if (strpos($id, 'Addenda') === FALSE && strpos($id, '(1890)') === FALSE){
     				        $svoronosID = 'svoronos-1904.' . normalizeID($id);
         				    $doc->startElement('otherRecordId');
         						$doc->writeAttribute('semantic', 'dcterms:replaces');
@@ -515,11 +515,10 @@ function generate_nuds($row, $count){
 									$uncertainty = false;
 									$content = processUri($uri);
 								}
-								$role = 'portrait';
 								
 								$doc->startElement($content['element']);
 									$doc->writeAttribute('xlink:type', 'simple');
-									$doc->writeAttribute('xlink:role', $role);
+									$doc->writeAttribute('xlink:role', $content['role']);
 									$doc->writeAttribute('xlink:href', $uri);
 									if($uncertainty == true){
 									    $doc->writeAttribute('certainty', 'http://nomisma.org/id/uncertain_value');
@@ -655,11 +654,10 @@ function generate_nuds($row, $count){
 									$uncertainty = false;
 									$content = processUri($uri);
 								}
-								$role = 'portrait';
 								
 								$doc->startElement($content['element']);
 								$doc->writeAttribute('xlink:type', 'simple');
-								$doc->writeAttribute('xlink:role', $role);
+								$doc->writeAttribute('xlink:role', $content['role']);
 								$doc->writeAttribute('xlink:href', $uri);
 								if($uncertainty == true){
 								    $doc->writeAttribute('certainty', 'http://nomisma.org/id/uncertain_value');
@@ -698,9 +696,19 @@ function generate_nuds($row, $count){
         				                $doc->text($id);
         				            $doc->endElement();
     				            $doc->endElement();    
+    				        } elseif (strpos($id, '(1890)') !== FALSE) {
+    				           //if it's a reference to the 1890 typology of Cyprus
+    				            $doc->startElement('reference');
+        				            $doc->startElement('tei:title');
+        				            $doc->writeAttribute('key', 'http://nomisma.org/id/svoronos-1890');
+        				                $doc->text('Svoronos (1890)');
+        				            $doc->endElement();
+        				            $doc->startElement('tei:idno');
+        				                $doc->text(str_replace('(1890), ', '', $id));
+        				            $doc->endElement();
+    				            $doc->endElement();    
     				        } else {
-    				            //otherwise, link to the URI
-    				            
+    				            //otherwise, link to the URI    				            
         				        $svoronosID = 'svoronos-1904.' . normalizeID($id);
         				        
         				        $doc->startElement('reference');
@@ -853,10 +861,16 @@ function processUri($uri){
 		case 'foaf:Person':
 			$content['element'] = 'persname';
 			$content['label'] = $label;
+			$content['role'] = 'portrait';
 			if (isset($parent)){
 				$content['parent'] = $parent;
 			}
 			break;
+		case 'wordnet:Deity':
+		    $content['element'] = 'persname';
+		    $content['role'] = 'deity';
+		    $content['label'] = $label;
+		    break;
 		case 'crm:E4_Period':
 			$content['element'] = 'periodname';
 			$content['label'] = $label;

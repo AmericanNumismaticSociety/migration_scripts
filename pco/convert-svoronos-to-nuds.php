@@ -9,7 +9,7 @@
 $data = generate_json('https://docs.google.com/spreadsheets/d/e/2PACX-1vRf52HzPeW0XE4jNVg0mL296k8yfKp0D43_faM907lYt5XZzUloYzZwe2o68IXXO3GjiLtQgp7XeJBL/pub?output=csv');
 
 //cpe spreadsheet
-$pco = generate_json('https://docs.google.com/spreadsheets/d/e/2PACX-1vQ6KOO3NMCVf8YebxKYXF1g5x-r3n1mDoSXkz7RPecj-UFWkezPnmDS6UzkLqGdAMZuJGo4FgoiYHug/pub?output=csv');
+$pco = generate_json('https://docs.google.com/spreadsheets/d/e/2PACX-1vQFHZHiQCr1MNrnZC9Rca1UbpawQDC86E-laoySz4cADKWgQxL0gOGCDJy531HiQQ82xbSroyZpldsl/pub?output=csv');
 
 $nomismaUris = array();
 //$records = array();
@@ -19,10 +19,12 @@ foreach($data as $row){
     $cpeID = null;
     foreach($pco as $type){
         if (strlen($type['Svoronos Nr.']) > 0){
-            $svoronosIDs = explode('|', trim($type['Svoronos Nr.']));
-            if (in_array($id, $svoronosIDs)){
-                $cpeID = $type['Lorber no.'];
-            }
+            if (strpos($type['Svoronos Nr.'], 'Addenda') === FALSE && strpos($type['Svoronos Nr.'], '(1890)') === FALSE){
+                $svoronosIDs = explode('|', trim($type['Svoronos Nr.']));
+                if (in_array($id, $svoronosIDs)){
+                    $cpeID = $type['Lorber no.'];
+                }
+            }            
         }
     }
     
