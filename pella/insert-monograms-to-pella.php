@@ -1,5 +1,11 @@
 <?php 
 
+/***
+ * Author: Ethan Gruber
+ * Date: May 2020
+ * Replace the word monogram with the appropriate monogram URI (if there's a corresponding SVG file), and return a list of errors for missing files
+ ***/
+
 $data = generate_json('https://docs.google.com/spreadsheets/d/e/2PACX-1vTeZzir8n5rwe8TAHQ5wuAvCUpVfEZVInkTHb90UkgPJgjApj1sawz7PIw7J0-dXJ_9lIPokKdH5Bax/pub?output=csv');
 $concordance = generate_json('https://docs.google.com/spreadsheets/d/e/2PACX-1vSXsS1RSt4IIe5EQ-D1OG77UQzg68giPSJM0b9k3BWWyDKeJ7GUnq7dFrBMad1imoHl04HjYjhGyoMz/pub?output=csv');
 $files = scandir('/usr/local/projects/migration_scripts/fonts/svg/Price');
