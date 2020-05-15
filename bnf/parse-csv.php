@@ -2,7 +2,7 @@
 
 
 //first process pella spreadsheet
-$data = generate_json('bnf-philip_ii.csv');
+$data = generate_json('hrc2.csv');
 $records = parse_oai($data);
 
 //then process CRRO
@@ -25,7 +25,7 @@ function parse_oai($data){
 		if (strlen($row['ark']) > 0){
 			$record['uri'] = $row['ark'];
 			
-			if (isset($row['coinType1']) || isset($row['coinType2'])){
+			if (isset($row['coinType1']) || isset($row['coinType2']) || isset($row['coinType3'])){
 			    $types = array();
 			    if (array_key_exists('coinType1', $row)){
 			        if (strlen(trim($row['coinType1'])) > 0){
@@ -35,6 +35,11 @@ function parse_oai($data){
 			    if (array_key_exists('coinType2', $row)){
 			        if (strlen(trim($row['coinType2'])) > 0){
 			            $types[] = trim($row['coinType2']);
+			        }
+			    }
+			    if (array_key_exists('coinType3', $row)){
+			        if (strlen(trim($row['coinType3'])) > 0){
+			            $types[] = trim($row['coinType3']);
 			        }
 			    }
 			    
@@ -126,7 +131,7 @@ function generate_rdf($records){
 	//start RDF/XML file
 	//use XML writer to generate RDF
 	$writer = new XMLWriter();
-	$writer->openURI("bnf-lerider.rdf");
+	$writer->openURI("bnf-hrc.rdf");
 	//$writer->openURI('php://output');
 	$writer->startDocument('1.0','UTF-8');
 	$writer->setIndent(true);

@@ -1,8 +1,8 @@
 <?php 
  /*****
  * Author: Ethan Gruber
- * Date: March 2019
- * Function: Process the Seleucid Coins Online spreadsheet from Google Drive into NUDS/XML:
+ * Date: May 2020
+ * Function: Process the Seleucid Coins Online spreadsheet from Google Drive into NUDS/XML. EpiDoc TEI used for complex symbol placement
  *****/
 
 $data = generate_json('https://docs.google.com/spreadsheets/d/e/2PACX-1vR-U8FG5i6BSlYyWUqEYMi7SmVtLv1YhYD1siB0nlKvAyjQxMU2HsDytmwlOQvr1dh0R6Px8lJGQ_Hh/pub?gid=79107715&single=true&output=csv');
@@ -16,6 +16,7 @@ $part = 1;
 $count = 1;
 
 foreach($data as $row){
+    
     if ($row['Type Number'] == '1296'){
         $part = 2;
     }
@@ -632,7 +633,10 @@ function generate_nuds($row, $part, $count){
 									$position = trim(str_replace('R:', '', $k));
 									$doc->startElement('symbol');
     									$doc->writeAttribute('position', $position);
-    									$doc->text(trim($v));
+    									
+    									//parse the text in the symbol field into TEI fragments, if applicable
+    									parse_symbol($doc, trim($v));
+    									
 									$doc->endElement();
 								}
 							}
@@ -713,6 +717,110 @@ function generate_nuds($row, $part, $count){
 
 
  /***** FUNCTIONS *****/
+
+//parse symbol text into TEI
+function parse_symbol($doc, $text){
+    
+    $doc->startElement('tei:div');
+    $doc->writeAttribute('type', 'edition');
+    
+        //split into two pieces
+        if (strpos($text, ' above ') !== FALSE){
+            $positions = explode(' above ', $text);
+            
+            foreach ($positions as $k=>$pos){
+                $pos = trim($pos);
+                
+                $doc->startElement('tei:ab');
+                    if ($k == 0) {
+                        $rend = 'above';
+                    } else {
+                        $rend = 'below';
+                    }
+                
+                    $doc->writeAttribute('rend', $rend);
+                    parse_horizontal($doc, $pos, 2);
+                $doc->endElement();                
+            }            
+        } else {
+            parse_horizontal($doc, $text, 1);
+        }    
+    
+    $doc->endElement();
+}
+
+//parse segments separated by ||, which signifies side-by-side glyphs 
+function parse_horizontal ($doc, $text, $level){
+    if (strpos($text, '||') !== FALSE){
+        $horizontal = explode('||', $text);
+        
+        foreach ($horizontal as $seg){
+            $seg = trim($seg);
+            
+            if ($level == 1){
+                $doc->startElement('tei:ab');
+                    parse_conditional($doc, $seg, true);        
+                $doc->endElement();
+            } else {
+                $doc->startElement('tei:seg');
+                    parse_conditional($doc, $seg, true);
+                $doc->endElement();
+            }
+        }        
+    } else {
+        //no horizontal configuration, so parse ' or '
+        parse_conditional($doc, $text, false);        
+    }
+}
+
+//split choices separated by ' or '
+function parse_conditional($doc, $text, $parent){
+    if (strpos($text, ' or ') !== FALSE){
+        $choices = explode(' or ', $text);
+        
+        //begin choice element
+        $doc->startElement('tei:choice');        
+            foreach ($choices as $choice){
+                $choice = trim($choice);
+                
+                parse_seg($doc, $choice, true);
+            }
+        $doc->endElement();
+    } else {
+        parse_seg($doc, $text, $parent);
+    }
+}
+
+//parse an atomized seg into a monogram glyph, seg, or just cdata
+function parse_seg($doc, $seg, $parent){
+    
+    if (strpos($seg, '.svg') !== FALSE ){
+        //insert a single monogram into an ab, if applicable
+        if ($parent == false){
+            $doc->startElement('tei:ab');
+        }
+        
+        $doc->startElement('tei:am');
+            $doc->startElement('tei:g');
+                $doc->writeAttribute('type', 'nmo:Monogram');
+                $doc->text(explode('.', $seg)[0]);
+            $doc->endElement();
+        $doc->endElement();
+        
+        if ($parent == false){
+            $doc->endElement();
+        }
+    } else {
+        //if there are parent TEI elements, then use tei:seg, otherwise tei:ab (tei:seg cannot appear directly in tei:div)
+        
+        if ($parent == true){
+            $doc->writeElement('tei:seg', $seg);
+        } else {
+            $doc->writeElement('tei:ab', $seg);
+        }        
+    }    
+}
+
 function processUri($uri){
 	GLOBAL $nomismaUris;
 	$content = array();
