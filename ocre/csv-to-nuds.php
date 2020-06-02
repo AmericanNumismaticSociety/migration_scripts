@@ -6,6 +6,7 @@
  * Function: A rewrite of the CSV to NUDS script from the ocre branch of the Numishare GitHub repository.
  * It has been extended to implement concordances from another spreadsheet (for Hadrian)
  *****/
+
 $data = generate_json('https://docs.google.com/spreadsheets/d/e/2PACX-1vRN0XNkxqZ0H0ZtP6VwFguDWKLVwPWFSd3STsOsrDk1Ldqrx7QzGcPzbhUKsxKE0uXhvTIMJu-kJqal/pub?output=csv');
 $deities = generate_json('https://docs.google.com/spreadsheet/pub?hl=en_US&hl=en_US&key=0Avp6BVZhfwHAdHk2ZXBuX0RYMEZzUlNJUkZOLXRUTmc&single=true&gid=0&output=csv');
 $con = generate_json('https://docs.google.com/spreadsheets/d/e/2PACX-1vQvfKQcmqOyIGhGzfWqVGUka8Lx3gx6923h3CZRVkzd9demKe3zzJqIYv-M8XxjIhAPMBXsw994E13O/pub?output=csv');
@@ -48,8 +49,8 @@ function generate_nuds($row, $count){
 		echo "Processing {$recordId}\n";
 		$doc = new XMLWriter();
 		
-		$doc->openUri('php://output');
-		//$doc->openUri('nuds/' . $recordId . '.xml');
+		//$doc->openUri('php://output');
+		$doc->openUri('nuds/' . $recordId . '.xml');
 		$doc->setIndent(true);
 		//now we need to define our Indent string,which is basically how many blank spaces we want to have for the indent
 		$doc->setIndentString("    ");
@@ -75,28 +76,32 @@ function generate_nuds($row, $count){
 					$doc->text(str_replace('sc.1.', '', $recordId));
 				$doc->endElement();*/
 				
-				//handle semantic relation with other record				
-				foreach ($concordance[$recordId] as $id){
-				    if (strlen(trim($id)) > 0){
-    				    $doc->startElement('otherRecordId');
-        				    $doc->writeAttribute('semantic', 'dcterms:replaces');
-        				    $doc->text(trim($id));
-    				    $doc->endElement();
-        				$doc->startElement('otherRecordId');
-        				    $doc->writeAttribute('semantic', 'skos:exactMatch');
-        				    $doc->text($uri_space . trim($id));
-    				    $doc->endElement();    
-				    }
-				}
+				//handle semantic relation with other record
+				if (array_key_exists($recordId, $concordance)){
+    				foreach ($concordance[$recordId] as $id){
+    				    if (strlen(trim($id)) > 0){
+        				    $doc->startElement('otherRecordId');
+        				        $doc->writeAttribute('semantic', 'dcterms:replaces');
+            				    $doc->text(trim($id));
+        				    $doc->endElement();
+            				$doc->startElement('otherRecordId');
+            				    $doc->writeAttribute('semantic', 'skos:exactMatch');
+            				    $doc->text($uri_space . trim($id));
+        				    $doc->endElement();    
+    				    }
+    				}    
+				}				
 				
 				//hierarchy
 				if (strlen($row['Parent ID']) > 0){
 				    $doc->startElement('otherRecordId');
     				    $doc->writeAttribute('semantic', 'skos:broader');
     				    $doc->text(trim($row['Parent ID']));
-				    $doc->endElement();
+				    $doc->endElement();				    
 				    $doc->writeElement('publicationStatus', 'approvedSubtype');
-				}			
+				} else {
+				    $doc->writeElement('publicationStatus', 'approved');
+				}
 				
 				$doc->writeElement('maintenanceStatus', 'derived');
 				$doc->startElement('maintenanceAgency');
