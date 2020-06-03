@@ -587,17 +587,23 @@ function generate_nuds($row, $count){
 				$doc->endElement();
 				
 				/***** REFDESC *****/				
-				/*$doc->startElement('refDesc');
-    				$doc->startElement('reference');
-    				    $doc->startElement('tei:title');
-    				        $doc->writeAttribute('key', 'http://nomisma.org/id/seleucid_coins');
-    				        $doc->text('Seleucid Coins (part ' . $part . ')');
-    				    $doc->endElement();
-    				    $doc->startElement('tei:idno');
-    				        $doc->text(str_replace('sc.1.', '', $row['SC no.']));
-    				    $doc->endElement();
-    				$doc->endElement();
-				$doc->endElement();*/
+				//create references to previous volumes
+				
+				if (array_key_exists($recordId, $concordance)){
+				    $doc->startElement('refDesc');
+				    foreach ($concordance[$recordId] as $id){
+				        $id = trim($id);
+				        
+				        if (strlen($id) > 0){				            
+				            $doc->startElement('reference');
+    				            $doc->writeAttribute('xlink:type', 'simple');
+    				            $doc->writeAttribute('xlink:href', $uri_space . $id);
+    				            $doc->text(get_title($id));    				           
+				            $doc->endElement();    
+				        }
+				    }				    
+				    $doc->endElement();
+				}
 				
 			//end descMeta
 			$doc->endElement();		
