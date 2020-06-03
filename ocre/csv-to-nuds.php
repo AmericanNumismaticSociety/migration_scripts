@@ -12,6 +12,11 @@ $deities = generate_json('https://docs.google.com/spreadsheet/pub?hl=en_US&hl=en
 $con = generate_json('https://docs.google.com/spreadsheets/d/e/2PACX-1vQvfKQcmqOyIGhGzfWqVGUka8Lx3gx6923h3CZRVkzd9demKe3zzJqIYv-M8XxjIhAPMBXsw994E13O/pub?output=csv');
 $concordance = array();
 
+//get the eXist-db password from disk
+$eXist_config_path = '/usr/local/projects/numishare/exist-config.xml';
+
+
+
 //generate a condordance
 foreach ($con as $row){
     if (strlen(trim($row['new'])) > 0){
@@ -32,7 +37,19 @@ $nomismaUris = array();
 $count = 1;
 
 foreach($data as $row){    
-    generate_nuds($row, $count);
+    generate_nuds($row, $count);    
+    
+    if (file_exists($eXist_config_path)) {
+        $eXist_config = simplexml_load_file($eXist_config_path);
+        $eXist_credentials = $eXist_config->username . ':' . $eXist_config->password;
+        
+        
+        $recordId = trim($row['ID']);
+        $filename =  'nuds/' . $recordId . '.xml';
+        put_to_exist($filename, $recordId, $eXist_credentials);
+    }
+    
+    
 }
 
 //functions
@@ -597,6 +614,45 @@ function generate_nuds($row, $count){
 
 
  /***** FUNCTIONS *****/
+function put_to_exist($filename, $recordId, $eXist_credentials){
+    if (($readFile = fopen($filename, 'r')) === FALSE){
+        echo "Unable to read {$recordId}.xml\n";
+    } else {
+        //PUT xml to eXist
+        $putToExist=curl_init();
+        
+        //set curl opts
+        curl_setopt($putToExist,CURLOPT_URL,'http://localhost:8080/exist/rest/db/ocre/objects/' . $recordId . '.xml');
+        curl_setopt($putToExist,CURLOPT_HTTPHEADER, array("Content-Type: text/xml; charset=utf-8"));
+        curl_setopt($putToExist,CURLOPT_CONNECTTIMEOUT,2);
+        curl_setopt($putToExist,CURLOPT_RETURNTRANSFER,1);
+        curl_setopt($putToExist,CURLOPT_PUT,1);
+        curl_setopt($putToExist,CURLOPT_INFILESIZE,filesize($filename));
+        curl_setopt($putToExist,CURLOPT_INFILE,$readFile);
+        curl_setopt($putToExist,CURLOPT_USERPWD,$eXist_credentials);
+        $response = curl_exec($putToExist);
+        
+        $http_code = curl_getinfo($putToExist,CURLINFO_HTTP_CODE);
+        
+        //error and success logging
+        if (curl_error($putToExist) === FALSE){
+            echo "{$recordId} failed to write to eXist.\n";
+        }
+        else {
+            if ($http_code == '201'){
+                echo "{$recordId} written.\n";
+            }
+        }
+        //close eXist curl
+        curl_close($putToExist);
+        
+        //close files and delete from /tmp
+        fclose($readFile);
+        //unlink($filename);
+    }
+}
+
+//parse the ID sequence to create a title
 function get_title($recordId){
     $pieces = explode('.', $recordId);
     switch ($pieces[1]) {
