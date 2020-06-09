@@ -590,19 +590,23 @@ function generate_nuds($row, $count){
 				//create references to previous volumes
 				
 				if (array_key_exists($recordId, $concordance)){
+				    
+				    if (strlen($concordance[$recordId][0]) > 0){	
+				    
 				    $doc->startElement('refDesc');
 				    foreach ($concordance[$recordId] as $id){
-				        $id = trim($id);
-				        
-				        if (strlen($id) > 0){				            
-				            $doc->startElement('reference');
+				        $id = trim($id); 
+				        if (strlen($id) > 0){
+    				        $doc->startElement('reference');
     				            $doc->writeAttribute('xlink:type', 'simple');
     				            $doc->writeAttribute('xlink:href', $uri_space . $id);
     				            $doc->text(get_title($id));    				           
-				            $doc->endElement();    
+    			            $doc->endElement();      
 				        }
-				    }				    
+			              
+				    }
 				    $doc->endElement();
+				    }
 				}
 				
 			//end descMeta
