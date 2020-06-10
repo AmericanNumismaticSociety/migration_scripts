@@ -13,17 +13,16 @@ $objects = array();
 
 foreach ($data as $row){
     $id = trim($row['monogram ID']);
+    $num = str_replace('monogram.lorber.', '', $id);
+    $num = (int) $num;
     
     //ignore blank rows, which are letters
     if (strlen($id) > 0){        
-        $filename = trim($row['Old Filename']) . '.svg';
+        $filename = trim($row['New Filename']) . '.svg';
         
-        $objects[$id]['ID'] = $id;
-        //add filenames
-        $objects[$id]['files'][] = trim($row['New Filename']);
+        $objects[$id]['ID'] = $id;        
         
-        //only read the constituent letters from the XML file if it hasn't already been done
-        
+        //only read the constituent letters from the XML file if it hasn't already been done        
         if (!array_key_exists('letters', $objects[$id])){
             foreach ($xml->folder[3]->children() as $file){
                 if (trim($file['name']) == $filename){
@@ -33,13 +32,22 @@ foreach ($data as $row){
                 }
             }
         }
+        
+        $objects[$id]['Label'] = "Lorber Monogram {$num}";
+        $objects[$id]['Definition'] = "Monogram {$num}";
+        $objects[$id]['Source'] = "http://nomisma.org/id/coins_ptolemaic_empire";
+        $objects[$id]['Field'] = "http://nomisma.org/id/greek_numismatics";
+        $objects[$id]['Image Creator'] = ($num < 258) ? "https://orcid.org/0000-0001-7542-4252" : "http://nomisma.org/editor/ltomanelli";
+        
+        //add filenames
+        $objects[$id]['files'][] =  "http://numismatics.org/symbolimages/pco/{$filename}";
     }
 }
 
-generate_xml($objects);
+//generate_xml($objects);
 
 
-//var_dump($objects);
+var_dump($objects);
 
 
 /**** FUNCTIONS ****/
