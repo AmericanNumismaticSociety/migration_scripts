@@ -531,7 +531,7 @@ function generate_nuds($row, $count){
 						//symbols
 						if (strlen($row['OBV']) > 0){
 							$doc->startElement('symbol');
-							parse_symbol($doc, trim($v));
+							 parse_symbol($doc, trim($row['OBV']));
 							$doc->endElement();
 						}
 					
