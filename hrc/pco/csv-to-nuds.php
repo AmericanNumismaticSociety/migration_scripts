@@ -877,34 +877,47 @@ function write_seg_tei ($doc, $seg, $rend, $parent){
             if (isset($rend)){
                 if ($rend == '?'){
                     $doc->startElement('tei:seg');
-                        $doc->writeElement('tei:unclear', $seg);
+                        $doc->writeElement('tei:unclear', replace_latin_with_greek($seg));
                     $doc->endElement();
                 } else {
                     $doc->startElement('tei:seg');
                         $doc->writeAttribute('rend', $rend);
-                        $doc->text($seg);
+                        $doc->text(replace_latin_with_greek($seg));
                     $doc->endElement();
                 }
             } else {
-                $doc->writeElement('tei:seg', $seg);
+                $doc->writeElement('tei:seg', replace_latin_with_greek($seg));
             }
             
         } else {
             if (isset($rend)){
                 if ($rend == '?'){
                     $doc->startElement('tei:ab');
-                        $doc->writeElement('tei:unclear', $seg);
+                        $doc->writeElement('tei:unclear', replace_latin_with_greek($seg));
                     $doc->endElement();
                 } else {
                     $doc->startElement('tei:ab');
                         $doc->writeAttribute('rend', $rend);
-                        $doc->text($seg);
+                        $doc->text(replace_latin_with_greek($seg));
                     $doc->endElement();
                 }
             } else {
-                $doc->writeElement('tei:ab', $seg);
+                $doc->writeElement('tei:ab', replace_latin_with_greek($seg));
             }
         }
+    }
+}
+
+function replace_latin_with_greek($seg){
+    if (preg_match('/^\p{Lu}+$/u', $seg)){
+        $latin = array('A','B','E','H','I','K','M','N','O','P','T','X','Y','Z');
+        $greek = array('Α','Β','Ε','Η','Ι','Κ','Μ','Ν','Ο','Ρ','Τ','Χ','Υ','Ζ');
+        $new = str_replace($latin, $greek, $seg);
+        echo "{$seg} (" . bin2hex($seg) . "): {$new}" . bin2hex($new) . "\n";
+        return $new;
+        //echo "{$v} (" . bin2hex($v) . "): {$new}" . bin2hex($new) . "\n";
+    } else {
+        return $seg;
     }
 }
 
