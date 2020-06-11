@@ -842,6 +842,14 @@ function parse_conditional($doc, $text, $parent){
 //parse an atomized seg into a monogram glyph, seg, or just cdata
 function parse_seg($doc, $seg, $parent){
     
+    if (preg_match('/(.*)\s?\((.*)\)$/', $seg, $matches)){
+        write_seg_tei($doc, trim($matches[1]), trim($matches[2]), $parent);
+    } else {
+        write_seg_tei($doc, trim($seg), null, $parent);
+    }    
+}
+
+function write_seg_tei ($doc, $seg, $rend, $parent){
     if (strpos($seg, 'monogram.lorber') !== FALSE ){
         //insert a single monogram into an ab, if applicable
         if ($parent == false){
@@ -852,6 +860,9 @@ function parse_seg($doc, $seg, $parent){
             $doc->startElement('tei:g');
                 $doc->writeAttribute('type', 'nmo:Monogram');
                 $doc->writeAttribute('ref', "http://numismatics.org/pco/symbol/" . $seg);
+                if (isset($rend)){
+                    $doc->writeAttribute('rend', $rend);
+                }
                 $doc->text("Lorber Monogram " . explode('.', $seg)[2]);
             $doc->endElement();
         $doc->endElement();
@@ -863,9 +874,36 @@ function parse_seg($doc, $seg, $parent){
         //if there are parent TEI elements, then use tei:seg, otherwise tei:ab (tei:seg cannot appear directly in tei:div)
         
         if ($parent == true){
-            $doc->writeElement('tei:seg', $seg);
+            if (isset($rend)){
+                if ($rend == '?'){
+                    $doc->startElement('tei:seg');
+                        $doc->writeElement('tei:unclear', $seg);
+                    $doc->endElement();
+                } else {
+                    $doc->startElement('tei:seg');
+                        $doc->writeAttribute('rend', $rend);
+                        $doc->text($seg);
+                    $doc->endElement();
+                }
+            } else {
+                $doc->writeElement('tei:seg', $seg);
+            }
+            
         } else {
-            $doc->writeElement('tei:ab', $seg);
+            if (isset($rend)){
+                if ($rend == '?'){
+                    $doc->startElement('tei:ab');
+                        $doc->writeElement('tei:unclear', $seg);
+                    $doc->endElement();
+                } else {
+                    $doc->startElement('tei:ab');
+                        $doc->writeAttribute('rend', $rend);
+                        $doc->text($seg);
+                    $doc->endElement();
+                }
+            } else {
+                $doc->writeElement('tei:ab', $seg);
+            }
         }
     }
 }
