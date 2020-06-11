@@ -27,30 +27,78 @@ foreach ($data as $row){
             foreach ($xml->folder[3]->children() as $file){
                 if (trim($file['name']) == $filename){
                     
-                    $objects[$id]['letters'] = trim($file['letters']);
+                    $objects[$id]['Constituent Letters'] = trim($file['letters']);
                     //echo $file['letters'];
                 }
             }
         }
         
         $objects[$id]['Label'] = "Lorber Monogram {$num}";
-        $objects[$id]['Definition'] = "Monogram {$num}";
+        $objects[$id]['Definition'] = "Monogram {$num} from Catharine C. Lorber, Coins of the Ptolemaic Empire, Vol. I (2018). The monogram contains " . parse_letters($objects[$id]['Constituent Letters']) . " as identified by Peter van Alfen." ;
         $objects[$id]['Source'] = "http://nomisma.org/id/coins_ptolemaic_empire";
-        $objects[$id]['Field'] = "http://nomisma.org/id/greek_numismatics";
-        $objects[$id]['Image Creator'] = ($num < 258) ? "https://orcid.org/0000-0001-7542-4252" : "http://nomisma.org/editor/ltomanelli";
+        $objects[$id]['Field of Numismatics'] = "http://nomisma.org/id/greek_numismatics";
         
         //add filenames
         $objects[$id]['files'][] =  "http://numismatics.org/symbolimages/pco/{$filename}";
+        
+        $objects[$id]['Image Creator'] = ($num < 258) ? "https://orcid.org/0000-0001-7542-4252" : "http://nomisma.org/editor/ltomanelli";
+        $objects[$id]['Image License'] = 'https://creativecommons.org/choose/mark/';        
+       
+        
     }
 }
 
 //generate_xml($objects);
+foreach($objects as $object){
+    $id = $object['ID'];
+    
+    $objects[$id]['Image'] = implode('|', $object['files']);
+    unset($objects[$id]['files']);
+}
+
+$headers = array('ID', 'Constituent Letters', 'Label', 'Definition', 'Source', 'Field of Numismatics', 'Image Creator', 'Image License', 'Image');
+
+$fp = fopen('ptolemaic_monograms.csv', 'w');
+
+foreach ($objects as $object){
+    fputcsv($fp, $object);
+}
+
+fclose($fp);
 
 
-var_dump($objects);
 
 
 /**** FUNCTIONS ****/
+//create the human-readable letters for the definition
+function parse_letters($letters){
+    $array = str_split_unicode($letters);
+    
+    if (count($array) == 1){
+        return $array[0];
+    } elseif (count($array) == 2){
+        return $array[0] . ' and ' . $array[1];
+    } else {
+        $array[count($array) - 1] = "and " . $array[count($array) - 1];
+        
+        $string = implode(', ', $array);
+        return $string;
+    }
+    
+}
+
+function str_split_unicode($str, $length = 1) {
+    $tmp = preg_split('~~u', $str, -1, PREG_SPLIT_NO_EMPTY);
+    if ($length > 1) {
+        $chunks = array_chunk($tmp, $length);
+        foreach ($chunks as $i => $chunk) {
+            $chunks[$i] = join('', (array) $chunk);
+        }
+        $tmp = $chunks;
+    }
+    return $tmp;
+}
+
 //generate a new folder XML node for inserting letters
 function generate_xml($objects){
     $doc = new XMLWriter();    
