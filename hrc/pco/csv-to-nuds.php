@@ -19,7 +19,7 @@ $count = 1;
 foreach($data as $row){
 	//call generate_nuds twice to generate two sets of NUDS records
 	
-	if (strpos($row['Date original'], 'vacat') === FALSE){
+	if (strpos($row['Date original'], 'vacat') !== TRUE){
 	    generate_nuds($row, $count);
 	    
 	    if (strlen($row['Parent ID']) == 0){
@@ -850,7 +850,18 @@ function parse_seg($doc, $seg, $parent){
 }
 
 function write_seg_tei ($doc, $seg, $rend, $parent){
-    if (strpos($seg, 'monogram.lorber') !== FALSE ){
+    if (preg_match('/^monogram\.lorber\.([0-9]+)$/', $seg, $matches)){
+        $num = (int) $matches[1];
+        
+        if ($num >= 68){
+            $id = "monogram.lorber." . ($num - 10);
+            echo "{$id}\n";
+        } else {
+            $id = $seg;
+        }
+        
+        
+        
         //insert a single monogram into an ab, if applicable
         if ($parent == false){
             $doc->startElement('tei:ab');
@@ -859,7 +870,7 @@ function write_seg_tei ($doc, $seg, $rend, $parent){
         $doc->startElement('tei:am');
             $doc->startElement('tei:g');
                 $doc->writeAttribute('type', 'nmo:Monogram');
-                $doc->writeAttribute('ref', "http://numismatics.org/pco/symbol/" . $seg);
+                $doc->writeAttribute('ref', "http://numismatics.org/pco/symbol/" . $id);
                 if (isset($rend)){
                     $doc->writeAttribute('rend', $rend);
                 }

@@ -41,7 +41,7 @@ foreach ($data as $row){
         //add filenames
         $objects[$id]['files'][] =  "http://numismatics.org/symbolimages/pco/{$filename}";
         
-        $objects[$id]['Image Creator'] = ($num < 258) ? "https://orcid.org/0000-0001-7542-4252" : "http://nomisma.org/editor/ltomanelli";
+        $objects[$id]['Image Creator'] = ($num < 248) ? "https://orcid.org/0000-0001-7542-4252" : "http://nomisma.org/editor/ltomanelli";
         $objects[$id]['Image License'] = 'https://creativecommons.org/choose/mark/';        
        
         
@@ -49,7 +49,7 @@ foreach ($data as $row){
 }
 
 //generate_xml($objects);
-foreach($objects as $object){
+/*foreach($objects as $object){
     $id = $object['ID'];
     
     $objects[$id]['Image'] = implode('|', $object['files']);
@@ -64,7 +64,7 @@ foreach ($objects as $object){
     fputcsv($fp, $object);
 }
 
-fclose($fp);
+fclose($fp);*/
 
 
 
