@@ -34,7 +34,11 @@ foreach ($data as $row){
         }
         
         $objects[$id]['Label'] = "Lorber Monogram {$num}";
-        $objects[$id]['Definition'] = "Monogram {$num} from Catharine C. Lorber, Coins of the Ptolemaic Empire, Vol. I (2018). The monogram contains " . parse_letters($objects[$id]['Constituent Letters']) . " as identified by Peter van Alfen." ;
+        $def = "Monogram {$num} from Catharine C. Lorber, Coins of the Ptolemaic Empire, Vol. I (2018).";        
+        if (strlen($objects[$id]['Constituent Letters']) > 0){
+            $def .= " The monogram contains " . parse_letters($objects[$id]['Constituent Letters']) . " as identified by Peter van Alfen." ;
+        }        
+        $objects[$id]['Definition'] = $def;
         $objects[$id]['Source'] = "http://nomisma.org/id/coins_ptolemaic_empire";
         $objects[$id]['Field of Numismatics'] = "http://nomisma.org/id/greek_numismatics";
         
@@ -49,7 +53,7 @@ foreach ($data as $row){
 }
 
 //generate_xml($objects);
-/*foreach($objects as $object){
+foreach($objects as $object){
     $id = $object['ID'];
     
     $objects[$id]['Image'] = implode('|', $object['files']);
@@ -64,7 +68,7 @@ foreach ($objects as $object){
     fputcsv($fp, $object);
 }
 
-fclose($fp);*/
+fclose($fp);
 
 
 
@@ -74,7 +78,9 @@ fclose($fp);*/
 function parse_letters($letters){
     $array = str_split_unicode($letters);
     
-    if (count($array) == 1){
+    if (count($array) == 0){
+        return '';
+    } elseif (count($array) == 1){
         return $array[0];
     } elseif (count($array) == 2){
         return $array[0] . ' and ' . $array[1];
