@@ -9,6 +9,8 @@
 $data = generate_json('https://docs.google.com/spreadsheets/d/e/2PACX-1vSSnVspLIFcgyv3WfN-Eubys_y8-sDZyMs-G0_C3CDetDSRgcdOxE4W8MZp8RwyfMeC44a48UqU2n3s/pub?output=csv');
 $xml = simplexml_load_file('/usr/local/projects/migration_scripts/fonts/xforms/xml/monograms.xml');
 
+$files = array();
+
 $doc = new XMLWriter();
 $doc->openUri('php://output');
 //$doc->openUri('lorber.xml');
@@ -17,7 +19,7 @@ $doc->setIndent(true);
 $doc->setIndentString("    ");
 $doc->startDocument('1.0','UTF-8');
 $doc->startElement('folder');
-    $doc->writeAttribute('name', "Seleucids");
+    $doc->writeAttribute('name', "HoughtonI");
 
 foreach ($data as $row){
     $newFile = $row['New Filename'];
@@ -26,21 +28,27 @@ foreach ($data as $row){
         $oldFile = $row['Old Filename'];
         
         $letters = '';
-        foreach ($xml->folder[1]->children() as $file){
-            if (trim($file['name']) == "{$oldFile}.svg" ){    
-                $letters = trim($file['letters']);
+        
+        if (!in_array($newFile, $files)){
+            foreach ($xml->folder[1]->children() as $file){
+                if (trim($file['name']) == "{$newFile}.svg" ){
+                    $letters = trim($file['letters']);
+                }
             }
+            
+            $doc->startElement('file');
+                $doc->writeAttribute('name', $newFile . '.svg');
+                $doc->writeAttribute('editor', 'pvalfen');
+                $doc->writeAttribute('letters', $letters);
+            $doc->endElement();
+            
+            $files[] = $newFile;
         }
         
-        $doc->startElement('file');
-            $doc->writeAttribute('name', $newFile . '.svg');
-            $doc->writeAttribute('editor', 'pvalfen');
-            $doc->writeAttribute('letters', $letters);
-        $doc->endElement();
         
-        if (!copy("/home/komet/ans_migration/fonts/svg/seleucids_rename/{$oldFile}.svg", "/home/komet/ans_migration/fonts/svg/seleucids_out/{$newFile}.svg")) {
+        /*if (!copy("/home/komet/ans_migration/fonts/svg/seleucids_rename/{$oldFile}.svg", "/home/komet/ans_migration/fonts/svg/seleucids_out/{$newFile}.svg")) {
             echo "failed to copy {$oldFile}...\n";
-        }
+        }*/
     }
 }
 
