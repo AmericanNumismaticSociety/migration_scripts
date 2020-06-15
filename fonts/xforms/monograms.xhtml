@@ -168,7 +168,7 @@
 									<xforms:repeat nodeset="xxforms:sort(file, tokenize(@name, '\.')[3], 'number', 'ascending')">
 										
 										
-										<div class="col-md-3 col-sm-6 col-lg-2 monogram" style="height:400px">
+										<div class="col-md-3 col-sm-6 col-lg-2 monogram {if (string-length(@letters) = 0) then 'bg-warning' else ''}" style="height:400px">
 											<img src="{concat('svg/', instance('control-instance')/folder, '/', @name)}" style="height:240px" />
 											<div>
 												<xforms:output ref="@name"/>
