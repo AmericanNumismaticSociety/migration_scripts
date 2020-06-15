@@ -854,7 +854,8 @@ function write_seg_tei ($doc, $seg, $rend, $parent){
         $num = (int) $matches[1];
         
         if ($num >= 68){
-            $id = "monogram.lorber." . ($num - 10);
+            $num = $num - 10;
+            $id = "monogram.lorber." . $num;
             echo "{$id}\n";
         } else {
             $id = $seg;
@@ -874,7 +875,7 @@ function write_seg_tei ($doc, $seg, $rend, $parent){
                 if (isset($rend)){
                     $doc->writeAttribute('rend', $rend);
                 }
-                $doc->text("Lorber Monogram " . explode('.', $seg)[2]);
+                $doc->text("Lorber Monogram " . $num);
             $doc->endElement();
         $doc->endElement();
         

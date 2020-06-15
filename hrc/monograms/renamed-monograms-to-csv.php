@@ -7,22 +7,75 @@
  * through the Google spreadsheet export mechanism. The script should read the Greek letters from monograms.xml file that were inputted in the XForms app
 *****/
 
-$data = generate_json('https://docs.google.com/spreadsheets/d/e/2PACX-1vSFMAciBwXoe_egvgsdO3okHslqOXl9dm98WZI50EX2dGEesZXgXP3V7Bertm8RLAE6yHLlA12Do6tf/pub?output=csv');
+$project = 'sco';
+if ($project == 'sco'){
+    $url = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSSnVspLIFcgyv3WfN-Eubys_y8-sDZyMs-G0_C3CDetDSRgcdOxE4W8MZp8RwyfMeC44a48UqU2n3s/pub?output=csv';
+} elseif ($project == 'pco'){
+    $url = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSFMAciBwXoe_egvgsdO3okHslqOXl9dm98WZI50EX2dGEesZXgXP3V7Bertm8RLAE6yHLlA12Do6tf/pub?output=csv';
+}
+$data = generate_json($url);
 $xml = simplexml_load_file('/usr/local/projects/migration_scripts/fonts/xforms/xml/monograms.xml');
 $objects = array();
 
 foreach ($data as $row){
+    if ($project == 'pco'){
+        process_pco_monograms($row, $xml, $objects);
+    } elseif ($project == 'sco'){
+        if (strlen($row['Monogram ID']) > 0){
+            $objects[] = process_sco_monograms($row, $xml);
+        }
+    }
+}
+
+
+//generate_xml($objects);
+
+var_dump($objects);
+
+//output CSV
+/*if ($project == 'pco'){
+    foreach($objects as $object){
+        $id = $object['ID'];
+        
+        $objects[$id]['Image'] = implode('|', $object['files']);
+        unset($objects[$id]['files']);
+    }
+
+    $headers = array('ID', 'Constituent Letters', 'Label', 'Definition', 'Source', 'Field of Numismatics', 'Image Creator', 'Image License', 'Image');
+    
+    $fp = fopen('ptolemaic_monograms.csv', 'w');
+    fputcsv($fp, $headers);
+    foreach ($objects as $object){
+        fputcsv($fp, $object);
+    }
+    
+    fclose($fp);
+} elseif ($project == 'sco'){
+    $headers = array('ID', 'Constituent Letters', 'Label', 'Definition', 'Source', 'Field of Numismatics', 'Image Creator', 'Image License', 'Image');
+    
+    $fp = fopen('ptolemaic_monograms.csv', 'w');
+    fputcsv($fp, $headers);
+    foreach ($objects as $object){
+        fputcsv($fp, $object);
+    }
+    
+    fclose($fp);
+}*/
+
+
+/**** FUNCTIONS ****/
+function process_pco_monograms($row, $xml, $objects){
     $id = trim($row['monogram ID']);
     $num = str_replace('monogram.lorber.', '', $id);
     $num = (int) $num;
     
     //ignore blank rows, which are letters
-    if (strlen($id) > 0){        
+    if (strlen($id) > 0){
         $filename = trim($row['New Filename']) . '.svg';
         
-        $objects[$id]['ID'] = $id;        
+        $objects[$id]['ID'] = $id;
         
-        //only read the constituent letters from the XML file if it hasn't already been done        
+        //only read the constituent letters from the XML file if it hasn't already been done
         if (!array_key_exists('letters', $objects[$id])){
             foreach ($xml->folder[3]->children() as $file){
                 if (trim($file['name']) == $filename){
@@ -34,10 +87,10 @@ foreach ($data as $row){
         }
         
         $objects[$id]['Label'] = "Lorber Monogram {$num}";
-        $def = "Monogram {$num} from Catharine C. Lorber, Coins of the Ptolemaic Empire, Vol. I (2018).";        
+        $def = "Monogram {$num} from Catharine C. Lorber, Coins of the Ptolemaic Empire, Vol. I (2018).";
         if (strlen($objects[$id]['Constituent Letters']) > 0){
             $def .= " The monogram contains " . parse_letters($objects[$id]['Constituent Letters']) . " as identified by Peter van Alfen." ;
-        }        
+        }
         $objects[$id]['Definition'] = $def;
         $objects[$id]['Source'] = "http://nomisma.org/id/coins_ptolemaic_empire";
         $objects[$id]['Field of Numismatics'] = "http://nomisma.org/id/greek_numismatics";
@@ -47,33 +100,56 @@ foreach ($data as $row){
         
         $objects[$id]['Image Creator'] = ($num < 248) ? "https://orcid.org/0000-0001-7542-4252" : "http://nomisma.org/editor/ltomanelli";
         $objects[$id]['Image License'] = 'https://creativecommons.org/choose/mark/';        
-       
-        
     }
 }
 
-//generate_xml($objects);
-foreach($objects as $object){
-    $id = $object['ID'];
+function process_sco_monograms($row, $xml){
     
-    $objects[$id]['Image'] = implode('|', $object['files']);
-    unset($objects[$id]['files']);
+    $id = trim($row['New Filename']);
+    $num = str_replace('monogram.houghton.', '', $id);    
+    
+    //ignore blank rows, which are letters
+    if (strlen($id) > 0){
+        $object = array();
+        
+        $filename = trim($row['Old Filename']) . '.svg';
+        
+        $object['ID'] = $id;
+        
+        if ($id != $row['Monogram ID']){
+            $object['Parent'] = $row['Monogram ID'];
+        }
+        
+        //only read the constituent letters from the XML file if it hasn't already been done
+        if (!array_key_exists('letters', $object)){
+            foreach ($xml->folder[1]->children() as $file){
+                if (trim($file['name']) == $filename){
+                    
+                    $object['Constituent Letters'] = trim($file['letters']);
+                    echo $file['letters'];
+                }
+            }
+        }
+        
+        $object['Label'] = "Houghton Monogram {$num}";
+        $def = "Monogram {$num} from Houghton, Lorber, and Hoover, Seleucid coins : a comprehensive catalogue (2008).";
+        if (strlen($object['Constituent Letters']) > 0){
+            $def .= " The monogram contains " . parse_letters($object['Constituent Letters']) . " as identified by Peter van Alfen." ;
+        }
+        $object['Definition'] = $def;
+        $object['Source'] = "http://nomisma.org/id/seleucid_coins";
+        $object['Field of Numismatics'] = "http://nomisma.org/id/greek_numismatics";
+        
+        //add filenames
+        $object['file'] =  "http://numismatics.org/symbolimages/pco/{$id}.svg";
+        
+        $object['Image Creator'] = "https://orcid.org/0000-0001-7542-4252";
+        $object['Image License'] = 'https://creativecommons.org/choose/mark/';
+        
+        return $object;
+    }
 }
 
-$headers = array('ID', 'Constituent Letters', 'Label', 'Definition', 'Source', 'Field of Numismatics', 'Image Creator', 'Image License', 'Image');
-
-$fp = fopen('ptolemaic_monograms.csv', 'w');
-
-foreach ($objects as $object){
-    fputcsv($fp, $object);
-}
-
-fclose($fp);
-
-
-
-
-/**** FUNCTIONS ****/
 //create the human-readable letters for the definition
 function parse_letters($letters){
     $array = str_split_unicode($letters);
