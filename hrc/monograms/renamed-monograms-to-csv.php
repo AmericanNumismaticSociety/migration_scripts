@@ -16,14 +16,19 @@ if ($project == 'sco'){
 $data = generate_json($url);
 $xml = simplexml_load_file('/usr/local/projects/migration_scripts/fonts/xforms/xml/monograms.xml');
 $objects = array();
+
+$ids = array();
 $parents = array();
 
 foreach ($data as $row){
     if ($project == 'pco'){
         process_pco_monograms($row, $xml, $objects);
     } elseif ($project == 'sco'){
-        if (strlen($row['Monogram ID']) > 0){
-            $objects[] = process_sco_monograms($row, $xml);
+        if (strlen($row['New Filename']) > 0){
+            if (!in_array($row['New Filename'], $ids)){
+                $objects[] = process_sco_monograms($row, $xml);
+                $ids[] = $row['New Filename'];
+            }            
         }
     }
 }
