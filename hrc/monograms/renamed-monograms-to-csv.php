@@ -16,6 +16,7 @@ if ($project == 'sco'){
 $data = generate_json($url);
 $xml = simplexml_load_file('/usr/local/projects/migration_scripts/fonts/xforms/xml/monograms.xml');
 $objects = array();
+$parents = array();
 
 foreach ($data as $row){
     if ($project == 'pco'){
@@ -30,10 +31,10 @@ foreach ($data as $row){
 
 //generate_xml($objects);
 
-var_dump($objects);
+//var_dump($objects);
 
 //output CSV
-/*if ($project == 'pco'){
+if ($project == 'pco'){
     foreach($objects as $object){
         $id = $object['ID'];
         
@@ -51,16 +52,16 @@ var_dump($objects);
     
     fclose($fp);
 } elseif ($project == 'sco'){
-    $headers = array('ID', 'Constituent Letters', 'Label', 'Definition', 'Source', 'Field of Numismatics', 'Image Creator', 'Image License', 'Image');
+    $headers = array('ID', 'Parent ID', 'Constituent Letters', 'Label', 'Definition', 'Source', 'Field of Numismatics', 'Image', 'Image Creator', 'Image License');
     
-    $fp = fopen('ptolemaic_monograms.csv', 'w');
+    $fp = fopen('sco_monograms.csv', 'w');
     fputcsv($fp, $headers);
     foreach ($objects as $object){
         fputcsv($fp, $object);
     }
     
     fclose($fp);
-}*/
+}
 
 
 /**** FUNCTIONS ****/
@@ -104,29 +105,52 @@ function process_pco_monograms($row, $xml, $objects){
 }
 
 function process_sco_monograms($row, $xml){
+    GLOBAL $parents;
+    GLOBAL $objects;   
     
     $id = trim($row['New Filename']);
-    $num = str_replace('monogram.houghton.', '', $id);    
+    $num = str_replace('_', '.', str_replace('monogram.houghton.', '', $id));    
     
     //ignore blank rows, which are letters
     if (strlen($id) > 0){
         $object = array();
         
-        $filename = trim($row['Old Filename']) . '.svg';
+        //$filename = trim($row['Old Filename']) . '.svg';
         
         $object['ID'] = $id;
         
         if ($id != $row['Monogram ID']){
-            $object['Parent'] = $row['Monogram ID'];
+            $object['Parent ID'] = $row['Monogram ID'];
+            
+            //create parent types
+            if (!in_array($row['Monogram ID'], $parents)){
+                $parent = array();
+                $parent['ID'] = $row['Monogram ID'];
+                $parent['Parent ID'] = null;
+                $parent['Constituent Letters'] = null;
+                $parentNum = str_replace('monogram.houghton.', '', $row['Monogram ID']);    
+                $parent['Label'] = "Houghton Monogram {$parentNum}";
+                $parent['Definition'] = "Monogram {$parentNum} from Houghton, Lorber, and Hoover, Seleucid coins : a comprehensive catalogue (2008).";
+                $parent['Source'] = "http://nomisma.org/id/seleucid_coins";
+                $parent['Field of Numismatics'] = "http://nomisma.org/id/greek_numismatics";      
+                $parent['Image'] =  null;                
+                $parent['Image Creator'] = null;
+                $parent['Image License'] = null;
+                
+                //insert $parent array into $objects
+                $objects[] = $parent;
+                $parents[] = $row['Monogram ID'];
+            }
+        } else {
+            $object['Parent ID'] = null;
         }
         
         //only read the constituent letters from the XML file if it hasn't already been done
         if (!array_key_exists('letters', $object)){
             foreach ($xml->folder[1]->children() as $file){
-                if (trim($file['name']) == $filename){
+                if (trim($file['name']) == "{$id}.svg"){
                     
                     $object['Constituent Letters'] = trim($file['letters']);
-                    echo $file['letters'];
                 }
             }
         }
@@ -141,7 +165,7 @@ function process_sco_monograms($row, $xml){
         $object['Field of Numismatics'] = "http://nomisma.org/id/greek_numismatics";
         
         //add filenames
-        $object['file'] =  "http://numismatics.org/symbolimages/pco/{$id}.svg";
+        $object['Image'] =  "http://numismatics.org/symbolimages/sco/{$id}.svg";
         
         $object['Image Creator'] = "https://orcid.org/0000-0001-7542-4252";
         $object['Image License'] = 'https://creativecommons.org/choose/mark/';
