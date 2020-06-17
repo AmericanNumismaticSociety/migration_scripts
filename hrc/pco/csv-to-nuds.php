@@ -1,10 +1,11 @@
 <?php 
  /*****
  * Author: Ethan Gruber
- * Last modified: December 2018
+ * Last modified: June 2020
  * Function: Process the Ptolemaic Coins Online spreadsheet from Google Drive into two sets of NUDS/XML documents:
  * 1. Lorber Coins of the Ptolemaic Empire numbers 
  * 2. Svoronos 1904 numbers that direct to Lorber numbers
+ * 3. Monogram/symbol placements parsed into EpiDoc TEI
  *****/
 
 $data = generate_json('https://docs.google.com/spreadsheets/d/e/2PACX-1vQFHZHiQCr1MNrnZC9Rca1UbpawQDC86E-laoySz4cADKWgQxL0gOGCDJy531HiQQ82xbSroyZpldsl/pub?output=csv');

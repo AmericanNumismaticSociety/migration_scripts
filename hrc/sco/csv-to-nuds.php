@@ -1,7 +1,7 @@
 <?php 
  /*****
  * Author: Ethan Gruber
- * Date: May 2020
+ * Date: June 2020
  * Function: Process the Seleucid Coins Online spreadsheet from Google Drive into NUDS/XML. EpiDoc TEI used for complex symbol placement
  *****/
 
@@ -10,7 +10,8 @@ $deities = generate_json('https://docs.google.com/spreadsheet/pub?hl=en_US&hl=en
 $stylesheet = generate_json('https://docs.google.com/spreadsheets/d/e/2PACX-1vS0CuQ4VWS_K7NNKhPfm9Km2yEggDjBgw0TH0xJRNTf5BUHeiA3Ol_SNU_CHZl10KFHXstdTSie81xC/pub?gid=1557628448&single=true&output=csv');
 
 $nomismaUris = array();
-//$records = array();
+$monograms = array();
+$errors = array();
 
 $part = 1;
 $count = 1;
@@ -26,6 +27,8 @@ foreach($data as $row){
 	    $count++;
 	}
 }
+
+var_dump($errors);
 
 //functions
 function generate_nuds($row, $part, $count){
@@ -238,7 +241,7 @@ function generate_nuds($row, $part, $count){
 						$doc->writeAttribute('xlink:type', 'simple');
 						$doc->writeAttribute('xlink:href', $uri);
 						if($uncertainty == true){
-							$doc->writeAttribute('certainty', 'uncertain');
+							$doc->writeAttribute('certainty', 'http://nomisma.org/id/uncertain_value');
 						}
 						$doc->text($content['label']);
 						$doc->endElement();
@@ -307,7 +310,7 @@ function generate_nuds($row, $part, $count){
 									$doc->writeAttribute('xlink:role', $role);
 									$doc->writeAttribute('xlink:href', $uri);
 									if($uncertainty == true){
-										$doc->writeAttribute('certainty', 'uncertain');
+									    $doc->writeAttribute('certainty', 'http://nomisma.org/id/uncertain_value');
 									}
 									$doc->text($content['label']);
 								$doc->endElement();
@@ -332,7 +335,7 @@ function generate_nuds($row, $part, $count){
 									$doc->writeAttribute('xlink:role', $role);
 									$doc->writeAttribute('xlink:href', $uri);
 									if($uncertainty == true){
-										$doc->writeAttribute('certainty', 'uncertain');
+									    $doc->writeAttribute('certainty', 'http://nomisma.org/id/uncertain_value');
 									}
 									$doc->text($content['label']);
 								$doc->endElement();
@@ -357,7 +360,7 @@ function generate_nuds($row, $part, $count){
 									$doc->writeAttribute('xlink:role', $role);
 									$doc->writeAttribute('xlink:href', $uri);
 									if($uncertainty == true){
-										$doc->writeAttribute('certainty', 'uncertain');
+									    $doc->writeAttribute('certainty', 'http://nomisma.org/id/uncertain_value');
 									}
 									$doc->text($content['label']);
 								$doc->endElement();
@@ -507,7 +510,10 @@ function generate_nuds($row, $part, $count){
 						
 						//symbols
 						if (strlen($row['OBV']) > 0){
-							$doc->writeElement('symbol', trim($row['OBV']));
+						    //parse the text in the symbol field into TEI fragments, if applicable
+						    $doc->startElement('symbol');
+						      parse_symbol($doc, trim($row['OBV']));
+						    $doc->endElement();
 						}
 						
 						//portrait
@@ -794,16 +800,50 @@ function parse_conditional($doc, $text, $parent){
 //parse an atomized seg into a monogram glyph, seg, or just cdata
 function parse_seg($doc, $seg, $parent){
     
-    if (strpos($seg, '.svg') !== FALSE ){
-        //insert a single monogram into an ab, if applicable
+    if (preg_match('/(.*)\s?\((.*)\)$/', $seg, $matches)){
+        write_seg_tei($doc, trim($matches[1]), trim($matches[2]), $parent);
+    } else {
+        write_seg_tei($doc, trim($seg), null, $parent);
+    }
+}
+
+function write_seg_tei ($doc, $seg, $rend, $parent){
+    GLOBAL $monograms;
+    GLOBAL $errors;
+    
+    if (preg_match('/^m([0-9]+_?[1-9]?)\.svg$/', $seg, $matches)){
+        $num = $matches[1];
+        
+        $id = "monogram.houghton." . $num;
+        $uri = "http://numismatics.org/sco/symbol/" . $id;
+        
         if ($parent == false){
             $doc->startElement('tei:ab');
         }
-        
+        //insert a single monogram into an ab, if applicable
         $doc->startElement('tei:am');
             $doc->startElement('tei:g');
-                $doc->writeAttribute('type', 'nmo:Monogram');
-                $doc->text(explode('.', $seg)[0]);
+                $doc->writeAttribute('type', 'nmo:Monogram');        
+                if (isset($rend)){
+                    $doc->writeAttribute('rend', $rend);
+                }
+                
+                //validate monogram URI before inserting the ref attribute
+                if (array_key_exists($uri, $monograms)){
+                    $doc->writeAttribute('ref', $uri);
+                } else {
+                    $file_headers = @get_headers($uri);
+                    if ($file_headers[0] == 'HTTP/1.1 200 OK'){
+                        $doc->writeAttribute('ref', $uri);
+                        $monograms[] = $uri;
+                        echo "Found {$uri}.\n";                        
+                    } else {
+                        echo "ERROR: {$uri} not found.\n";
+                        $errors[] = $uri;
+                    }
+                }       
+        
+                $doc->text("Houghton Monogram " . str_replace('_', '.', $num));
             $doc->endElement();
         $doc->endElement();
         
@@ -814,11 +854,50 @@ function parse_seg($doc, $seg, $parent){
         //if there are parent TEI elements, then use tei:seg, otherwise tei:ab (tei:seg cannot appear directly in tei:div)
         
         if ($parent == true){
-            $doc->writeElement('tei:seg', $seg);
+            if (isset($rend)){
+                if ($rend == '?'){
+                    $doc->startElement('tei:seg');
+                    $doc->writeElement('tei:unclear', replace_latin_with_greek($seg));
+                    $doc->endElement();
+                } else {
+                    $doc->startElement('tei:seg');
+                    $doc->writeAttribute('rend', $rend);
+                    $doc->text(replace_latin_with_greek($seg));
+                    $doc->endElement();
+                }
+            } else {
+                $doc->writeElement('tei:seg', replace_latin_with_greek($seg));
+            }
+            
         } else {
-            $doc->writeElement('tei:ab', $seg);
-        }        
-    }    
+            if (isset($rend)){
+                if ($rend == '?'){
+                    $doc->startElement('tei:ab');
+                    $doc->writeElement('tei:unclear', replace_latin_with_greek($seg));
+                    $doc->endElement();
+                } else {
+                    $doc->startElement('tei:ab');
+                    $doc->writeAttribute('rend', $rend);
+                    $doc->text(replace_latin_with_greek($seg));
+                    $doc->endElement();
+                }
+            } else {
+                $doc->writeElement('tei:ab', replace_latin_with_greek($seg));
+            }
+        }
+    }
+}
+
+function replace_latin_with_greek($seg){
+    if (preg_match('/^\p{Lu}+$/u', $seg)){
+        $latin = array('A','B','E','H','I','K','M','N','O','P','T','X','Y','Z');
+        $greek = array('Α','Β','Ε','Η','Ι','Κ','Μ','Ν','Ο','Ρ','Τ','Χ','Υ','Ζ');
+        $new = str_replace($latin, $greek, $seg);
+        //echo "{$seg} (" . bin2hex($seg) . "): {$new}" . bin2hex($new) . "\n";
+        return $new;
+    } else {
+        return $seg;
+    }
 }
 
 function processUri($uri){
