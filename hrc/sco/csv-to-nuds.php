@@ -811,8 +811,10 @@ function write_seg_tei ($doc, $seg, $rend, $parent){
     GLOBAL $monograms;
     GLOBAL $errors;
     
-    if (preg_match('/^m([0-9]+_?[1-9]?)\.svg$/', $seg, $matches)){
-        $num = $matches[1];
+    if (preg_match('/^m([0-9]+(_[0-9]+)?)\.svg$/', $seg, $matches)){
+        $num = trim($matches[1]);
+        
+        //echo "{$num}\n";
         
         $id = "monogram.houghton." . $num;
         $uri = "http://numismatics.org/sco/symbol/" . $id;
@@ -825,7 +827,11 @@ function write_seg_tei ($doc, $seg, $rend, $parent){
             $doc->startElement('tei:g');
                 $doc->writeAttribute('type', 'nmo:Monogram');        
                 if (isset($rend)){
-                    $doc->writeAttribute('rend', $rend);
+                    if ($rend == '?'){                        
+                        $doc->writeAttribute('rend', 'unclear');
+                    } else {
+                        $doc->writeAttribute('rend', $rend);
+                    }                    
                 }
                 
                 //validate monogram URI before inserting the ref attribute
