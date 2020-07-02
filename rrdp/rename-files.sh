@@ -3,10 +3,10 @@ filename="rename-files.txt"
  
 while read line
 do
-	readarray -d ';' -t arr <<<"$line"
-	newvar=$(echo "${arr[1]}"|tr '\n' ' ')
-
-	echo "Moving ${arr[0]} => ${newvar}"
-	cp /data/images/archivesimages/thumbnail/${arr[0]} ~/${newvar}
+	
+	old=$(echo $line | awk -F';' '{print $1}'|tr '\n' ' ')
+	new=$(echo $line | awk -F';' '{print $2}'|tr '\n' ' ')
+	echo "Moving ${old} => ${new}"
+	cp /data/images/archivesimages/thumbnail/$old ~/$new	
 	
 done < $filename
