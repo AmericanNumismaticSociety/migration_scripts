@@ -1,0 +1,16 @@
+schaefer_093-b04_p320-1.jpg;schaefer_093_b04_p320-1.jpg
+schaefer_132_b06_095.jpg;schaefer_132_b06_p095.jpg
+schaefer_132_b06_100.jpg;schaefer_132_b06_p100.jpg
+schaefer_132_b06_101-0.jpg;schaefer_132_b06_p101-0.jpg
+schaefer_132_b06_101-1.jpg;schaefer_132_b06_p101-1.jpg
+schaefer_193_1_b08_p129.jpg;schaefer_193-1_b08_p129.jpg
+schaefer_292_b01_043.jpg;schaefer_292_b01_p043.jpg
+schaefer_294_b01_0061.jpg;schaefer_294_b01_p061.jpg
+schaefer_304_b01_b153-0.jpg;schaefer_304_b01_p153-0.jpg
+schaefer_304_b01_b153-1.jpg;schaefer_304_b01_p153-1.jpg
+schaefer_305_b01_155.jpg;schaefer_305_b01_p155.jpg
+schaefer_316_b02_076.jpg;schaefer_316_b02_p076.jpg
+schaefer_353-1a_b04_325-0.jpg;schaefer_353-1a_b04_p325-0.jpg
+schaefer_353-1a_b04_325-1.jpg;schaefer_353-1a_b04_p325-1.jpg
+schaefer_391-2_b06_080-0.jpg;schaefer_391-2_b06_p080-0.jpg
+schaefer_391-2_b06_080-1.jpg;schaefer_391-2_b06_p080-1.jpg

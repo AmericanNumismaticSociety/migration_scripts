@@ -9,8 +9,9 @@
  *****/
 
 $data = generate_json('https://docs.google.com/spreadsheets/d/e/2PACX-1vQFHZHiQCr1MNrnZC9Rca1UbpawQDC86E-laoySz4cADKWgQxL0gOGCDJy531HiQQ82xbSroyZpldsl/pub?output=csv');
-$deities = generate_json('https://docs.google.com/spreadsheet/pub?hl=en_US&hl=en_US&key=0Avp6BVZhfwHAdHk2ZXBuX0RYMEZzUlNJUkZOLXRUTmc&single=true&gid=0&output=csv');
-$stylesheet = generate_json('https://docs.google.com/spreadsheets/d/e/2PACX-1vQ9dm5-zYlLzEm_URfzguJhQr_VT0Xt5uh7qAQTK23YKzwNUvyRQO0LgcihP18h4JRTVD41C-6PZf9c/pub?output=csv');
+$deities = generate_json('https://docs.google.com/spreadsheets/d/e/2PACX-1vSCOcaJN4oDU9a9JabpLbMzGc8wVQvEi1LaUbCW_Sdh5UKlhqOxHfVtmKfaKlgkhkXPuKl5gbpOEDpI/pub?output=csv');
+$obverses = generate_json('https://docs.google.com/spreadsheets/d/e/2PACX-1vQFHZHiQCr1MNrnZC9Rca1UbpawQDC86E-laoySz4cADKWgQxL0gOGCDJy531HiQQ82xbSroyZpldsl/pub?gid=1223774619&single=true&output=csv');
+$reverses = generate_json('https://docs.google.com/spreadsheets/d/e/2PACX-1vQFHZHiQCr1MNrnZC9Rca1UbpawQDC86E-laoySz4cADKWgQxL0gOGCDJy531HiQQ82xbSroyZpldsl/pub?gid=1472724110&single=true&output=csv');
 
 $nomismaUris = array();
 //$records = array();
@@ -32,7 +33,8 @@ foreach($data as $row){
 //functions
 function generate_nuds($row, $count){
 	GLOBAL $deities;
-	GLOBAL $stylesheet;
+	GLOBAL $obverses;
+	GLOBAL $reverses;
 	
 	$uri_space = 'http://numismatics.org/pco/id/';	
 	$recordId = trim($row['Lorber no.']);
@@ -449,16 +451,15 @@ function generate_nuds($row, $count){
 				//obverse
 				if (strlen($row['O']) > 0){
 					$key = trim($row['O']);
-					//$type = $row['O (en)'];
 					
 					$doc->startElement('obverse');					
 						//multilingual type descriptions
 						$doc->startElement('type');
-							foreach ($stylesheet as $desc){
-								if ($desc['Abbreviation'] == $key){
+							foreach ($obverses as $desc){
+								if ($desc['code'] == $key){
 								    $type = $desc['en'];
 									foreach ($desc as $k=>$v){
-										if ($k != 'Abbreviation'){
+										if ($k != 'code'){
 											if (strlen($v) > 0){
 												$doc->startElement('description');
 													$doc->writeAttribute('xml:lang', $k);
@@ -481,8 +482,8 @@ function generate_nuds($row, $count){
 									$doc->startElement('persname');
 									$doc->writeAttribute('xlink:type', 'simple');
 									$doc->writeAttribute('xlink:role', 'deity');
-									if (strlen($deity['bm_uri']) > 0){
-										$doc->writeAttribute('xlink:href', $deity['bm_uri']);
+									if (strlen($deity['uri']) > 0){
+										$doc->writeAttribute('xlink:href', $deity['uri']);
 									}
 									$doc->text($deity['name']);
 									$doc->endElement();
@@ -495,8 +496,8 @@ function generate_nuds($row, $count){
 									$doc->startElement('persname');
 									$doc->writeAttribute('xlink:type', 'simple');
 									$doc->writeAttribute('xlink:role', 'deity');
-									if (strlen($deity['bm_uri']) > 0){
-										$doc->writeAttribute('xlink:href', $deity['bm_uri']);
+									if (strlen($deity['uri']) > 0){
+										$doc->writeAttribute('xlink:href', $deity['uri']);
 									}
 									$doc->text($deity['name']);
 									$doc->endElement();
@@ -580,11 +581,11 @@ function generate_nuds($row, $count){
 					
 						//multilingual type descriptions
 						$doc->startElement('type');
-						 foreach ($stylesheet as $desc){
-							 if ($desc['Abbreviation'] == $key){
+						 foreach ($reverses as $desc){
+							 if ($desc['code'] == $key){
 							     $type = $desc['en'];
 								 foreach ($desc as $k=>$v){
-									 if ($k != 'Abbreviation'){
+									 if ($k != 'code'){
 									 	if (strlen($v) > 0){
 									 		$doc->startElement('description');
 										 		$doc->writeAttribute('xml:lang', $k);
@@ -622,8 +623,8 @@ function generate_nuds($row, $count){
 									$doc->startElement('persname');
 									$doc->writeAttribute('xlink:type', 'simple');
 									$doc->writeAttribute('xlink:role', 'deity');
-									if (strlen($deity['bm_uri']) > 0){
-										$doc->writeAttribute('xlink:href', $deity['bm_uri']);
+									if (strlen($deity['uri']) > 0){
+										$doc->writeAttribute('xlink:href', $deity['uri']);
 									}
 									$doc->text($deity['name']);
 									$doc->endElement();
@@ -636,8 +637,8 @@ function generate_nuds($row, $count){
 									$doc->startElement('persname');
 									$doc->writeAttribute('xlink:type', 'simple');
 									$doc->writeAttribute('xlink:role', 'deity');
-									if (strlen($deity['bm_uri']) > 0){
-										$doc->writeAttribute('xlink:href', $deity['bm_uri']);
+									if (strlen($deity['uri']) > 0){
+										$doc->writeAttribute('xlink:href', $deity['uri']);
 									}
 									$doc->text($deity['name']);
 									$doc->endElement();
