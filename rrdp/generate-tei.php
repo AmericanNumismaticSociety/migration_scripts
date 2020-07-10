@@ -9,9 +9,11 @@
 $filename = "identify.list";
 $coinTypes = array();
 
+$json = json_decode(file_get_contents("page-crro-concordance.json"), true);
+
 //parse filename listing and pixel dimensions into a data object for processing into TEI
 $object = parse_files($filename);
-
+//var_dump($object);
 generate_tei($object);
 
 
@@ -84,15 +86,21 @@ function generate_tei($object){
                                 
                                 foreach ($binder as $page){
                                     
-                                    //var_dump($page);
-                                    $type = parse_type($page);
-                                    
-                                    if (isset($type)){
-                                        $doc->startElement('term');
-                                            $doc->writeAttribute('ref', $type['uri']);
-                                            $doc->text($type['label']);
-                                        $doc->endElement();
-                                    }                                    
+                                    //if there are URIs in the 'ref'
+                                    if (count($page['ref']) > 0){
+                                        foreach ($page['ref'] as $uri){
+                                            $type = parse_type($uri);
+                                            if (isset($type)){
+                                                $facs = '#' . str_replace('.jpg', '', $page['filename']);
+                                                
+                                                $doc->startElement('term');
+                                                    $doc->writeAttribute('ref', $type['uri']);
+                                                    $doc->writeAttribute('facs', $facs);
+                                                    $doc->text($type['label']);
+                                                $doc->endElement();
+                                            }      
+                                        }
+                                    }                         
                                 }
                                 
                             $doc->endElement();
@@ -148,54 +156,37 @@ function generate_tei($object){
 }
 
 //parse the ref to ensure it is a valid CRRO URI
-function parse_type($page){
+function parse_type($uri){
     GLOBAL $coinTypes;
     
-    if (preg_match('/^[0-9]+/', $page['ref'])){
-        //parse subtype
-        if (strpos($page['ref'], '-') !== FALSE){
-            $pieces = explode('-', $page['ref']);
-            
-            $typeNumber = ltrim($pieces[0], '0');
-            $subType = ltrim($pieces[1], '0');
-            
-            $uri = "http://numismatics.org/crro/id/rrc-" . $typeNumber . '.' . $subType;
-        } else {
-            $uri = "http://numismatics.org/crro/id/rrc-" . ltrim($page['ref'], '0');
-        }
+    if (array_key_exists($uri, $coinTypes)){
+        //echo "Matched {$uri}\n";
         
-        if (array_key_exists($uri, $coinTypes)){
-            echo "Matched {$uri}\n";
+        return array('label'=>$coinTypes[$uri]['label'], 'uri'=>$uri);
+    } else {
+        $file_headers = @get_headers($uri);
+        if ($file_headers[0] == 'HTTP/1.1 200 OK'){
+            //echo "Found {$uri}\n";
+            $xmlDoc = new DOMDocument();
+            $xmlDoc->load($uri . '.rdf');
+            $xpath = new DOMXpath($xmlDoc);
+            $xpath->registerNamespace('skos', 'http://www.w3.org/2004/02/skos/core#');
+            $xpath->registerNamespace('rdf', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#');
+            $label = $xpath->query("descendant::skos:prefLabel[@xml:lang='en']")->item(0)->nodeValue;
             
-            return array('label'=>$coinTypes[$uri]['label'], 'uri'=>$uri);            
-        } else {
-            $file_headers = @get_headers($uri);
-            if ($file_headers[0] == 'HTTP/1.1 200 OK'){
-                echo "Found {$uri}\n";
-                $xmlDoc = new DOMDocument();
-                $xmlDoc->load($uri . '.rdf');
-                $xpath = new DOMXpath($xmlDoc);
-                $xpath->registerNamespace('skos', 'http://www.w3.org/2004/02/skos/core#');
-                $xpath->registerNamespace('rdf', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#');
-                $label = $xpath->query("descendant::skos:prefLabel[@xml:lang='en']")->item(0)->nodeValue;
-                
-                if (!isset($label)){
-                    echo "Error with {$id}\n";
-                } else {
-                    $coinTypes[$uri] = array('label'=>$label, 'uri'=>$uri);
-                    return array('label'=>$label, 'uri'=>$uri);
-                }
+            if (!isset($label)){
+                echo "Error with {$id}\n";
             } else {
-                echo "{$uri} not found\n";
-                return null;
+                $coinTypes[$uri] = array('label'=>$label, 'uri'=>$uri);
+                return array('label'=>$label, 'uri'=>$uri);
             }
         }
-    } else {
-        return null;
     }
 }
 
 function parse_files($filename){
+    GLOBAL $json;
+    
     $object = array();
     
     $handle = fopen($filename, "r");
@@ -211,8 +202,16 @@ function parse_files($filename){
             //echo $image . "\n";
             $pieces = explode('_', str_replace('.jpg', '', $image));
             
+            //get the array of associated CRRO URIs from concordance JSON
+            $id = str_replace('.jpg', '', $image);
+            if (array_key_exists($id, $json)){
+                $ref = $json[$id];
+            } else {
+                $ref = array();
+            }
+            
             //insert page metadata into each object
-            $page = array('filename'=>$image, 'ref'=>$pieces[1], 'page'=>$pieces[3], 'height'=>$height, 'width'=>$width);
+            $page = array('filename'=>$image, 'ref'=>$ref, 'page'=>$pieces[3], 'height'=>$height, 'width'=>$width);
             $object[$pieces[2]][$pieces[3]] = $page;
         }
         fclose($handle);
