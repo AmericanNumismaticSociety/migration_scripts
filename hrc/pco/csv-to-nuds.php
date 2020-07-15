@@ -855,15 +855,18 @@ function write_seg_tei ($doc, $seg, $rend, $parent){
     if (preg_match('/^monogram\.lorber\.([0-9]+)$/', $seg, $matches)){
         $num = (int) $matches[1];
         
-        if ($num >= 68){
+        
+        //manually fixed by Lauren Tomanelli
+        /*if ($num >= 68){
             $num = $num - 10;
             $id = "monogram.lorber." . $num;
             echo "{$id}\n";
         } else {
             $id = $seg;
-        }
+        }*/
         
         
+        $id = $seg;
         
         //insert a single monogram into an ab, if applicable
         if ($parent == false){
@@ -927,7 +930,7 @@ function replace_latin_with_greek($seg){
         $latin = array('A','B','E','H','I','K','M','N','O','P','T','X','Y','Z');
         $greek = array('Α','Β','Ε','Η','Ι','Κ','Μ','Ν','Ο','Ρ','Τ','Χ','Υ','Ζ');
         $new = str_replace($latin, $greek, $seg);
-        echo "{$seg} (" . bin2hex($seg) . "): {$new}" . bin2hex($new) . "\n";
+        //echo "{$seg} (" . bin2hex($seg) . "): {$new}" . bin2hex($new) . "\n";
         return $new;
         //echo "{$v} (" . bin2hex($v) . "): {$new}" . bin2hex($new) . "\n";
     } else {

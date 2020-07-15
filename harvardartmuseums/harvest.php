@@ -19,8 +19,8 @@ function parse_page($page, $apiKey){
 	
 	echo "Page {$page}\n";
 	
-	$query = 'standardreferencenumber(RRC+OR+RIC+OR+Price+OR+SC+OR+Svoronos+OR+Lorber)';
-	//$query= 'standardreferencenumber(Lorber+OR+Svoronos)';
+	$query = 'standardreferencenumber(RRC+OR+RIC+OR+Price+OR+SC+OR+Svoronos+OR+Lorber+OR+Newell)';
+	//$query= 'standardreferencenumber(Newell)';
 	$service = 'https://api.harvardartmuseums.org/object?size=100&classification=Coins&q=' . $query . '+AND+department:"Department%20of%20Ancient%20and%20Byzantine%20Art%20%26%20Numismatics"&apikey=' . $apiKey . '&page=' . $page;
 	
 	$json = file_get_contents($service);
@@ -48,25 +48,54 @@ function parse_page($page, $apiKey){
 				}
 				$records[] = $row;
 				//end RRC processing
-			} elseif (preg_match('/Price/', $reference)){
-				$num = explode(' ', $reference);
-				$row = array();
-				
-				//generate record metadata array
-				$row = construct_metadata($record);
-				$row['reference'] = $reference;
-				
-				//ignore uncertain coins
-				if (substr($num[1], -1) != '?'){
-					$cointype = 'http://numismatics.org/pella/id/price.' . $num[1];
-					$file_headers = @get_headers($cointype);					
-					if ($file_headers[0] == 'HTTP/1.1 200 OK'){
-						echo "{$row['objectnumber']}: {$cointype}\n";
-						$row['cointype'][] = $cointype;
-					}
-				}
-				$records[] = $row;
-				//end PELLA processing				
+			} elseif (preg_match('/Price/', $reference) || preg_match('/Newell/', $reference)){
+			    $refs = explode(';', $reference);
+			    
+			    foreach ($refs as $ref){
+			        $ref = trim($ref);
+			        
+			        if (preg_match('/^Price\.([L|P]?\d+[A-Z]?$)/', $ref, $matches)){
+			            if (isset($matches[1])){
+			                $num = $matches[1];
+			                $row = array();
+			                
+			                //generate record metadata array
+			                $row = construct_metadata($record);
+			                $row['reference'] = $reference;
+			                
+			                //ignore uncertain coins
+			                if (substr($num, -1) != '?'){
+			                    $cointype = 'http://numismatics.org/pella/id/price.' . $num;
+			                    $file_headers = @get_headers($cointype);
+			                    if ($file_headers[0] == 'HTTP/1.1 200 OK'){
+			                        echo "{$row['objectnumber']}: {$cointype}\n";
+			                        $row['cointype'][] = $cointype;
+			                    }
+			                }
+			                $records[] = $row;
+			            }
+			        } elseif (preg_match('/^Newell\sn?o?\.?(\d+)/', $ref, $matches) && strpos($record->title, 'Poliorketes') !== FALSE){
+			            if (isset($matches[1])){
+			                $num = $matches[1];
+			                $row = array();
+			                
+			                //generate record metadata array
+			                $row = construct_metadata($record);
+			                $row['reference'] = $reference;
+			                
+			                //ignore uncertain coins
+			                if (substr($num, -1) != '?'){
+			                    $cointype = 'http://numismatics.org/agco/id/newell.demetrius.' . $num;
+			                    $file_headers = @get_headers($cointype);
+			                    if ($file_headers[0] == 'HTTP/1.1 200 OK'){
+			                        echo "{$row['objectnumber']}: {$cointype}\n";
+			                        $row['cointype'][] = $cointype;
+			                    }
+			                }
+			                $records[] = $row;
+			            }
+			        }
+			    }			
 			} elseif (preg_match('/SC/', $reference)){
 				$refs = explode(',', $reference);
 				

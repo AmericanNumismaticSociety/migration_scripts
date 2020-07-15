@@ -20,7 +20,7 @@
                     <col>Contributor</col>
                     <col>Image Creator</col>
                 </row>
-                <xsl:apply-templates select="//folder[@name = 'Price']/file"/>
+                <xsl:apply-templates select="//folder[@name = 'Demetrius']/file"/>
             </csv>
         </xsl:variable>
 
@@ -54,16 +54,16 @@
             <col>
                 <xsl:value-of select="normalize-space(@letters)"/>
             </col>
-            <col>Price Monogram <xsl:value-of select="$num"/></col>
+            <col>Demetrius Monogram <xsl:value-of select="$num"/></col>
             <col>
                 <xsl:value-of select="nomisma:normalizeLabel($num, normalize-space(@letters))"/>
             </col>
-            <col>http://nomisma.org/id/price1991</col>
+            <col>http://nomisma.org/id/newell_demetrius_poliorcetes</col>
             <col>
-                <xsl:value-of select="concat('http://numismatics.org/symbolimages/pella/monogram.price.', $num, '.svg')"/>
+                <xsl:value-of select="concat('http://numismatics.org/symbolimages/pella/monogram.demetrius.', $num, '.svg')"/>
             </col>
             <col>http://nomisma.org/editor/pvalfen</col>
-            <col>https://orcid.org/0000-0001-7542-4252</col>
+            <col>http://nomisma.org/editor/ltomanelli</col>
         </row>
     </xsl:template>
 
@@ -76,7 +76,7 @@
         <!-- definition boilerplate -->
         <xsl:text>Monogram </xsl:text>
         <xsl:value-of select="$num"/>
-        <xsl:text> from M.J. Price, Coinage in the Name of Alexander the Great and Philip Arrhidaeus: A British Museum Catalogue.</xsl:text>
+        <xsl:text> from The Coinages of Demetrius Poliorcetes, by Edward T. Newell. Oxford University Press, 1927.</xsl:text>
         
         <!-- parse constituent letters -->
         <xsl:text> The monogram contains</xsl:text>
