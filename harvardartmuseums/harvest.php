@@ -194,6 +194,7 @@ function parse_page($page, $apiKey){
 				
 				switch($volNum){
 					case 'RIC I 2':
+					case 'RIC I (2)':
 						$parsedVolume = $volNum;
 						$volume = 'ric.1(2)';
 						break;

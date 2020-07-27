@@ -2,7 +2,7 @@
 
 
 //first process pella spreadsheet
-$data = generate_json('hrc2.csv');
+$data = generate_json('hrc.csv');
 $records = parse_oai($data);
 
 //then process CRRO
@@ -40,6 +40,11 @@ function parse_oai($data){
 			    if (array_key_exists('coinType3', $row)){
 			        if (strlen(trim($row['coinType3'])) > 0){
 			            $types[] = trim($row['coinType3']);
+			        }
+			    }
+			    if (array_key_exists('coinType4', $row)){
+			        if (strlen(trim($row['coinType4'])) > 0){
+			            $types[] = trim($row['coinType4']);
 			        }
 			    }
 			    
