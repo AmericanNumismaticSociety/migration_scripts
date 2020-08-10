@@ -1,12 +1,13 @@
 <?php 
 /*****
  * Author: Ethan Gruber
- * Date: July 2020
+ * 
+ * Date: August 2020
  * Function: Process a list of JPG files from an imagemagick identify of a folder for the Roman Republican Die Project.
- * Parse the filenames into 14 binders, reordered by page, and insert subjects for CRRO URIs
+ * Parse the filenames into 6 TEI files for binders, in groups of 100 RRC numbers
  *****/
 
-$filename = "identify.list";
+$filename = "identify-clippings.list";
 $coinTypes = array();
 
 $json = json_decode(file_get_contents("page-crro-concordance.json"), true);
@@ -20,6 +21,32 @@ generate_tei($object);
 /***** FUNCTIONS *****/
 function generate_tei($object){
     foreach ($object as $no=>$binder){
+        switch ($no){
+            case 'preprocessed':
+                $title = 'Preprocessed Clippings, RRC 1-550, Brockages, and Miscellaneous';
+                break;
+            case 'processed_001-099':
+                $title = "Processed Clippings, RRC 1-99";
+                break;
+            case 'processed_100-199':
+                $title = "Processed Clippings, RRC 100-199";
+                break;
+            case 'processed_200-299':
+                $title = "Processed Clippings, RRC 200-299";
+                break;
+            case 'processed_300-399':
+                $title = "Processed Clippings, RRC 300-399";
+                break;
+            case 'processed_400-499':
+                $title = "Processed Clippings, RRC 400-499";
+                break;
+            case 'processed_500-':
+                $title = "Processed Clippings, RRC 500-550";
+                break;
+            case 'processed_misc':
+                $title = 'Processed Clippings, Brockages and Miscellaneous';
+        }
+        
         echo "Processing {$no}\n";
         $id = "schaefer.rrdp.{$no}";
         
@@ -44,7 +71,7 @@ function generate_tei($object){
             $doc->startElement('teiHeader');
                 $doc->startElement('fileDesc');
                     $doc->startElement('titleStmt');
-                        $doc->writeElement('title', 'Schaefer Roman Republican Die Study: Binder ' . ltrim(str_replace('b', '', $no), '0'));
+                        $doc->writeElement('title', 'Schaefer Roman Republican Die Study: ' . $title);
                         $doc->startElement('author');
                             $doc->startElement('persName');
                                 $doc->writeAttribute('ref', 'http://numismatics.org/authority/schaefer_richard');
@@ -69,7 +96,7 @@ function generate_tei($object){
                     $doc->startElement('sourceDesc');
                         $doc->startElement('biblStruct');
                             $doc->startElement('monogr');
-                                $doc->writeElement('title', 'Schaefer Roman Republican Die Study: Binder' . ltrim(str_replace('b', '', $no), '0'));
+                                $doc->writeElement('title', 'Schaefer Roman Republican Die Study: ' . $title);
                                 $doc->startElement('author');
                                     $doc->startElement('persName');
                                         $doc->writeAttribute('ref', 'http://numismatics.org/authority/schaefer_richard');
@@ -156,7 +183,7 @@ function generate_tei($object){
                     
                     $doc->startElement('media');
                         $doc->writeAttribute('url', "http://images.numismatics.org/archivesimages%2Farchive%2F{$filename}");
-                        $doc->writeAttribute('n', ltrim(str_replace('p', '', $page['page']), '0'));                        
+                        $doc->writeAttribute('n', $page['page']);                        
                         $doc->writeAttribute('mimeType', 'image/jpeg');
                         $doc->writeAttribute('type', 'IIIFService');
                         $doc->writeAttribute('height', "{$page['height']}px");
@@ -232,8 +259,44 @@ function parse_files($filename){
             }
             
             //insert page metadata into each object
-            $page = array('filename'=>$image, 'ref'=>$ref, 'page'=>$pieces[3], 'height'=>$height, 'width'=>$width);
-            $object[$pieces[2]][$pieces[3]] = $page;
+            $page = array('filename'=>$image, 'ref'=>$ref, 'page'=>explode('put_', str_replace('.jpg', '', $image))[1], 'height'=>$height, 'width'=>$width);
+            
+            //parse RRC number from filename in order to group
+            
+            if ($pieces[2] == 'input'){
+                $object['preprocessed'][] = $page;
+            } else {
+                preg_match('/^([0-9]+).*/', $pieces[3], $matches);
+                
+                if (isset($matches[1])){
+                    $num = (int) $matches[1];
+                    switch ($num){
+                        case $num < 100:
+                            $id = 'processed_001-099';
+                            break;
+                        case $num >= 100 && $num < 200:
+                            $id = 'processed_100-199';
+                            break;
+                        case $num >= 200 && $num < 300:                            
+                            $id = 'processed_200-299';
+                            break;
+                        case $num >= 300 && $num < 400:
+                            $id = 'processed_300-399';
+                            break;
+                        case $num >= 400 && $num < 499:
+                            $id = 'processed_400-499';
+                            break;
+                        case $num >= 500:
+                            $id = 'processed_500-';
+                    }
+                    
+                    $object[$id][] = $page;
+                    
+                } else {
+                    $object['processed_misc'][] = $page;  
+                    
+                }
+            }
         }
         fclose($handle);
     }
