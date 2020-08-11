@@ -25,7 +25,7 @@ function parse_oai($data){
 		if (strlen($row['ark']) > 0){
 			$record['uri'] = $row['ark'];
 			
-			if (isset($row['coinType1']) || isset($row['coinType2']) || isset($row['coinType3'])){
+			if (isset($row['coinType1']) || isset($row['coinType2']) || isset($row['coinType3']) || isset($row['coinType4'])){
 			    $types = array();
 			    if (array_key_exists('coinType1', $row)){
 			        if (strlen(trim($row['coinType1'])) > 0){
@@ -49,6 +49,12 @@ function parse_oai($data){
 			    }
 			    
 			    $record['cointype'] = $types;
+			    
+			    if (array_key_exists('hoard', $row)){
+			        if (strlen(trim($row['hoard'])) > 0){
+			            $record['hoard'] = $row['hoard'];
+			        }
+			    }
 			    
 			    echo "{$count}: Processing {$record['uri']}\n";
 			    $id = str_replace('https://gallica.bnf.fr/', '', $record['uri']);
@@ -157,7 +163,7 @@ function generate_rdf($records){
 	$writer->writeAttribute('xmlns:doap', "http://usefulinc.com/ns/doap#");
 	
 	foreach ($records as $record){
-		if (count($record['cointype']) > 0){
+		if (count($record['cointype']) > 0 || isset($record['hoard'])){
 			$writer->startElement('nmo:NumismaticObject');
 			$writer->writeAttribute('rdf:about', $record['uri']);
 			$writer->startElement('dcterms:title');
@@ -172,6 +178,13 @@ function generate_rdf($records){
 			foreach ($record['cointype'] as $type){
 			    $writer->startElement('nmo:hasTypeSeriesItem');
 			         $writer->writeAttribute('rdf:resource', $type);
+			    $writer->endElement();
+			}
+			
+			// hoard URI
+			if (isset($record['hoard'])){
+			    $writer->startElement('dcterms:isPartOf');
+			     $writer->writeAttribute('rdf:resource', $record['hoard']);
 			    $writer->endElement();
 			}
 			
