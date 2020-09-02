@@ -835,7 +835,7 @@ function write_seg_tei ($doc, $seg, $rend, $parent){
                 }
                 
                 //validate monogram URI before inserting the ref attribute
-                if (array_key_exists($uri, $monograms)){
+                if (in_array($uri, $monograms)){
                     $doc->writeAttribute('ref', $uri);
                 } else {
                     $file_headers = @get_headers($uri);
