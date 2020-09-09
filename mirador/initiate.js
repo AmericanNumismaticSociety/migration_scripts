@@ -1,6 +1,4 @@
 $(document).ready(function () {
-    // Called without "let" or "var"
-    // so we can play with it in the browser
     
     var manifest = getUrlVar('manifest');
     var publisher = getUrlVar('publisher');
@@ -14,26 +12,43 @@ $(document).ready(function () {
         windowOptions[ "loadedManifest"] = manifest;
     }
     if (canvas) {
-        windowOptions[ "canvasID"] = canvas;
+        windowOptions[ "canvasId"] = canvas;
     }
     
     windowOptions[ "viewType"] = "ImageView";
-    windowOptions[ "annotationLayer"] = true;
-    windowOptions[ "annotationCreation"] = false;
-    windowOptions[ "annotationState"] = "annoOnCreateOff";
-    windowOptions[ "displayLayout"] = false;
-    
+    windowOptions[ "thumbnailNavigationPosition"] = "far-bottom";
     
     windowObjects.push(windowOptions);
     
-    Mirador({
+    var miradorInstance = Mirador.viewer({
         "id": "viewer",
-        "layout": "1x1",
-        "data":[ {
-            "manifestUri": manifest, "location": publisher
-        }],
-        "windowObjects": windowObjects,
-        "sidePanelVisible": false
+        "windows": windowObjects,
+        "window": {
+            "allowClose": true,
+            "allowMaximize": true,
+            "defaultSideBarPanel": 'info',
+            "defaultView": 'gallery',
+            "sideBarOpenByDefault": true,
+            "forceDrawAnnotations": true
+        },
+        "thumbnailNavigation": {
+            "defaultPosition": 'on'
+        },
+        "workspace": {
+            "type": 'mosaic'
+        },
+        "workspaceControlPanel": {
+            "enabled": true
+        },
+        "theme": {
+            "palette": {
+                "annotations": {
+                    "hidden": {
+                        "globalAlpha": 1
+                    }
+                }
+            }
+        }
     });
 });
 
