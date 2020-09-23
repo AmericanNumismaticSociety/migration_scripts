@@ -1,14 +1,14 @@
 <!DOCTYPE html>
 <head>
-  <meta charset="utf-8">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-  <link rel="stylesheet" type="text/css" href="mirador-2.6.1/css/mirador-combined.css">
+  <meta charset="utf-8"/>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"/>
+  <link rel="stylesheet" type="text/css" href="mirador-2.6.1/css/mirador-combined.css"></link>
   <title>Mirador Viewer</title>
   <style type="text/css">
     body { padding: 0; margin: 0; overflow: hidden;}
     #viewer {width: 100%; height: 100%; position: fixed; }
   </style>
-  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.4.1/css/all.css" integrity="sha384-5sAR7xN1Nv6T6+dT2mhtzEpVJvfS3NScPQTrOxhwjIuvcA67KV2R5Jz6kr4abQsz" crossorigin="anonymous"/>
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.4.1/css/all.css" integrity="sha384-5sAR7xN1Nv6T6+dT2mhtzEpVJvfS3NScPQTrOxhwjIuvcA67KV2R5Jz6kr4abQsz" crossorigin="anonymous"></link>
 </head>
 <body>
   <div id="viewer"></div>
@@ -77,11 +77,18 @@
 					url: 'annotation',
 				}
 		  },
-          "sidePanelOptions" : {
-           "tocTabAvailable": true,
-           "layersTabAvailable": true,
-           "searchTabAvailable": true
-         }
+		  "windowSettings": {
+    		  "canvasControls": {
+        		  "annotations": {
+            		  "annotationLayer": true,
+            		  "annotationState": "on"
+        		  },        		  
+        		  "imageManipulation": {
+        		      "manipulationLayer": false
+        		  }
+    		  }
+		  },
+		  "sidePanel": false
       };
         // From Getty code: http://www.getty.edu/art/collection/static/viewers/mirador/?manifest=https://data.getty.edu/museum/api/iiif/1895/manifest.json
         function getURLParameter(param) {
