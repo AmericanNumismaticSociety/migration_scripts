@@ -154,7 +154,6 @@ foreach ($sheets as $sheet){
     }
 }
 
-
 //process $records object into NUDS and write to eXist-db
 foreach ($records as $record){
     $id = $record['recordId'];
