@@ -67,7 +67,7 @@ foreach ($sheets as $sheet){
             $ref = trim($row['Source Ref']);
             if (strlen($ref) > 0){
                 foreach ($sources as $source){
-                    if ($source['Name'] == $ref){
+                    if ($source['Label'] == $ref){
                         $reference = array();
                         $reference['name'] = $ref;
                         if (strlen($source['Donum URI']) > 0){
