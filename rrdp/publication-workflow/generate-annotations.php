@@ -9,7 +9,7 @@
 
 ini_set("allow_url_fopen", 1);
 define("DIE_URI_SPACE", "http://numismatics.org/rrdp/id/");
-define("SPECIMEN_URI_SPACE", "http://localhost:8080/orbeon/numishare/rrdp-specimens/id/");
+define("SPECIMEN_URI_SPACE", "http://numismatics.org/sitnam/id/");
 
 //an array of sheets for batches of RRC numbers
 $sheets = array('https://docs.google.com/spreadsheets/d/e/2PACX-1vR7jfpBFfSzCLTTXLNCjU0p49GLFUMxbgrb1I5daS0uUjSFrBeM3SjHLUOTYE3NGd7ugMpi29qzu8cn/pub?gid=0&single=true&output=csv');
