@@ -15,7 +15,7 @@ ini_set("allow_url_fopen", 1);
 define("ANNOTATION_SOLR_URL", "http://numismatics.org:8983/solr/annotations/select");
 define("NUMISHARE_SOLR_URL", "http://localhost:8983/solr/numishare/update");
 define("INDEX_COUNT", 500);
-define("COLLECTION_NAME", 'rrdp-specimens');
+define("COLLECTION_NAME", 'sitnam');
 
 //an array of sheets for batches of RRC numbers
 $sheets = array('https://docs.google.com/spreadsheets/d/e/2PACX-1vR7jfpBFfSzCLTTXLNCjU0p49GLFUMxbgrb1I5daS0uUjSFrBeM3SjHLUOTYE3NGd7ugMpi29qzu8cn/pub?gid=0&single=true&output=csv');
@@ -47,109 +47,143 @@ foreach ($sheets as $sheet){
     
     echo "Processing {$sheet}\n";
     
-    foreach ($data as $row){       
-        if (strlen($row['ID']) > 0){
-            $record = array();
-            $errorCount = 0;
+    foreach ($data as $row){        
+        if (strlen(trim($row['ID'])) > 0){
+            $id = trim($row['ID']);
             
-            $id = $row['ID'];
-            
-            $record['recordId'] = $id;
-            
-            if (strlen($row['Title']) > 0){
-                $record['title'] = $row['Title'];
-            } else {
-                $errors[] = "{$id}: No title";
-                $errorCount++;
-            }
-            
-            //read sources sheet in order to create a reference with an optional URI
-            $ref = trim($row['Source Ref']);
-            if (strlen($ref) > 0){
-                foreach ($sources as $source){
-                    if ($source['Label'] == $ref){
-                        $reference = array();
-                        $reference['name'] = $ref;
-                        if (strlen($source['Donum URI']) > 0){
-                            $reference['URI'] = $source['Donum URI'];
+            //don't process rows with a canonical URI that already exists in CRRO
+            if (strlen(trim($row['Canonical URI (CRRO only)'])) == 0) {
+                $record = array();
+                $errorCount = 0;
+                
+                echo "Processing {$id}\n";                
+                
+                $record['recordId'] = $id;
+                
+                if (strlen($row['Title']) > 0){
+                    $record['title'] = $row['Title'];
+                } else {
+                    $errors[] = "{$id}: No title";
+                    $errorCount++;
+                }
+                
+                //read sources sheet in order to create a reference with an optional URI
+                $ref = trim($row['Source Ref']);
+                if (strlen($ref) > 0){
+                    foreach ($sources as $source){
+                        if ($source['Label'] == $ref){
+                            if ($source['Type'] == 'auction'){
+                                $provenance = array();
+                                $provenance['label'] = $ref;
+                                if (strlen($source['Donum URI']) > 0){
+                                    $provenance['URI'] = $source['Donum URI'];
+                                }
+                                
+                                if (strlen($source['Start Date']) > 0 && strlen($source['End Date']) > 0){
+                                    if ($source['Start Date'] == $source['End Date']){
+                                        $provenance['date'] = $source['Start Date'];
+                                    } else {
+                                        $provenance['fromDate'] = $source['Start Date'];
+                                        $provenance['toDate'] = $source['End Date'];
+                                    }
+                                }
+                                
+                                $record['provenance'] = $provenance;
+                                
+                            } elseif ($source['Type'] == 'collection_public'){
+                                $collection = array();
+                                $collection['label'] = $ref;
+                                
+                                if (strpos($source['Collection Nomisma URI'], 'nomisma.org') !== FALSE){
+                                    $collection['URI'] = $source['Collection Nomisma URI'];
+                                }
+                                
+                                $record['collection'] = $collection;
+                            } elseif ($source['Type'] == 'citation'){
+                                $citation = array();
+                                $citation['label'] = $ref;
+                                
+                                if (strlen($source['Donum URI']) > 0){
+                                    $citation['URI'] = $source['Donum URI'];
+                                }
+                                
+                                $record['citation'] = $citation;
+                            }
                         }
-                        $record['reference'] = $reference;
-                        unset($reference);
-                        break;
                     }
                 }
-            }
-            
-            //validate the type URI
-            if (strlen(trim($row['Type'])) > 0){
-                $uri = trim($row['Type']);
-                if (in_array($uri, $coinTypes)){
-                    $record['coinType'] = $uri;
-                } else {
-                    if (preg_match('/^http:\/\/numismatics\.org\/crro\/id\/rrc-/', $uri)){
-                        $file_headers = @get_headers($uri);
-                        if (strpos($file_headers[0], '200') !== FALSE){
-                            $record['coinType'] = $uri;
-                            $coinTypes[] = $uri;
+                
+                //validate the type URI
+                if (strlen(trim($row['Type'])) > 0){
+                    $uri = trim($row['Type']);
+                    if (in_array($uri, $coinTypes)){
+                        $record['coinType'] = $uri;
+                    } else {
+                        if (preg_match('/^http:\/\/numismatics\.org\/crro\/id\/rrc-/', $uri)){
+                            $file_headers = @get_headers($uri);
+                            if (strpos($file_headers[0], '200') !== FALSE){
+                                $record['coinType'] = $uri;
+                                $coinTypes[] = $uri;
+                            } else {
+                                $errors[] = "{$id}: coin type URI ({$uri}) does not resolve in CRRO";
+                                $errorCount++;
+                            }
                         } else {
-                            $errors[] = "{$id}: coin type URI ({$uri}) does not resolve in CRRO";
+                            $errors[] = "{$id}: coin type URI ({$uri}) is invalid";
                             $errorCount++;
                         }
-                    } else {
-                        $errors[] = "{$id}: coin type URI ({$uri}) is invalid";
+                    }
+                } else {
+                    $errors[] = "{$id}: coin type URI is empty";
+                    $errorCount++;
+                }
+                
+                //read images from the annotation endpoint
+                $record['obvImage'] = query_solr($id, 'obv');
+                $record['revImage'] = query_solr($id, 'rev');
+                
+                //physDesc objects
+                $weight = trim($row['Weight']);
+                if (strlen($weight) > 0){
+                    if (is_numeric($weight) && $weight > 0){
+                        $record['weight'] = $weight;
+                    } elseif(!is_numeric($weight) && strlen($weight) > 0){
+                        $errors[] = "{$id}: has non-numeric weight.";
                         $errorCount++;
                     }
                 }
+                
+                $diameter = trim($row['Diameter']);
+                if (strlen($diameter) > 0){
+                    if (is_numeric($diameter) && $diameter > 0){
+                        $record['diameter'] = $diameter;
+                    } elseif(!is_numeric($diameter) && strlen($diameter) > 0){
+                        $errors[] = "{$id}: has non-numeric diameter.";
+                        $errorCount++;
+                    }
+                }
+                
+                $axis = trim($row['Axis']);
+                if (strlen($axis) > 0){
+                    if (is_int((int) $axis) && $axis > 0){
+                        $record['axis'] = $axis;
+                    } elseif(!is_numeric($diameter) && strlen($diameter) > 0){
+                        $errors[] = "{$id}: has non-numeric axis.";
+                        $errorCount++;
+                    }
+                }
+                
+                //only insert the record if there are no validation errors
+                if ($errorCount == 0){
+                    $records[] = $record;
+                }
             } else {
-                $errors[] = "{$id}: coin type URI is empty";
-                $errorCount++;
-            }           
-            
-            //read images from the annotation endpoint
-            $record['obvImage'] = query_solr($id, 'obv');
-            $record['revImage'] = query_solr($id, 'rev');
-            
-            //physDesc objects
-            $weight = trim($row['Weight']);
-            if (strlen($weight) > 0){
-                if (is_numeric($weight) && $weight > 0){
-                    $record['weight'] = $weight;
-                } elseif(!is_numeric($weight) && strlen($weight) > 0){
-                    $errors[] = "{$id}: has non-numeric weight.";
-                    $errorCount++;
-                }
+                //output the URI
+                echo "Skipping {$id}: {$row['Canonical URI (CRRO only)']}\n";
             }
-           
-            $diameter = trim($row['Diameter']);            
-            if (strlen($diameter) > 0){
-                if (is_numeric($diameter) && $diameter > 0){
-                    $record['diameter'] = $diameter;
-                } elseif(!is_numeric($diameter) && strlen($diameter) > 0){
-                    $errors[] = "{$id}: has non-numeric diameter.";
-                    $errorCount++;
-                }
-            }            
-            
-            $axis = trim($row['Axis']);  
-            if (strlen($axis) > 0){
-                if (is_int((int) $axis) && $axis > 0){
-                    $record['axis'] = $axis;
-                } elseif(!is_numeric($diameter) && strlen($diameter) > 0){
-                    $errors[] = "{$id}: has non-numeric axis.";
-                    $errorCount++;
-                }
-            }
-            
-            //only insert the record if there are no validation errors
-            if ($errorCount == 0){
-                $records[] = $record;
-            }
-            
-           
         } else {
             $errors[] = "Row {$count} has no ID";
-        }
-            
+        }            
         $count++;
     }
 }
@@ -272,7 +306,6 @@ function generate_nuds($record, $fileName){
         
         //rightsStmt
         $writer->startElement('rightsStmt');
-        $writer->writeElement('copyrightHolder', 'American Numismatic Society');
         
         //data and image licenses
         $writer->startElement('license');
@@ -293,6 +326,7 @@ function generate_nuds($record, $fileName){
         $writer->startElement('rights');
             $writer->writeAttribute('xlink:type', 'simple');
             $writer->writeAttribute('xlink:href', 'http://rightsstatements.org/vocab/NoC-US/1.0/');
+            $writer->text('No Copyright - United States');
         $writer->endElement();
         
         //rights statement
@@ -303,9 +337,10 @@ function generate_nuds($record, $fileName){
             $writer->writeElement('prefix', 'nmo');
             $writer->writeElement('namespace', 'http://nomisma.org/ontology#');
         $writer->endElement();
+        
         $writer->startElement('semanticDeclaration');
-        $writer->writeElement('prefix', 'skos');
-        $writer->writeElement('namespace', 'http://www.w3.org/2004/02/skos/core#');
+            $writer->writeElement('prefix', 'skos');
+            $writer->writeElement('namespace', 'http://www.w3.org/2004/02/skos/core#');
         $writer->endElement();
     $writer->endElement();
     //end control
@@ -350,15 +385,71 @@ function generate_nuds($record, $fileName){
         }
         
         //refDesc
-        if (array_key_exists('reference', $record)){
+        if (array_key_exists('citation', $record)){
             $writer->startElement('refDesc');
-                $writer->startElement('reference');
-                    if (array_key_exists('URI', $record['reference'])){
+                $writer->startElement('citation');
+                    if (array_key_exists('URI', $record['citation'])){
                         $writer->writeAttribute('xlink:type', 'simple');
-                        $writer->writeAttribute('xlink:href', $record['reference']['URI']);                    
+                        $writer->writeAttribute('xlink:href', $record['citation']['URI']);                    
                     }
-                    $writer->text($record['reference']['name']);
+                    $writer->text($record['citation']['label']);
                 $writer->endElement();
+            $writer->endElement();
+        }
+        
+        //put collection/provenance in adminDesc
+        if (array_key_exists('collection', $record) || array_key_exists('provenance', $record)){
+            $writer->startElement('adminDesc');
+            //collection
+            if (array_key_exists('collection', $record)) {
+                $writer->startElement('collection');
+                    if (array_key_exists('URI', $record['collection'])){
+                        $writer->writeAttribute('xlink:type', 'simple');
+                        $writer->writeAttribute('xlink:href', $record['collection']['URI']);
+                    }
+                    $writer->text($record['collection']['label']);
+                $writer->endElement();
+            }
+            //construct provenance
+            if (array_key_exists('provenance', $record)) {
+                $writer->startElement('provenance');
+                    $writer->startElement('chronList');
+                        $writer->startElement('chronItem');
+                            $writer->startElement('previousColl');
+                                $writer->startElement('saleCatalog');
+                                    if (array_key_exists('URI', $record['provenance'])){
+                                        $writer->writeAttribute('xlink:type', 'simple');
+                                        $writer->writeAttribute('xlink:href', $record['provenance']['URI']);
+                                    }
+                                    $writer->text($record['provenance']['label']);                                    
+                                $writer->endElement();
+                                
+                                $writer->writeElement('method', 'auction');
+                            $writer->endElement();
+                            
+                            //insert optional dates into the chronItem
+                            if (array_key_exists('date', $record['provenance'])){
+                                $writer->startElement('date');
+                                    $writer->writeAttribute('standardDate', $record['provenance']['date']);
+                                    $writer->text(date("j M Y", strtotime($record['provenance']['date'])));
+                                $writer->endElement();
+                            } elseif (array_key_exists('fromDate', $record['provenance']) && array_key_exists('toDate', $record['provenance'])){
+                                $writer->startElement('dateRange');
+                                    $writer->startElement('fromDate');
+                                        $writer->writeAttribute('standardDate', $record['provenance']['fromDate']);
+                                        $writer->text(date("j M Y", strtotime($record['provenance']['fromDate'])));
+                                    $writer->endElement();
+                                    $writer->startElement('toDate');
+                                        $writer->writeAttribute('standardDate', $record['provenance']['toDate']);
+                                        $writer->text(date("j M Y", strtotime($record['provenance']['toDate'])));
+                                    $writer->endElement();
+                                $writer->endElement();
+                            }
+                            
+                        $writer->endElement();
+                    $writer->endElement();
+                $writer->endElement();
+            }
             $writer->endElement();
         }
     

@@ -9,7 +9,7 @@
 
 ini_set("allow_url_fopen", 1);
 define("DIE_URI_SPACE", "http://numismatics.org/rrdp/id/");
-define("SPECIMEN_URI_SPACE", "http://numismatics.org:8080/orbeon/numishare/rrdp-specimens/id/");
+define("SPECIMEN_URI_SPACE", "http://localhost:8080/orbeon/numishare/rrdp-specimens/id/");
 
 //an array of sheets for batches of RRC numbers
 $sheets = array('https://docs.google.com/spreadsheets/d/e/2PACX-1vR7jfpBFfSzCLTTXLNCjU0p49GLFUMxbgrb1I5daS0uUjSFrBeM3SjHLUOTYE3NGd7ugMpi29qzu8cn/pub?gid=0&single=true&output=csv');
@@ -18,8 +18,8 @@ $errors = array();
 
 //begin RDF file
 $writer = new XMLWriter();
-//$writer->openURI("annotations.rdf");
-$writer->openURI('php://output');
+$writer->openURI("annotations.rdf");
+//$writer->openURI('php://output');
 $writer->startDocument('1.0','UTF-8');
 $writer->setIndent(true);
 //now we need to define our Indent string,which is basically how many blank spaces we want to have for the indent
@@ -49,39 +49,43 @@ foreach ($sheets as $sheet){
                 $writer->writeAttribute('rdf:about', $uri);
                 
                 $writer->startElement('nmo:hasObverse');
-                    $writer->startElement('nmo:hasDie');
-                        $writer->startElement('rdf:Description');
-                            $writer->startElement('rdf:value');
-                                $writer->writeAttribute('rdf:resource', DIE_URI_SPACE . $row['Obv. Die ID']);
-                            $writer->endElement();
-                            if (strlen($row['Die Attribution']) > 0){
-                                $writer->startElement('crm:P141i_was_assigned_by');
-                                    $writer->startElement('crm:E13_Attribute_Assignment');
-                                        $writer->startElement('crm:P14_carried_out_by');
-                                            $writer->writeAttribute('rdf:resource', "http://nomisma.org/editor/{$row['Die Attribution']}");
+                    $writer->startElement('rdf:Description');
+                        $writer->startElement('nmo:hasDie');
+                            $writer->startElement('rdf:Description');
+                                $writer->startElement('rdf:value');
+                                    $writer->writeAttribute('rdf:resource', DIE_URI_SPACE . $row['Obv. Die ID']);
+                                $writer->endElement();
+                                if (strlen($row['Die Attribution']) > 0){
+                                    $writer->startElement('crm:P141i_was_assigned_by');
+                                        $writer->startElement('crm:E13_Attribute_Assignment');
+                                            $writer->startElement('crm:P14_carried_out_by');
+                                                $writer->writeAttribute('rdf:resource', "http://nomisma.org/editor/{$row['Die Attribution']}");
+                                            $writer->endElement();
                                         $writer->endElement();
                                     $writer->endElement();
-                                $writer->endElement();
-                            }
+                                }
+                            $writer->endElement();
                         $writer->endElement();
                     $writer->endElement();
                 $writer->endElement();
                 
                 $writer->startElement('nmo:hasReverse');
-                    $writer->startElement('nmo:hasDie');
-                        $writer->startElement('rdf:Description');
-                            $writer->startElement('rdf:value');
-                            $writer->writeAttribute('rdf:resource', DIE_URI_SPACE . $row['Rev. Die ID']);
-                            $writer->endElement();
-                            if (strlen($row['Die Attribution']) > 0){
-                                $writer->startElement('crm:P141i_was_assigned_by');
-                                    $writer->startElement('crm:E13_Attribute_Assignment');
-                                        $writer->startElement('crm:P14_carried_out_by');
-                                            $writer->writeAttribute('rdf:resource', "http://nomisma.org/editor/{$row['Die Attribution']}");
+                    $writer->startElement('rdf:Description');
+                        $writer->startElement('nmo:hasDie');
+                            $writer->startElement('rdf:Description');
+                                $writer->startElement('rdf:value');
+                                $writer->writeAttribute('rdf:resource', DIE_URI_SPACE . $row['Rev. Die ID']);
+                                $writer->endElement();
+                                if (strlen($row['Die Attribution']) > 0){
+                                    $writer->startElement('crm:P141i_was_assigned_by');
+                                        $writer->startElement('crm:E13_Attribute_Assignment');
+                                            $writer->startElement('crm:P14_carried_out_by');
+                                                $writer->writeAttribute('rdf:resource', "http://nomisma.org/editor/{$row['Die Attribution']}");
+                                            $writer->endElement();
                                         $writer->endElement();
                                     $writer->endElement();
-                                $writer->endElement();
-                            }
+                                }
+                            $writer->endElement();
                         $writer->endElement();
                     $writer->endElement();
                 $writer->endElement();
