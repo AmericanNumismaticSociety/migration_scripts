@@ -34,6 +34,12 @@ $accnums = array();
 
 $errors = array();
 
+//read the RDF for Nomisma collection URIs to use the preferred label from Nomisma
+$nomismaURIs = parse_nomisma_collections($sources);
+
+//read the Donum bibliographic metadata for catalog citations
+$donum = array();
+
 $startTime = date(DATE_W3C);
 
 //get the eXist-db password from disk
@@ -91,23 +97,48 @@ foreach ($sheets as $sheet){
                                 $record['provenance'] = $provenance;
                                 
                             } elseif ($source['Type'] == 'collection_public'){
-                                $collection = array();
-                                $collection['label'] = $ref;
+                                $collection = array();                                
                                 
+                                //get preferred label from $nomismaURIs array
                                 if (strpos($source['Collection Nomisma URI'], 'nomisma.org') !== FALSE){
                                     $collection['URI'] = $source['Collection Nomisma URI'];
+                                    $collection['label'] = $nomismaURIs[$source['Collection Nomisma URI']]['label'];
+                                } else {
+                                    $collection['label'] = $ref;
                                 }
                                 
                                 $record['collection'] = $collection;
-                            } elseif ($source['Type'] == 'citation'){
-                                $citation = array();
-                                $citation['label'] = $ref;
                                 
+                                //if there's also a Donum URI, insert as a citation, since this corresponds to a collection catalog
                                 if (strlen($source['Donum URI']) > 0){
-                                    $citation['URI'] = $source['Donum URI'];
+                                    $donumURI = $source['Donum URI'];
+                                    
+                                    //read bibliographic metadata from Donum MODS XML                                    
+                                    if (array_key_exists($donumURI, $donum)){
+                                        echo "Found {$donumURI}\n";
+                                        $record['citation'] = $donum[$donumURI];
+                                    } else {
+                                        $record['citation'] = parse_mods($donumURI);
+                                    }  
                                 }
-                                
-                                $record['citation'] = $citation;
+                            } elseif ($source['Type'] == 'citation'){
+                               
+                                //lookup bibliographic metadata from Donum
+                                if (strlen($source['Donum URI']) > 0){
+                                    $donumURI = $source['Donum URI'];
+                                    
+                                    //read bibliographic metadata from Donum MODS XML
+                                    if (array_key_exists($donumURI, $donum)){
+                                        echo "Found {$donumURI}\n";
+                                        $record['citation'] = $donum[$donumURI];
+                                    } else {
+                                        $record['citation'] = parse_mods($donumURI);
+                                    }
+                                } else {
+                                    $citation = array();
+                                    $citation['label'] = $ref;
+                                    $record['citation'] = $citation;
+                                }
                             }
                         }
                     }
@@ -141,6 +172,24 @@ foreach ($sheets as $sheet){
                 //read images from the annotation endpoint
                 $record['obvImage'] = query_solr($id, 'obv');
                 $record['revImage'] = query_solr($id, 'rev');
+                
+                //parse images into resource link
+                if (strlen($record['obvImage']) > 0){
+                    $pieces = explode('/', $record['obvImage']);
+                    $path = $pieces[3];
+                    $page = str_replace('.jpg', '', explode('%2F', $path)[2]);
+                    $teiID = explode('_', $page)[0];
+                    
+                    $record['obvContext'] = "http://numismatics.org/archives/ark:/53695/{$teiID}#{$page}";            
+                }
+                if (strlen($record['revImage']) > 0){
+                    $pieces = explode('/', $record['revImage']);
+                    $path = $pieces[3];
+                    $page = str_replace('.jpg', '', explode('%2F', $path)[2]);
+                    $teiID = explode('_', $page)[0];
+                    
+                    $record['revContext'] = "http://numismatics.org/archives/ark:/53695/{$teiID}#{$page}";
+                }
                 
                 //physDesc objects
                 $weight = trim($row['Weight']);
@@ -187,6 +236,10 @@ foreach ($sheets as $sheet){
         $count++;
     }
 }
+
+//var_dump($records);
+
+
 
 //process $records object into NUDS and write to eXist-db
 foreach ($records as $record){
@@ -392,7 +445,40 @@ function generate_nuds($record, $fileName){
                         $writer->writeAttribute('xlink:type', 'simple');
                         $writer->writeAttribute('xlink:href', $record['citation']['URI']);                    
                     }
-                    $writer->text($record['citation']['label']);
+                    
+                    //authors
+                    if (array_key_exists('authors', $record['citation'])){
+                        foreach ($record['citation']['authors'] as $author){
+                            $writer->writeElement('tei:author', $author);
+                        }
+                    }
+                    
+                    $writer->startElement('tei:title');
+                        $writer->writeAttribute('type', 'main');
+                        $writer->text($record['citation']['title']);
+                    $writer->endElement();
+                    
+                    if (array_key_exists('subtitle', $record['citation'])){
+                        $writer->startElement('tei:title');
+                            $writer->writeAttribute('type', 'sub');
+                            $writer->text($record['citation']['subtitle']);
+                        $writer->endElement();
+                    }                    
+                    
+                    if (array_key_exists('pubPlaces', $record['citation'])){
+                        foreach ($record['citation']['pubPlaces'] as $place){
+                            $writer->writeElement('tei:pubPlace', $place);
+                        }
+                    }
+                    
+                    if (array_key_exists('publisher', $record['citation'])){
+                        $writer->writeElement('tei:publisher', $record['citation']['publisher']);
+                    }
+                    
+                    if (array_key_exists('date', $record['citation'])){
+                        $writer->writeElement('tei:date', $record['citation']['date']);
+                    }
+                    
                 $writer->endElement();
             $writer->endElement();
         }
@@ -451,14 +537,15 @@ function generate_nuds($record, $fileName){
                 $writer->endElement();
             }
             $writer->endElement();
-        }
-    
+        }    
         $writer->endElement();
         //end descMeta
         
         //digRep
         $writer->startElement('digRep');
             $writer->startElement('mets:fileSec');
+            
+            if (strlen($record['obvImage']) > 0){                
                 //obverse images
                 $writer->startElement('mets:fileGrp');
                     $writer->writeAttribute('USE', 'obverse');
@@ -481,8 +568,19 @@ function generate_nuds($record, $fileName){
                             $writer->writeAttribute('xlink:href', str_replace('full', ',120', $record['obvImage']));
                         $writer->endElement();
                     $writer->endElement();
-                $writer->endElement();
-                
+                    
+                    //link to page in Archer
+                    $writer->startElement('mets:file');
+                        $writer->writeAttribute('USE', 'context');
+                        $writer->startElement('mets:FLocat');
+                            $writer->writeAttribute('LOCYPE', 'URL');
+                            $writer->writeAttribute('xlink:href', $record['obvContext']);
+                        $writer->endElement();
+                    $writer->endElement();
+                    
+                $writer->endElement();    
+            }
+            if (strlen($record['revImage']) > 0){
                 //reverse images
                 $writer->startElement('mets:fileGrp');
                     $writer->writeAttribute('USE', 'reverse');
@@ -505,7 +603,19 @@ function generate_nuds($record, $fileName){
                             $writer->writeAttribute('xlink:href', str_replace('full', ',120', $record['revImage']));
                         $writer->endElement();
                     $writer->endElement();
-                $writer->endElement();
+                    
+                    //link to page in Archer
+                    $writer->startElement('mets:file');
+                        $writer->writeAttribute('USE', 'context');
+                        $writer->startElement('mets:FLocat');
+                            $writer->writeAttribute('LOCYPE', 'URL');
+                            $writer->writeAttribute('xlink:href', $record['revContext']);
+                        $writer->endElement();
+                    $writer->endElement();
+                $writer->endElement();    
+            }
+                
+            //end mets:fileSec and nuds:digRep
             $writer->endElement();
         $writer->endElement();
     
@@ -561,6 +671,99 @@ function parse_annotation ($id, $base64) {
     } else {
         $errors[] = "{$id}: No fragment identifier found in annotation";
         return null;
+    }
+}
+
+/***** GET PREFLABEL FOR NOMISMA COLLECTION *****/
+function parse_nomisma_collections($sources){
+    $nomismaURIs = array();
+    
+    foreach ($sources as $row){
+        if (strpos($row['Collection Nomisma URI'], 'nomisma.org') !== FALSE){
+            $uri = $row['Collection Nomisma URI'];
+            $nomismaURIs[$uri] = parse_nomisma_uri($uri);
+        }
+    }
+    
+    return $nomismaURIs;
+}
+
+function parse_nomisma_uri ($uri){
+    
+    $file_headers = @get_headers($uri);
+    
+    //only get RDF if the ID exists
+    if (strpos($file_headers[0], '200') !== FALSE){
+        $xmlDoc = new DOMDocument();
+        $xmlDoc->load($uri . '.rdf');
+        $xpath = new DOMXpath($xmlDoc);
+        $xpath->registerNamespace('skos', 'http://www.w3.org/2004/02/skos/core#');
+        $xpath->registerNamespace('rdf', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#');
+        $type = $xpath->query("/rdf:RDF/*")->item(0)->nodeName;
+        $label = $xpath->query("descendant::skos:prefLabel[@xml:lang='en']")->item(0)->nodeValue;
+        
+        if (!isset($label)){
+            echo "Error with {$uri}\n";
+        }
+        
+        return array('label'=>$label,'type'=>$type);
+    } else {
+        //otherwise output the error
+        echo "Error: {$uri} not found.\n";
+        return array('label'=>$uri,'type'=>'nmo:Collection');
+    }
+}
+
+function parse_mods ($uri){
+    GLOBAL $donum;
+    
+    $donumID = explode('/', $uri)[4];
+    $modsURL = "https://donum.numismatics.org/cgi-bin/koha/opac-export.pl?op=export&bib={$donumID}&format=mods";
+    
+    $file_headers = @get_headers($modsURL);
+    
+    //only get RDF if the ID exists
+    if (strpos($file_headers[0], '200') !== FALSE){
+        $xmlDoc = new DOMDocument();
+        $xmlDoc->load($modsURL);
+        $xpath = new DOMXpath($xmlDoc);
+        $xpath->registerNamespace('mods', 'http://www.loc.gov/mods/v3');
+        
+        $bib = array();
+               
+        //titles
+        $bib['title'] = $xpath->query("/mods:mods/mods:titleInfo/mods:title")->item(0)->nodeValue;        
+        if (count($xpath->query("/mods:mods/mods:titleInfo/mods:subTitle")) > 0){
+            $bib['subtitle'] = $xpath->query("/mods:mods/mods:titleInfo/mods:subTitle")->item(0)->nodeValue;
+        }        
+        
+        //authors
+        $authors = $xpath->query("/mods:mods/mods:name[@type = 'personal'][mods:role/mods:roleTerm = 'creator' or mods:role/mods:roleTerm = 'auth.' or mods:role/mods:roleTerm = 'author']/mods:namePart");
+        
+        foreach ($authors as $author){
+            $bib['authors'][] = $author->nodeValue;
+        }
+        
+        if (count($xpath->query("/mods:mods/mods:originInfo/mods:publisher")) > 0){
+            $bib['publisher'] = $xpath->query("/mods:mods/mods:originInfo/mods:publisher")->item(0)->nodeValue;
+        }  
+        
+        $places = $xpath->query("/mods:mods/mods:originInfo/mods:place/mods:placeTerm[@type = 'text']");
+        foreach ($places as $place){
+            $bib['pubPlaces'][] = $place->nodeValue;
+        }
+        
+        if (count($xpath->query("/mods:mods/mods:originInfo/mods:dateIssued")) > 0){
+            $bib['date'] = $xpath->query("/mods:mods/mods:originInfo/mods:dateIssued")->item(0)->nodeValue;
+        }   
+        
+        $bib['URI'] = $uri;
+        
+        $donum[$uri] = $bib;
+        return $bib;
+    } else {
+        //otherwise output the error
+        echo "Error: {$uri} not found.\n";
     }
 }
 
