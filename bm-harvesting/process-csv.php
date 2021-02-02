@@ -117,7 +117,7 @@ foreach ($data as $row){
             }
             
             //hoard URI
-            if (strlen($row['hoard']) > 0){
+            if (strlen($row['hoard']) > 0 && $row['hoard_uncertain'] != 'true'){
                 $writer->startElement('dcterms:isPartOf');
                     $writer->writeAttribute('rdf:resource', $row['hoard']);
                 $writer->endElement();
