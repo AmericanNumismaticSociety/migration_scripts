@@ -2,7 +2,7 @@
 
 /*****
  * Author: Ethan Gruber
- * Date: November 2020
+ * Date: July 2021
  * Function: Read the RRDP specimen spreadsheet and generate Nomisma-compliant RDF for die linking, to be ingested
  * into the Nomisma SPARQL endpoint at a named graph that reflects a URI of the scholar who makes the attribution
  *****/
@@ -12,8 +12,11 @@ define("DIE_URI_SPACE", "http://numismatics.org/rrdp/id/");
 define("SPECIMEN_URI_SPACE", "http://numismatics.org/sitnam/id/");
 
 //an array of sheets for batches of RRC numbers
-$sheets = array('https://docs.google.com/spreadsheets/d/e/2PACX-1vR7jfpBFfSzCLTTXLNCjU0p49GLFUMxbgrb1I5daS0uUjSFrBeM3SjHLUOTYE3NGd7ugMpi29qzu8cn/pub?gid=0&single=true&output=csv');
-
+$sheets = array('https://docs.google.com/spreadsheets/d/e/2PACX-1vR7jfpBFfSzCLTTXLNCjU0p49GLFUMxbgrb1I5daS0uUjSFrBeM3SjHLUOTYE3NGd7ugMpi29qzu8cn/pub?gid=0&single=true&output=csv',
+    'https://docs.google.com/spreadsheets/d/e/2PACX-1vR7jfpBFfSzCLTTXLNCjU0p49GLFUMxbgrb1I5daS0uUjSFrBeM3SjHLUOTYE3NGd7ugMpi29qzu8cn/pub?gid=1239303383&single=true&output=csv',
+    'https://docs.google.com/spreadsheets/d/e/2PACX-1vR7jfpBFfSzCLTTXLNCjU0p49GLFUMxbgrb1I5daS0uUjSFrBeM3SjHLUOTYE3NGd7ugMpi29qzu8cn/pub?gid=1931963948&single=true&output=csv',
+    'https://docs.google.com/spreadsheets/d/e/2PACX-1vR7jfpBFfSzCLTTXLNCjU0p49GLFUMxbgrb1I5daS0uUjSFrBeM3SjHLUOTYE3NGd7ugMpi29qzu8cn/pub?gid=799072239&single=true&output=csv'
+);
 $errors = array();
 
 //begin RDF file
@@ -38,7 +41,7 @@ foreach ($sheets as $sheet){
     echo "Processing {$sheet}\n";
     
     foreach ($data as $row){
-        if (strlen($row['Obv. Die ID']) > 0 && strlen($row['Rev. Die ID']) > 0){
+        if (strlen($row['Obv. Die ID']) > 0 || strlen($row['Rev. Die ID']) > 0){
             if (strlen($row['Canonical URI (CRRO only)']) > 0){
                 $uri = $row['Canonical URI (CRRO only)'];
             } else {
@@ -48,47 +51,51 @@ foreach ($sheets as $sheet){
             $writer->startElement('nmo:NumismaticObject');
                 $writer->writeAttribute('rdf:about', $uri);
                 
-                $writer->startElement('nmo:hasObverse');
-                    $writer->startElement('rdf:Description');
-                        $writer->startElement('nmo:hasDie');
-                            $writer->startElement('rdf:Description');
-                                $writer->startElement('rdf:value');
-                                    $writer->writeAttribute('rdf:resource', DIE_URI_SPACE . $row['Obv. Die ID']);
-                                $writer->endElement();
-                                if (strlen($row['Die Attribution']) > 0){
-                                    $writer->startElement('crm:P141i_was_assigned_by');
-                                        $writer->startElement('crm:E13_Attribute_Assignment');
-                                            $writer->startElement('crm:P14_carried_out_by');
-                                                $writer->writeAttribute('rdf:resource', "http://nomisma.org/editor/{$row['Die Attribution']}");
+                if (strlen($row['Obv. Die ID']) > 0){
+                    $writer->startElement('nmo:hasObverse');
+                        $writer->startElement('rdf:Description');
+                            $writer->startElement('nmo:hasDie');
+                                $writer->startElement('rdf:Description');
+                                    $writer->startElement('rdf:value');
+                                        $writer->writeAttribute('rdf:resource', DIE_URI_SPACE . $row['Obv. Die ID']);
+                                    $writer->endElement();
+                                    if (strlen($row['Die Attribution']) > 0){
+                                        $writer->startElement('crm:P141i_was_assigned_by');
+                                            $writer->startElement('crm:E13_Attribute_Assignment');
+                                                $writer->startElement('crm:P14_carried_out_by');
+                                                    $writer->writeAttribute('rdf:resource', "http://nomisma.org/editor/{$row['Die Attribution']}");
+                                                $writer->endElement();
                                             $writer->endElement();
                                         $writer->endElement();
-                                    $writer->endElement();
-                                }
+                                    }
+                                $writer->endElement();
                             $writer->endElement();
                         $writer->endElement();
-                    $writer->endElement();
-                $writer->endElement();
-                
-                $writer->startElement('nmo:hasReverse');
-                    $writer->startElement('rdf:Description');
-                        $writer->startElement('nmo:hasDie');
-                            $writer->startElement('rdf:Description');
-                                $writer->startElement('rdf:value');
-                                $writer->writeAttribute('rdf:resource', DIE_URI_SPACE . $row['Rev. Die ID']);
-                                $writer->endElement();
-                                if (strlen($row['Die Attribution']) > 0){
-                                    $writer->startElement('crm:P141i_was_assigned_by');
-                                        $writer->startElement('crm:E13_Attribute_Assignment');
-                                            $writer->startElement('crm:P14_carried_out_by');
-                                                $writer->writeAttribute('rdf:resource', "http://nomisma.org/editor/{$row['Die Attribution']}");
+                    $writer->endElement();    
+                }
+
+                if (strlen($row['Rev. Die ID']) > 0){
+                    $writer->startElement('nmo:hasReverse');
+                        $writer->startElement('rdf:Description');
+                            $writer->startElement('nmo:hasDie');
+                                $writer->startElement('rdf:Description');
+                                    $writer->startElement('rdf:value');
+                                    $writer->writeAttribute('rdf:resource', DIE_URI_SPACE . $row['Rev. Die ID']);
+                                    $writer->endElement();
+                                    if (strlen($row['Die Attribution']) > 0){
+                                        $writer->startElement('crm:P141i_was_assigned_by');
+                                            $writer->startElement('crm:E13_Attribute_Assignment');
+                                                $writer->startElement('crm:P14_carried_out_by');
+                                                    $writer->writeAttribute('rdf:resource', "http://nomisma.org/editor/{$row['Die Attribution']}");
+                                                $writer->endElement();
                                             $writer->endElement();
                                         $writer->endElement();
-                                    $writer->endElement();
-                                }
+                                    }
+                                $writer->endElement();
                             $writer->endElement();
                         $writer->endElement();
-                    $writer->endElement();
-                $writer->endElement();
+                    $writer->endElement();                    
+                }
                 
                 //insert dataset
                 $writer->startElement('void:inDataset');
