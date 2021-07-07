@@ -73,6 +73,14 @@ foreach ($sheets as $sheet){
                 $record['note'] = $row['note'];
             }
             
+            if (strlen(trim($row['symbol1'])) > 0){
+                $record['symbols'][] = trim($row['symbol1']);
+            }
+            
+            if (strlen(trim($row['symbol2'])) > 0){
+                $record['symbols'][] = trim($row['symbol2']);
+            }
+            
             //only insert the record if there are no validation errors
             if ($errorCount == 0){
                 $records[] = $record;
@@ -254,6 +262,12 @@ function generate_nuds($record, $fileName){
             $writer->writeAttribute('xml:lang', 'en');
             $writer->text($record['title']);
         $writer->endElement();
+        
+        if (array_key_exists('note', $record)){
+            $writer->startElement('noteSet');
+                $writer->writeElement('note', $record['note']);
+            $writer->endElement();
+        }
     
         //typeDesc
         $writer->startElement('typeDesc');
@@ -262,6 +276,13 @@ function generate_nuds($record, $fileName){
                 $writer->writeAttribute('xlink:href', 'http://nomisma.org/id/die');
                 $writer->text('Die');
             $writer->endElement();
+            
+            if (array_key_exists('symbols', $record)){
+                foreach ($record['symbols'] as $symbol){
+                    $writer->writeElement('symbol', $symbol);
+                }
+            }
+            
         $writer->endElement();
     
     $writer->endElement();

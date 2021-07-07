@@ -82,25 +82,7 @@ foreach ($sheets as $sheet){
                 if (strlen($ref) > 0){
                     foreach ($sources as $source){
                         if ($source['Label'] == $ref){
-                            if ($source['Type'] == 'auction'){
-                                $provenance = array();
-                                $provenance['label'] = $ref;
-                                if (strlen($source['Donum URI']) > 0){
-                                    $provenance['URI'] = $source['Donum URI'];
-                                }
-                                
-                                if (strlen($source['Start Date']) > 0 && strlen($source['End Date']) > 0){
-                                    if ($source['Start Date'] == $source['End Date']){
-                                        $provenance['date'] = $source['Start Date'];
-                                    } else {
-                                        $provenance['fromDate'] = $source['Start Date'];
-                                        $provenance['toDate'] = $source['End Date'];
-                                    }
-                                }
-                                
-                                $record['provenance'] = $provenance;
-                                
-                            } elseif ($source['Type'] == 'collection_public'){
+                           if ($source['Type'] == 'collection'){
                                 $collection = array();                                
                                 
                                 //get preferred label from $nomismaURIs array
@@ -143,6 +125,28 @@ foreach ($sheets as $sheet){
                                     $citation['label'] = $ref;
                                     $record['citation'] = $citation;
                                 }
+                            } else {
+                                $provenance = array();
+                                $provenance['label'] = $ref;
+                                if (strlen($source['Donum URI']) > 0){
+                                    $provenance['URI'] = $source['Donum URI'];
+                                }
+                                
+                                if (strlen(trim($row['Source ID number'])) > 0){
+                                    $provenance['ID'] = trim($row['Source ID number']);
+                                }
+                                
+                                if (strlen($source['Start Date']) > 0 && strlen($source['End Date']) > 0){
+                                    if ($source['Start Date'] == $source['End Date']){
+                                        $provenance['date'] = $source['Start Date'];
+                                    } else {
+                                        $provenance['fromDate'] = $source['Start Date'];
+                                        $provenance['toDate'] = $source['End Date'];
+                                    }
+                                }
+                                
+                                $record['provenance'] = $provenance;
+                                
                             }
                         }
                     }
@@ -224,6 +228,14 @@ foreach ($sheets as $sheet){
                         $errors[] = "{$id}: has non-numeric axis.";
                         $errorCount++;
                     }
+                }
+
+                if (strlen(trim($row['Schaefer Notes'])) > 0){
+                    $record['Schaefer Notes'] = trim($row['Schaefer Notes']);
+                }
+                
+                if (strlen(trim($row['New Notes'])) > 0){
+                    $record['New Notes'] = trim($row['New Notes']);
                 }
                 
                 //only insert the record if there are no validation errors
@@ -409,6 +421,23 @@ function generate_nuds($record, $fileName){
             $writer->writeAttribute('xml:lang', 'en');
             $writer->text($record['title']);
         $writer->endElement();
+        
+        if (array_key_exists('Schaefer Notes', $record) || array_key_exists('New Notes', $record)){
+            $writer->startElement('noteSet');
+                if (array_key_exists('Schaefer Notes', $record)){
+                    $writer->startElement('note');
+                        $writer->writeAttribute('localType', 'Schaefer Notes');
+                        $writer->text($record['Schaefer Notes']);
+                    $writer->endElement();
+                }
+                if (array_key_exists('New Notes', $record)){
+                    $writer->startElement('note');
+                        $writer->writeAttribute('localType', 'New Notes');
+                        $writer->text($record['New Notes']);
+                    $writer->endElement();
+                }
+            $writer->endElement();
+        }
     
         //typeDesc
         $writer->startElement('typeDesc');
@@ -513,6 +542,10 @@ function generate_nuds($record, $fileName){
                                     }
                                     $writer->text($record['provenance']['label']);                                    
                                 $writer->endElement();
+                                
+                                if (array_key_exists('ID', $record['provenance'])){
+                                    $writer->writeElement('identifier', $record['provenance']['ID']);
+                                }
                                 
                                 $writer->writeElement('method', 'auction');
                             $writer->endElement();
@@ -732,6 +765,8 @@ function parse_mods ($uri){
         $xmlDoc->load($modsURL);
         $xpath = new DOMXpath($xmlDoc);
         $xpath->registerNamespace('mods', 'http://www.loc.gov/mods/v3');
+        
+        echo "Extracting bib {$donumID}\n";
         
         $bib = array();
                
