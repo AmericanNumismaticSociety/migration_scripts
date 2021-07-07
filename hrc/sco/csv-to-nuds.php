@@ -839,7 +839,7 @@ function write_seg_tei ($doc, $seg, $rend, $parent){
                     $doc->writeAttribute('ref', $uri);
                 } else {
                     $file_headers = @get_headers($uri);
-                    if ($file_headers[0] == 'HTTP/1.1 200 OK'){
+                    if (strpos($file_headers[0], '200') !== FALSE){
                         $doc->writeAttribute('ref', $uri);
                         $monograms[] = $uri;
                         echo "Found {$uri}.\n";                        
@@ -930,7 +930,7 @@ function processUri($uri){
 			$file_headers = @get_headers($uri);
 			
 			//only get RDF if the ID exists
-			if ($file_headers[0] == 'HTTP/1.1 200 OK'){
+			if (strpos($file_headers[0], '200') !== FALSE){
 				$xmlDoc = new DOMDocument();
 				$xmlDoc->load('http://nomisma.org/id/' . $id . '.rdf');
 				$xpath = new DOMXpath($xmlDoc);
