@@ -320,7 +320,7 @@ $endTime = date(DATE_W3C);
 //send email report
 generate_email_report($accnums, $errors, $startTime, $endTime);
 
-var_dump($errors)
+var_dump($errors);
 
 /***** CREATE NUDS RECORD *****/
 function generate_nuds($record, $fileName){
