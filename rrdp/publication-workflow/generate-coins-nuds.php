@@ -581,7 +581,7 @@ function generate_nuds($record, $fileName){
         $writer->startElement('digRep');
             $writer->startElement('mets:fileSec');
             
-            if (strlen($record['obvImage']) > 0){                
+            if (array_key_exists('obvImage', $record)){                
                 //obverse images
                 $writer->startElement('mets:fileGrp');
                     $writer->writeAttribute('USE', 'obverse');
@@ -616,7 +616,7 @@ function generate_nuds($record, $fileName){
                     
                 $writer->endElement();    
             }
-            if (strlen($record['revImage']) > 0){
+            if (array_key_exists('revImage', $record)){
                 //reverse images
                 $writer->startElement('mets:fileGrp');
                     $writer->writeAttribute('USE', 'reverse');
