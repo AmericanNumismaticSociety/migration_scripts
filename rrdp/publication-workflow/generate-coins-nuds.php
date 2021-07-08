@@ -178,25 +178,17 @@ foreach ($sheets as $sheet){
                 }
                 
                 //read images from the annotation endpoint
-                $record['obvImage'] = query_solr($id, 'obv');
-                $record['revImage'] = query_solr($id, 'rev');
+                $obverseAnnotation = query_solr($id, 'obv');
+                $reverseAnnotation = query_solr($id, 'rev');
                 
                 //parse images into resource link
-                if (strlen($record['obvImage']) > 0){
-                    $pieces = explode('/', $record['obvImage']);
-                    $path = $pieces[3];
-                    $page = str_replace('.jpg', '', explode('%2F', $path)[2]);
-                    $teiID = explode('_', $page)[0];
-                    
-                    $record['obvContext'] = "http://numismatics.org/archives/ark:/53695/{$teiID}#{$page}";            
-                }
-                if (strlen($record['revImage']) > 0){
-                    $pieces = explode('/', $record['revImage']);
-                    $path = $pieces[3];
-                    $page = str_replace('.jpg', '', explode('%2F', $path)[2]);
-                    $teiID = explode('_', $page)[0];
-                    
-                    $record['revContext'] = "http://numismatics.org/archives/ark:/53695/{$teiID}#{$page}";
+                if (array_key_exists('image', $obverseAnnotation)){
+                    $record['obvImage'] = $obverseAnnotation['image'];
+                    $record['obvContext'] = $obverseAnnotation['context'];            
+                }               
+                if (array_key_exists('image', $reverseAnnotation)){
+                    $record['revImage'] = $reverseAnnotation['image'];
+                    $record['revContext'] = $reverseAnnotation['context'];
                 }
                 
                 //physDesc objects
@@ -327,6 +319,8 @@ $endTime = date(DATE_W3C);
 
 //send email report
 generate_email_report($accnums, $errors, $startTime, $endTime);
+
+var_dump($errors)
 
 /***** CREATE NUDS RECORD *****/
 function generate_nuds($record, $fileName){
@@ -679,8 +673,15 @@ function query_solr($id, $side){
     
     if ($obj->response->numFound == 1){
         //parse the base64 encoded annotation
-        $base64 = $obj->response->docs[0]->data;        
-        return parse_annotation($id, $base64);
+        $target = $obj->response->docs[0]->target;
+        $base64 = $obj->response->docs[0]->data;   
+        
+        $context = str_replace('manifest', 'ark:/53695', str_replace('/canvas/', '#', $target));
+        
+        $imageURL = parse_annotation($id, $base64);
+        
+        $image = array('image'=>$imageURL, 'context'=>$context);
+        return $image;
     } elseif ($obj->response->numFound == 0){
         $errors[] = "{$id}: No annotated {$side} image";
     } else {
@@ -703,7 +704,7 @@ function parse_annotation ($id, $base64) {
         $pieces = explode('/', $canvas);
         $filename = $pieces[count($pieces) - 1];
         
-        $image = "http://images.numismatics.org/archivesimages%2Farchive%2F{$filename}.jpg/{$frag}/full/0/default.jpg";    
+        $image = "http://images.numismatics.org/archivesimages%2Farchive%2F{$filename}.jpg/{$frag}/full/0/default.jpg";
         return $image;
     } else {
         $errors[] = "{$id}: No fragment identifier found in annotation";
@@ -838,7 +839,7 @@ function generate_solr_shell_script($array){
 
 //send an email report
 function generate_email_report ($accnums, $errors, $startTime, $endTime){
-    $to = 'database@numismatics.org, lcarbone@numismatics.org, yarrow@brooklyn.cuny.edu';
+    $to = 'database@numismatics.org, lcarbone@numismatics.org, yarrow@brooklyn.cuny.edu, ewg4xuva@gmail.com';
     $subject = "Error report for" . COLLECTION_NAME;
     $body = "Error Report for " . COLLECTION_NAME . "\n\n";
     $body .= "Successful objects: " . count($accnums) . "\n";
