@@ -182,14 +182,19 @@ foreach ($sheets as $sheet){
                 $reverseAnnotation = query_solr($id, 'rev');
                 
                 //parse images into resource link
-                if (array_key_exists('image', $obverseAnnotation)){
-                    $record['obvImage'] = $obverseAnnotation['image'];
-                    $record['obvContext'] = $obverseAnnotation['context'];            
-                }               
-                if (array_key_exists('image', $reverseAnnotation)){
-                    $record['revImage'] = $reverseAnnotation['image'];
-                    $record['revContext'] = $reverseAnnotation['context'];
+                if (isset($obverseAnnotation)){
+                    if (array_key_exists('image', $obverseAnnotation)){
+                        $record['obvImage'] = $obverseAnnotation['image'];
+                        $record['obvContext'] = $obverseAnnotation['context'];
+                    }   
                 }
+                        
+                if (isset($reverseAnnotation)){
+                    if (array_key_exists('image', $reverseAnnotation)){
+                        $record['revImage'] = $reverseAnnotation['image'];
+                        $record['revContext'] = $reverseAnnotation['context'];
+                    }
+                }                
                 
                 //physDesc objects
                 $weight = trim($row['Weight']);
