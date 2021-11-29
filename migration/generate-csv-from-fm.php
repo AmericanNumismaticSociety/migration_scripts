@@ -31,20 +31,20 @@ AddHandler cgi-script cgi php py
 ************************/
 
 //$csv_id = $_GET['id'];
-$csv_id = 'fmeport-500-roman';
+$csv_id = 'fmexport-medals';
 
 //create an array with pre-defined labels and values passed from the Filemaker POST
 $labels = array("accnum","department","objtype","material","manufacture",
-		"shape","weight","measurements","axis","denomination","era","dob",
-		"startdate","enddate","refs","published","info","prevcoll","region",
-		"locality","series","dynasty","mint","mintabbr","person","issuer",
-		"magistrate","maker","artist","sernum","subjevent","subjperson",
-		"subjissuer","subjplace","decoration","degree","findspot",
-		"obverselegend","obversetype","reverselegend","reversetype","color",
-		"edge","undertype","counterstamp","conservation","symbol",
-		"obversesymbol","reversesymbol","signature","watermark",
-		"imageavailable","acknowledgment","category","imagesponsor",
-		"OrigIntenUse","Authenticity","PostManAlt","diameter","height","width","depth","privateinfo");
+    "shape","weight","measurements","axis","denomination","era","dob",
+    "startdate","enddate","refs","published","info","prevcoll","region","subregion",
+    "locality","series","dynasty","mint","mintabbr","person","issuer",
+    "magistrate","maker","artist","sernum","subjevent","subjperson",
+    "subjissuer","subjplace","decoration","degree","findspot",
+    "obverselegend","obversetype","reverselegend","reversetype","color",
+    "edge","undertype","counterstamp","conservation","symbol",
+    "obversesymbol","reversesymbol","signature","watermark",
+    "imageavailable","acknowledgment","category","imagesponsor",
+    "OrigIntenUse","Authenticity","PostManAlt","diameter","height","width","depth","privateinfo");
 
 
 //open CSV file from FileMaker and clean it, writing it back to /tmp
@@ -59,7 +59,7 @@ $cleaned = preg_replace('/\|\"/', '"', $cleaned);
 //$lines = explode("\n", $cleaned);
 
 
-file_put_contents($cleanFile, implode(',', $labels));
+file_put_contents($cleanFile, implode(',', $labels) . "\n");
 file_put_contents($cleanFile, $cleaned, FILE_APPEND);
 
 
