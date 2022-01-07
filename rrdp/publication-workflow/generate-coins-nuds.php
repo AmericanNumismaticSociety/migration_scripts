@@ -37,6 +37,7 @@ $coinTypes = array();
 $accnums = array();
 
 $errors = array();
+$warnings = array();
 
 //read the RDF for Nomisma collection URIs to use the preferred label from Nomisma
 $nomismaURIs = parse_nomisma_collections($sources);
@@ -173,8 +174,7 @@ foreach ($sheets as $sheet){
                         }
                     }
                 } else {
-                    $errors[] = "{$id}: coin type URI is empty";
-                    $errorCount++;
+                    $warnings[] = $id;
                 }
                 
                 //read images from the annotation endpoint
@@ -323,7 +323,7 @@ generate_solr_shell_script($toIndex);
 $endTime = date(DATE_W3C);
 
 //send email report
-generate_email_report($accnums, $errors, $startTime, $endTime);
+generate_email_report($accnums, $errors, $warnings, $startTime, $endTime);
 
 var_dump($errors);
 
@@ -843,9 +843,9 @@ function generate_solr_shell_script($array){
 }
 
 //send an email report
-function generate_email_report ($accnums, $errors, $startTime, $endTime){
+function generate_email_report ($accnums, $errors, $warnings, $startTime, $endTime){
     $to = 'database@numismatics.org, lcarbone@numismatics.org, yarrow@brooklyn.cuny.edu, ewg4xuva@gmail.com';
-    $subject = "Error report for" . COLLECTION_NAME;
+    $subject = "Error report for " . COLLECTION_NAME;
     $body = "Error Report for " . COLLECTION_NAME . "\n\n";
     $body .= "Successful objects: " . count($accnums) . "\n";
     $body .= "Errors: " . count($errors) . "\n\n";
@@ -855,6 +855,14 @@ function generate_email_report ($accnums, $errors, $startTime, $endTime){
     foreach ($errors as $error){
         $body .= $error . "\n";
     }
+    
+    if (count($warnings) > 0){
+        $body .= "\n\nThe following coins do not have coin type URIs, but were processed anyway:\n\n";
+        foreach ($warnings as $warning){
+            $body .= $warning . "\n";
+        }
+    }
+    
     $body .= "\nNote that records with errors were not published to Numishare. Please review the relevant spreadsheets.\n";
     mail($to, $subject, $body);
 }
