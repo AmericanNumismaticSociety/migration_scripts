@@ -439,10 +439,13 @@ function generate_nuds($record, $fileName){
         }
     
         //typeDesc
-        $writer->startElement('typeDesc');
-            $writer->writeAttribute('xlink:type', 'simple');
-            $writer->writeAttribute('xlink:href', $record['coinType']);
-        $writer->endElement();
+        
+        if (array_key_exists('coinType', $record)){
+            $writer->startElement('typeDesc');
+                $writer->writeAttribute('xlink:type', 'simple');
+                $writer->writeAttribute('xlink:href', $record['coinType']);
+            $writer->endElement();
+        }
         
         //physDesc
         if (array_key_exists('axis', $record) || array_key_exists('weight', $record) || array_key_exists('diameter', $record)){
