@@ -49,13 +49,21 @@ foreach ($sheets as $sheet){
             $record['notation'] = trim($row['label']);
             
             if (strlen(trim($row['label'])) > 0){
-                //parse title
-                $pieces = explode('.', trim($row['ID']));
+                //use explicit title if necessary
                 
-                $title = ucfirst(substr(trim($row['attribution']), 1)) . ' RRC ' . 
+                if (strlen(trim($row['Title'])) > 0){
+                    $record['title'] = trim($row['Title']);
+                } else {
+                    //parse title
+                    $pieces = explode('.', trim($row['ID']));
+                    
+                    $title = ucfirst(substr(trim($row['attribution']), 1)) . ' RRC ' .
                     str_replace('rrc-', '', $pieces[0]) . '/' . $pieces[1] . ' ' . ($pieces[2] == 'o' ? 'Obverse' : 'Reverse') . ' ' . trim($row['label']);
+                        
+                   $record['title'] = $title;
+                }
                 
-                $record['title'] = $title;
+                
             } else {
                 $errors[] = "{$id}: No title";
                 $errorCount++;
