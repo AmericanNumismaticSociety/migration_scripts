@@ -2,7 +2,7 @@
 
 
 //first process pella spreadsheet
-$data = generate_json('iacb.csv');
+$data = generate_json('ocre.csv');
 $records = parse_oai($data);
 
 //then process CRRO
@@ -142,7 +142,7 @@ function generate_rdf($records){
 	//start RDF/XML file
 	//use XML writer to generate RDF
 	$writer = new XMLWriter();
-	$writer->openURI("bnf-iacb.rdf");
+	$writer->openURI("bnf-ocre.rdf");
 	//$writer->openURI('php://output');
 	$writer->startDocument('1.0','UTF-8');
 	$writer->setIndent(true);

@@ -49,7 +49,7 @@ foreach ($sheets as $sheet){
             }
             
             $writer->startElement('nmo:NumismaticObject');
-                $writer->writeAttribute('rdf:about', $uri);
+                $writer->writeAttribute('rdf:about', trim($uri));
                 
                 if (strlen($row['Obv. Die ID']) > 0){
                     $writer->startElement('nmo:hasObverse');
