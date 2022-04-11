@@ -3,18 +3,14 @@
 PASSWORD=`cat  /usr/local/projects/migration_scripts/backup-scripts/password.txt`
 COLLECTION=$1
 echo "Generating backup."
-cd /usr/local/projects/eXist-db
-java -jar start.jar backup -u admin -p $PASSWORD -b /db/$COLLECTION -d /data/backups/eXist-db/$COLLECTION
+cd /opt/eXist-db/bin
+sh backup.sh -u admin -p $PASSWORD -b /db/$COLLECTION -d /data/backups/eXist-db/$COLLECTION -ouri=xmldb:exist://localhost:8888/exist/xmlrpc
 
 #create zip
-echo "Creating .gz file."
+echo "Creating zip file."
 cd /data/backups/eXist-db/$COLLECTION
 NOW=`date +"%Y%m%d%H%M%S"`
-tar czvf $NOW.tar.gz db
-
-#SCP backups to admin
-echo "Uploading to admin server."
-scp -P 4858 $NOW.tar.gz admin.numismatics.org:/usr/local/projects/backups/data/$COLLECTION/$NOW.tar.gz
+zip $NOW.zip db
 
 #delete directory
 
