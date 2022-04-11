@@ -10,7 +10,7 @@ sh backup.sh -u admin -p $PASSWORD -b /db/$COLLECTION -d /data/backups/eXist-db/
 echo "Creating zip file."
 cd /data/backups/eXist-db/$COLLECTION
 NOW=`date +"%Y%m%d%H%M%S"`
-zip $NOW.zip db
+zip -r $NOW.zip db
 
 #delete directory
 
