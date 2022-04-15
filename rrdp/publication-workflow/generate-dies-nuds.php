@@ -121,7 +121,7 @@ foreach ($records as $record){
         $putToExist=curl_init();
         
         //set curl opts
-        curl_setopt($putToExist,CURLOPT_URL,'http://localhost:8080/exist/rest/db/' . COLLECTION_NAME . '/objects/' . $id . '.xml');
+        curl_setopt($putToExist,CURLOPT_URL,'http://localhost:8888/exist/rest/db/' . COLLECTION_NAME . '/objects/' . $id . '.xml');
         curl_setopt($putToExist,CURLOPT_HTTPHEADER, array("Content-Type: text/xml; charset=utf-8"));
         curl_setopt($putToExist,CURLOPT_CONNECTTIMEOUT,2);
         curl_setopt($putToExist,CURLOPT_RETURNTRANSFER,1);
