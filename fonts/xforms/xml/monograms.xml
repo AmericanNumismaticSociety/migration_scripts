@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <monograms>
-      <folder name="Demetrius">
+      <!--<folder name="Demetrius">
             <file name="monogram.demetrius.1.svg" editor="pvalfen" letters="ΓΥ"/>
             <file name="monogram.demetrius.10.svg" editor="pvalfen" letters="ΜΝΔΟ"/>
             <file name="monogram.demetrius.11.svg" editor="pvalfen" letters="ΜΠΑΔΕΟ"/>
@@ -27,7 +27,7 @@
             <file name="monogram.demetrius.7.svg" editor="pvalfen" letters="ΒΓ"/>
             <file name="monogram.demetrius.8.svg" editor="pvalfen" letters="ΑΒΝ"/>
             <file name="monogram.demetrius.9.svg" editor="pvalfen" letters="ΣΙ"/>
-      </folder>
+      </folder>-->
       <folder name="OXUS-INDUS">
         <file name="PMC.118v.svg" editor="" letters=""/>
         <file name="monogram.bop.10.svg" editor="" letters=""/>
@@ -407,7 +407,7 @@
         <file name="monogram.kharoshthi.98.svg" editor="" letters=""/>
         <file name="monogram.kharoshthi.99.svg" editor="" letters=""/>
     </folder>
-      <folder name="Price">
+     <!-- <folder name="Price">
             <file name="monogram.price.1000.svg" editor="pvalfen" letters="ΚΥΟ"/>
             <file name="monogram.price.1001.svg" editor="pvalfen" letters="ΚΟΕ"/>
             <file name="monogram.price.1004.svg" editor="pvalfen" letters="ΟΛ"/>
@@ -5363,5 +5363,5 @@
             <file name="monogram.lorber.307.svg" editor="pvalfen" letters="ΠΑΥ"/>
             <file name="monogram.lorber.308.svg" editor="pvalfen" letters="ΠΑΥ"/>
             <file name="monogram.lorber.309.svg" editor="pvalfen" letters="ΠΑΥΕ"/>
-      </folder>
+      </folder>-->
 </monograms>
