@@ -7,7 +7,6 @@
 	<p:param type="output" name="data"/>
 	
 	<p:processor name="oxf:xml-converter">
-		<p:input name="data" href="#doc"/>
 		<p:input name="config">
 			<config>
 				<method>xml</method>
@@ -17,6 +16,7 @@
 				<indent>true</indent>
 			</config>
 		</p:input>
+		<p:input name="data" href="#doc"/>
 		<p:output name="data" id="converted"/>
 		<p:output name="data" ref="data"/>		
 	</p:processor>

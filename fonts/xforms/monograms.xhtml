@@ -1,5 +1,5 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:xforms="http://www.w3.org/2002/xforms" xmlns:xs="http://www.w3.org/2001/XMLSchema"
-	xmlns:ev="http://www.w3.org/2001/xml-events" xmlns:xxforms="http://orbeon.org/oxf/xml/xforms" xmlns:fr="http://orbeon.org/oxf/xml/form-runner"
+	xmlns:ev="http://www.w3.org/2001/xml-events" xmlns:xxf="http://orbeon.org/oxf/xml/xforms" xmlns:fr="http://orbeon.org/oxf/xml/form-runner"
 	xmlns:xi="http://www.w3.org/2001/XInclude">
 	<head>
 		<title>Monograms</title>
@@ -12,7 +12,7 @@
 		<link rel="stylesheet" href="/apps/monograms/xforms/css/style.css" />
 
 		<xforms:model>
-			<xforms:instance id="control-instance" xxforms:exclude-result-prefixes="#all">
+			<xforms:instance id="control-instance" xxf:exclude-result-prefixes="#all">
 				<controls xmlns="">
 					<status></status>
 					<folder>OXUS-INDUS</folder>
@@ -21,11 +21,16 @@
 				</controls>
 			</xforms:instance>
 
-			<xforms:instance id="filter-enabled" xxforms:exclude-result-prefixes="#all">
+			<!-- exist URL is stored in an XML file -->
+			<xforms:instance id="exist-config">
+				<xi:include href="../exist-config.xml"/>
+			</xforms:instance>
+
+			<xforms:instance id="filter-enabled" xxf:exclude-result-prefixes="#all">
 				<enabled xmlns="">false</enabled>
 			</xforms:instance>
 
-			<xforms:instance id="monograms" xxforms:exclude-result-prefixes="#all">
+			<xforms:instance id="monograms" xxf:exclude-result-prefixes="#all">
 				<monograms xmlns=""></monograms>
 			</xforms:instance>
 
@@ -39,7 +44,7 @@
 
 			<xforms:instance id="save-config">
 				<config xmlns="">
-					<url>file:/usr/local/projects/migration_scripts/fonts/xforms/xml/monograms.xml</url>
+					<url>file:/e/work-data/projects/migration_scripts/fonts/xforms/xml/monograms.xml</url>
 					<content-type>text/plain</content-type>
 					<make-directories>false</make-directories>
 					<append>false</append>
@@ -50,7 +55,7 @@
 				<dump xmlns=""></dump>
 			</xforms:instance>
 
-			<xforms:instance id="filtered-monograms" xxforms:exclude-result-prefixes="#all">
+			<xforms:instance id="filtered-monograms" xxf:exclude-result-prefixes="#all">
 				<monograms xmlns=""></monograms>
 			</xforms:instance>
 
@@ -63,6 +68,20 @@
 				</xforms:bind>
 			</xforms:bind>
 
+			<!-- ****************** SUBMISSIONS *******************-->
+			<!-- Load File -->
+			<xforms:submission id="load-monograms" serialization="none" method="get" action="{instance('exist-config')/url}monograms/monograms.xml"
+				xxf:username="{instance('exist-config')/username}" xxf:password="{instance('exist-config')/password}" replace="instance" instance="monograms">
+				<xforms:message ev:event="xforms-submit-error" level="modal">Error loading monogram file.</xforms:message>
+
+			</xforms:submission>
+
+			<!-- Save File -->
+			<xforms:submission id="save-monograms" ref="instance('monograms')" xxf:username="{instance('exist-config')/username}"
+				xxf:password="{instance('exist-config')/password}" action="{instance('exist-config')/url}monograms/monograms.xml" method="put" replace="none">
+				<xforms:message ev:event="xforms-submit-error" level="modal">Save Error. Are all required inputs filled?</xforms:message>
+			</xforms:submission>
+
 			<!--<xforms:action ev:event="xforms-value-changed" ev:observer="filter-enabled">
 				<xforms:toggle case="filter" if="instance('filter-enabled') = true()"/>
 				<xforms:toggle case="folder" if="instance('filter-enabled') = false()"/>
@@ -70,12 +89,14 @@
 
 			<!-- **************** MODEL-CONSTRUCT-DONE ********************** -->
 			<xforms:action ev:event="xforms-model-construct-done">
-				<xforms:setvalue ref="instance('control-instance')/username" value="xxforms:get-remote-user()"/>
-				
-				<xforms:insert nodeset="instance('monograms')"
-					origin="xxforms:call-xpl('oxf:/apps/monograms/xforms/xpl/load-id.xpl', 'file', instance('load-config'), 'data')"/>
+				<xforms:setvalue ref="instance('control-instance')/username" value="xxf:get-remote-user()"/>
 
-				<xforms:action xxforms:iterate="instance('monograms')//file">
+				<xforms:send submission="load-monograms"/>
+
+				<!--<xforms:insert nodeset="instance('monograms')"
+					origin="xxf:call-xpl('oxf:/apps/monograms/xforms/xpl/load-id.xpl', 'file', instance('load-config'), 'data')"/>-->
+
+				<xforms:action xxf:iterate="instance('monograms')//file">
 					<xforms:var name="id" select="concat(context()/parent::folder/@name, ':', context()/@name)"/>
 					<xforms:insert context="instance('filtered-monograms')" nodeset="./child::node()[last()]"
 						origin="xforms:element('monogram', (xforms:attribute('visible', false()), $id))"/>
@@ -116,11 +137,11 @@
 										'\|$',
 										''), '\|')"/>
 
-									<xforms:action xxforms:iterate="$chars">
+									<xforms:action xxf:iterate="$chars">
 										<xforms:var name="char" select="."/>
 										<xforms:var name="position" select="position()"/>
 
-										<xforms:action xxforms:iterate="instance('monograms')//file">
+										<xforms:action xxf:iterate="instance('monograms')//file">
 											<xforms:var name="id" select="concat(context()/parent::folder/@name, ':', context()/@name)"/>
 
 											<xforms:action if="contains(context()/@letters, $char)">
@@ -165,10 +186,11 @@
 								<div>
 									<h2><xforms:output ref="@name"/></h2>
 
-									<xforms:repeat nodeset="xxforms:sort(file, tokenize(@name, '\.')[3], 'number', 'ascending')">
-										
-										
-										<div class="col-md-3 col-sm-6 col-lg-2 monogram {if (string-length(@letters) = 0) then 'bg-warning' else ''}" style="height:400px">
+									<xforms:repeat nodeset="xxf:sort(file, tokenize(@name, '\.')[3], 'number', 'ascending')">
+
+
+										<div class="col-md-3 col-sm-6 col-lg-2 monogram {if (string-length(@letters) = 0) then 'bg-warning' else ''}"
+											style="height:400px">
 											<img src="{concat('svg/', instance('control-instance')/folder, '/', @name)}" style="height:240px" />
 											<div>
 												<xforms:output ref="@name"/>
@@ -180,14 +202,17 @@
 												<xforms:input ref="@letters">
 													<xforms:action ev:event="xforms-value-changed">
 														<xforms:var name="val" select="normalize-space(.)"/>
-														
+
 														<xforms:var name="id" select="parent::node()/@name"/>
 														<xforms:setvalue ref="instance('control-instance')/status" value="concat($id, ' updated.')"/>
-														<xforms:setvalue ref="parent::node()/@editor" value="if (string($val)) then instance('control-instance')/username else ''"/>
+														<xforms:setvalue ref="parent::node()/@editor"
+															value="if (string($val)) then instance('control-instance')/username else ''"/>
+														
+														<xforms:send submission="save-monograms"/>
 
-														<xforms:insert nodeset="instance('dump')"
-															origin="xxforms:call-xpl('oxf:/apps/monograms/xforms/xpl/save-id.xpl', ('doc', 'configuration'), (instance('monograms'), instance('save-config')), 'data')"
-														/>
+														<!--<xforms:insert nodeset="instance('dump')"
+															origin="xxf:call-xpl('oxf:/apps/nomisma/xpl/xforms/save-id.xpl', ('doc', 'configuration'), (instance('monograms'), instance('save-config')), 'data')"
+														/>-->
 													</xforms:action>
 												</xforms:input>
 											</div>
@@ -207,7 +232,7 @@
 									'$1|'),
 									'\|$',
 									''), '\|')"/>
-								
+
 								<div>
 									<h2>Filtered results</h2>
 
@@ -221,7 +246,7 @@
 										<xforms:repeat nodeset="monogram[@visible = true()]">
 											<xforms:var name="folder" select="substring-before(., ':')"/>
 											<xforms:var name="file" select="substring-after(., ':')"/>
-											
+
 											<xforms:group ref="instance('monograms')/folder[@name = $folder]/file[@name = $file]">
 												<div class="col-md-3 col-sm-6 col-lg-2 monogram" style="height:400px">
 													<img src="{concat('svg/', $folder, '/', $file)}" style="height:240px" />
@@ -235,27 +260,30 @@
 														<xforms:input ref="@letters">
 															<xforms:action ev:event="xforms-value-changed">
 																<xforms:var name="val" select="normalize-space(.)"/>
-																
+
 																<xforms:var name="id" select="parent::node()/@name"/>
 																<xforms:setvalue ref="instance('control-instance')/status" value="concat($id, ' updated.')"/>
-																<xforms:setvalue ref="parent::node()/@editor" value="if (string($val)) then instance('control-instance')/username else ''"/>
+																<xforms:setvalue ref="parent::node()/@editor"
+																	value="if (string($val)) then instance('control-instance')/username else ''"/>
 																
-																<xforms:insert nodeset="instance('dump')"
-																	origin="xxforms:call-xpl('oxf:/apps/monograms/xforms/xpl/save-id.xpl', ('doc', 'configuration'), (instance('monograms'), instance('save-config')), 'data')"
-																/>
+																<xforms:send submission="save-monograms"/>
+
+																<!--<xforms:insert nodeset="instance('dump')"
+																	origin="xxf:call-xpl('oxf:/apps/nomisma/xpl/xforms/save-id.xpl', ('doc', 'configuration'), (instance('monograms'), instance('save-config')), 'data')"
+																/>-->
 															</xforms:action>
 														</xforms:input>
 													</div>
 												</div>
 											</xforms:group>
-											
+
 										</xforms:repeat>
 									</xforms:group>
 								</div>
 							</xforms:group>
 						</xforms:case>
 					</xforms:switch>
-					<!--<fr:xforms-inspector/>-->
+					<fr:xforms-inspector/>
 				</div>
 			</div>
 		</div>
