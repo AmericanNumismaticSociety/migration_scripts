@@ -20,10 +20,7 @@ foreach($data as $row){
 	
 	if (strlen($row['ID']) > 0){
 	    generate_nuds($row, $count);
-	    
-	    if (strlen($row['Parent ID']) == 0){
-	        $count++;
-	    }
+	    $count++;
 	}
 }
 
@@ -38,7 +35,9 @@ function generate_nuds($row, $count){
 	if (strlen($recordId) > 0){
 	    $idPieces = explode('.', $recordId);
 	    
-	    if (isset($idPieces[3])) {
+	    if (isset($idPieces[4])) {
+	        $typeNumber = $idPieces[2] . '.' . $idPieces[3] . '.' . $idPieces[4];
+	    } elseif (isset($idPieces[3])) {
 	        $typeNumber = $idPieces[2] . '.' . $idPieces[3];
 	    } else {
 	        $typeNumber = $idPieces[2];
@@ -88,6 +87,12 @@ function generate_nuds($row, $count){
     				$doc->text($typeNumber);
     			$doc->endElement();	
 				
+    			//insert a sortID
+    			$doc->startElement('otherRecordId');
+        			$doc->writeAttribute('localType', 'sortId');
+        			$doc->text(number_pad(intval($count), 4));
+    			$doc->endElement();		
+    			
 				//handle subtype hierarchy
 				if (strlen($row['Parent ID']) > 0){
 				    $doc->startElement('otherRecordId');
@@ -95,12 +100,7 @@ function generate_nuds($row, $count){
     				    $doc->text(trim($row['Parent ID']));
 				    $doc->endElement();
 				    $doc->writeElement('publicationStatus', 'approvedSubtype');
-				} else {
-				    //insert a sortID
-				    $doc->startElement('otherRecordId');
-				        $doc->writeAttribute('localType', 'sortId');
-				        $doc->text(number_pad(intval($count), 4));
-				    $doc->endElement();				    
+				} else {				    		    
 				    $doc->writeElement('publicationStatus', 'approved');
 				}
 				
@@ -711,7 +711,9 @@ function parse_title($recordId){
     
     $idPieces = explode('.', $recordId);
     
-    if (isset($idPieces[3])) {
+    if (isset($idPieces[4])) {
+        $typeNumber = $idPieces[2] . '.' . $idPieces[3] . '.' . $idPieces[4];
+    } elseif (isset($idPieces[3])) {
         $typeNumber = $idPieces[2] . '.' . $idPieces[3];
     } else {
         $typeNumber = $idPieces[2];
