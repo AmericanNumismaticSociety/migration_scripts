@@ -1,7 +1,7 @@
 <?php 
  /*****
  * Author: Ethan Gruber
- * Last modified: May 2022
+ * Last modified: June 2022
  * Function: Transform the Bactrian and Indo-Greek typology into NUDS
  *****/
 
@@ -762,29 +762,34 @@ function parse_title($recordId){
 function parse_symbol($doc, $text){
     
     $doc->startElement('tei:div');
-    $doc->writeAttribute('type', 'edition');
-    
-    //split into two pieces
-    if (strpos($text, ' above ') !== FALSE){
-        $positions = explode(' above ', $text);
+        $doc->writeAttribute('type', 'edition');
         
-        foreach ($positions as $k=>$pos){
-            $pos = trim($pos);
+        //split into two pieces
+        if (strpos($text, ' above ') !== FALSE){
+            $positions = explode(' above ', $text);
             
-            $doc->startElement('tei:ab');
-            if ($k == 0) {
-                $rend = 'above';
-            } else {
-                $rend = 'below';
+            foreach ($positions as $k=>$pos){
+                $pos = trim($pos);
+                
+                $doc->startElement('tei:ab');
+                if ($k == 0) {
+                    $rend = 'above';
+                } else {
+                    $rend = 'below';
+                }
+                
+                $doc->writeAttribute('rend', $rend);
+                    parse_horizontal($doc, $pos, 2);
+                $doc->endElement();
             }
-            
-            $doc->writeAttribute('rend', $rend);
-                parse_horizontal($doc, $pos, 2);
+        } elseif ($text == '[no monogram]') {
+            //semantically encode intentional blank space for subtypes
+            $doc->startElement('tei:ab');
+                $doc->writeElement('tei:space');
             $doc->endElement();
+        } else {
+            parse_horizontal($doc, $text, 1);
         }
-    } else {
-        parse_horizontal($doc, $text, 1);
-    }
     
     $doc->endElement();
 }
