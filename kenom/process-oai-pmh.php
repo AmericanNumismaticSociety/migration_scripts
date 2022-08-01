@@ -17,7 +17,7 @@ $findTypes = array();
 $hoards = array();
 
 //production: harvest entire set
-$url = 'http://www.kenom.de/oai/?verb=ListRecords&metadataPrefix=lido&set=relation:nomisma.org:true';
+$url = 'https://www.kenom.de/oai/?verb=ListRecords&metadataPrefix=lido&set=relation:nomisma.org:true';
 
 //test a single record
 //$url = 'https://www.kenom.de/oai/?verb=GetRecord&metadataPrefix=lido&identifier=record_DE-MUS-805310_kenom_200083';
