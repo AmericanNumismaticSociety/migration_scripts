@@ -1,13 +1,18 @@
 <?php 
-$collection = 'leeds';
+
+/*****
+ * Author: Ethan Gruber
+ * Date modified: August 2022
+ * Function: Transform Ashmolean or Leeds University CSV exports into Nomisma RDF/XML
+ *****/
+
+$collection = 'ashmolean';
 $data = generate_json("{$collection}.csv");
 //store successful hits
 $coinTypes = array();
 
 //generate an array of records for outputting
 $records = array();
-
-$project = 'pella';
 
 $count = 1;
 foreach ($data as $row){
@@ -20,7 +25,11 @@ foreach ($data as $row){
 	$record['title'] = $row['title'];
 	
 	if ($collection == 'ashmolean'){
-	    $record['objectnumber'] = $pieces[4];
+	    if (strlen($row['objectnumber']) > 0) {
+	        $record['objectnumber'] = $row['objectnumber'];
+	    } else {
+	        $record['objectnumber'] = $pieces[4];
+	    }	    
 	} elseif ($collection == 'leeds'){
 	    $record['objectnumber'] = $row['IRN'];
 	}
@@ -62,7 +71,7 @@ foreach ($data as $row){
 
 //after the CSV has been parsed, then process the resulting records array into Nomisma-conformant RDF
 //generate_csv($records, $project);
-generate_rdf($records, $project, $collection);
+generate_rdf($records, $collection);
 
 function check_uri($uri){
 	GLOBAL $coinTypes;
@@ -92,11 +101,11 @@ function check_uri($uri){
 	return $valid;
 }
 
-function generate_rdf($records, $project, $collection){
+function generate_rdf($records, $collection){
 	//start RDF/XML file
 	//use XML writer to generate RDF
 	$writer = new XMLWriter();
-	$writer->openURI("{$collection}-{$project}.rdf");
+	$writer->openURI("{$collection}.rdf");
 	//$writer->openURI('php://output');
 	$writer->startDocument('1.0','UTF-8');
 	$writer->setIndent(true);
@@ -192,7 +201,7 @@ function generate_rdf($records, $project, $collection){
 			//void:inDataset
 			$writer->startElement('void:inDataset');
 			if ($collection == 'ashmolean'){
-			    $writer->writeAttribute('rdf:resource', 'http://hcr.ashmus.ox.ac.uk/');
+			    $writer->writeAttribute('rdf:resource', 'https://hcr.ashmus.ox.ac.uk/');
 			} elseif ($collection == 'leeds'){
 			    $writer->writeAttribute('rdf:resource', 'https://library.leeds.ac.uk/special-collections/collection/1491');
 			}				
@@ -209,7 +218,7 @@ function generate_rdf($records, $project, $collection){
 }
 
 //generate csv
-function generate_csv($records, $project){
+/*function generate_csv($records, $project){
 	$csv = '"objectnumber","title","uri","reference","type"' . "\n";
 
 	foreach ($records as $record){
@@ -217,7 +226,7 @@ function generate_csv($records, $project){
 	}
 
 	file_put_contents("concordances-{$project}.csv", $csv);
-}
+}*/
 
 function generate_json($doc){
 	$keys = array();

@@ -157,6 +157,9 @@ function read_oai($url, $writer){
 					case 'http://ld.zdb-services.de/resource/organisations/DE-MUS-805310':
 						$nomisma_collection = 'http://nomisma.org/id/landesmuseum-vorgeschichte_halle';
 						break;
+					case 'http://ld.zdb-services.de/resource/organisations/DE-1966':
+					    $nomisma_collection = 'http://nomisma.org/id/mk_mainz';
+					    break;
 				}
 				
 				$writer->startElement('nmo:NumismaticObject');
