@@ -1,7 +1,7 @@
 <?php 
  /*****
  * Author: Ethan Gruber
- * Last modified: June 2022
+ * Last modified: August 2022
  * Function: Transform the Bactrian and Indo-Greek typology into NUDS
  *****/
 
@@ -22,6 +22,10 @@ foreach($data as $row){
 	    generate_nuds($row, $count);
 	    $count++;
 	}
+}
+
+foreach ($errors as $error) {
+    echo $error . "\n";
 }
 
 //functions
@@ -787,6 +791,11 @@ function parse_symbol($doc, $text){
             $doc->startElement('tei:ab');
                 $doc->writeElement('tei:space');
             $doc->endElement();
+        } elseif ($text == '[unclear]') {
+            //semantically encode intentional blank space for subtypes
+            $doc->startElement('tei:ab');
+                $doc->writeElement('tei:unclear');
+            $doc->endElement();
         } else {
             parse_horizontal($doc, $text, 1);
         }
@@ -850,13 +859,48 @@ function write_seg_tei ($doc, $seg, $rend, $parent){
     GLOBAL $monograms;
     GLOBAL $errors;
     
-    if (preg_match('/^m([0-9]+(_[0-9]+)?)\.svg$/', $seg, $matches)){
-        $num = trim($matches[1]);
+    if (preg_match('/^(monogram\..*)/', $seg, $matches)){
+        $id = trim($matches[1]);
+        $pieces = explode('.', $id);
+        $num = $pieces[2];
         
-        //echo "{$num}\n";
+        switch ($pieces[1]){
+            case 'kharoshthi':
+                $auth = 'Kharoshthi';
+                break;
+            case 'antialcidas':
+                $auth = 'Antialcidas';
+                break;
+            case 'apollodotus_ii':
+                $auth = 'Apollodotus II';
+                break;
+            case 'artemidorus':
+                $auth = 'Artemidorus';
+                break;
+            case 'bop':
+                $auth = 'Bopearachchi';
+                break;
+            case 'hermaeus':
+                $auth = 'Hermaeus';
+                break;
+            case 'hippostratus':
+                $auth = 'Hippostratus';
+                break;
+            case 'PMC':
+                $auth = 'PMC';
+                break;
+            case 'tamga':
+                $auth = 'Tamga';
+                break;
+            case 'zoilus_i':
+                $auth = 'Zoilus I';
+                break;
+            default:
+                $auth = 'Other';                
+        }
         
-        $id = "monogram.houghton." . $num;
-        $uri = "http://numismatics.org/sco/symbol/" . $id;
+        //echo "{$id}\n";        
+        $uri = "https://numismatics.org/bigr/symbol/" . $id;
         
         if ($parent == false){
             $doc->startElement('tei:ab');
@@ -864,31 +908,38 @@ function write_seg_tei ($doc, $seg, $rend, $parent){
         //insert a single monogram into an ab, if applicable
         $doc->startElement('tei:am');
             $doc->startElement('tei:g');
-            $doc->writeAttribute('type', 'nmo:Monogram');
-            if (isset($rend)){
-                if ($rend == '?'){
-                    $doc->writeAttribute('rend', 'unclear');
-                } else {
-                    $doc->writeAttribute('rend', $rend);
+                $doc->writeAttribute('type', 'nmo:Monogram');
+                if (isset($rend)){
+                    if ($rend == '?'){
+                        $doc->writeAttribute('rend', 'unclear');
+                    } else {
+                        $doc->writeAttribute('rend', $rend);
+                    }
                 }
-            }
-            
-            //validate monogram URI before inserting the ref attribute
-            if (in_array($uri, $monograms)){
-                $doc->writeAttribute('ref', $uri);
-            } else {
-                $file_headers = @get_headers($uri);
-                if (strpos($file_headers[0], '200') !== FALSE){
+                
+                //validate monogram URI before inserting the ref attribute                
+                if (in_array($uri, $monograms)){
                     $doc->writeAttribute('ref', $uri);
-                    $monograms[] = $uri;
-                    echo "Found {$uri}.\n";
                 } else {
-                    echo "ERROR: {$uri} not found.\n";
-                    $errors[] = $uri;
+                    $file_headers = @get_headers($uri);
+                    if (strpos($file_headers[0], '200') !== FALSE){
+                        $doc->writeAttribute('ref', $uri);
+                        $monograms[] = $uri;
+                        echo "Found {$uri}.\n";
+                    } else {
+                        echo "ERROR: {$uri} not found.\n";
+                        if (!in_array($uri, $errors)){
+                            $errors[] = $uri;
+                        }
+                    }
                 }
-            }
-            
-            $doc->text("Houghton Monogram " . str_replace('_', '.', $num));
+                
+                if ($auth == 'Kharoshthi'){
+                    $doc->text($auth . " " . str_replace('_', '.', $num));
+                } else {
+                    $doc->text($auth . " Monogram " . str_replace('_', '.', $num));
+                }
+                
             $doc->endElement();
         $doc->endElement();
         

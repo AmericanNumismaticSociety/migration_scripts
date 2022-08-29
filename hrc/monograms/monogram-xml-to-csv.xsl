@@ -15,12 +15,13 @@
                     <col>Constituent Letters</col>
                     <col>Label</col>
                     <col>Definition</col>
+                    <col>Parent ID</col>
                     <col>Source</col>
                     <col>Image1</col>
                     <col>Contributor</col>
                     <col>Image Creator</col>
                 </row>
-                <xsl:apply-templates select="//folder[@name = 'Demetrius']/file"/>
+                <xsl:apply-templates select="//folder[@name = 'OXUS-INDUS']/file"/>
             </csv>
         </xsl:variable>
 
@@ -45,7 +46,61 @@
 
     <!-- process RDF to CSV metamodel -->
     <xsl:template match="file">
-        <xsl:variable name="num" select="tokenize(@name, '\.')[3]"/>
+        <xsl:variable name="pieces" select="tokenize(@name, '\.')"/>
+        <xsl:variable name="auth">
+            <xsl:choose>
+                <xsl:when test="$pieces[2] = 'kharoshthi'">Kharoshthi</xsl:when>
+                <xsl:when test="$pieces[2] = 'apollodotus_ii'">Apollodotus II</xsl:when>
+                <xsl:when test="$pieces[2] = 'bop'">Bopearachchi</xsl:when>
+                <xsl:when test="$pieces[2] = 'hippostratus'">Hippostratus</xsl:when>
+                <xsl:when test="$pieces[2] = 'PMC'">PMC</xsl:when>
+                <xsl:when test="$pieces[2] = 'zoilus_i'">Zoilus I</xsl:when>
+                <xsl:otherwise>Other</xsl:otherwise>
+            </xsl:choose>
+        </xsl:variable>
+        <xsl:variable name="num" select="$pieces[3]"/>
+        
+        <!-- for the first letter subtype, create the parent type -->
+        
+        <xsl:if test="ends-with($num, '_1')">
+            <row>
+                <col>
+                    <xsl:value-of select="concat($pieces[1], '.', $pieces[2], '.', substring-before($num, '_'))"/>
+                </col>
+                <col>
+                    <xsl:value-of select="normalize-space(@letters)"/>
+                </col>
+                <col>
+                    <xsl:value-of select="$auth"/>
+                    <xsl:choose>
+                        <xsl:when test="not($auth = 'Kharoshthi')">
+                            <xsl:text> Monogram </xsl:text>
+                        </xsl:when>
+                        <xsl:otherwise>
+                            <xsl:text> </xsl:text>
+                        </xsl:otherwise>
+                    </xsl:choose>
+                    
+                    <xsl:value-of select="substring-before($num, '_')"/>
+                </col>
+                <col>
+                    <xsl:value-of select="nomisma:normalizeLabel($auth, substring-before($num, '_'), normalize-space(@letters))"/>
+                </col>
+                <col/>
+                <col>
+                    <xsl:choose>
+                        <xsl:when test="$auth = 'Bopearachchi'">http://nomisma.org/id/bopearachchi-1991</xsl:when>
+                        <xsl:otherwise>http://nomisma.org/id/bigr</xsl:otherwise>
+                    </xsl:choose>
+                </col>
+                <col/>
+                <col>
+                    <xsl:value-of select="concat('http://nomisma.org/editor/', @editor)"/>
+                </col>
+                <col/>
+            </row>
+            
+        </xsl:if>
 
         <row>
             <col>
@@ -54,43 +109,99 @@
             <col>
                 <xsl:value-of select="normalize-space(@letters)"/>
             </col>
-            <col>Demetrius Monogram <xsl:value-of select="$num"/></col>
             <col>
-                <xsl:value-of select="nomisma:normalizeLabel($num, normalize-space(@letters))"/>
+                <xsl:value-of select="$auth"/>
+                <xsl:choose>
+                    <xsl:when test="not($auth = 'Kharoshthi')">
+                        <xsl:text> Monogram </xsl:text>
+                    </xsl:when>
+                    <xsl:otherwise>
+                        <xsl:text> </xsl:text>
+                    </xsl:otherwise>
+                </xsl:choose>
+
+                <xsl:value-of select="replace($num, '_', '.')"/>
             </col>
-            <col>http://nomisma.org/id/newell_demetrius_poliorcetes</col>
             <col>
-                <xsl:value-of select="concat('http://numismatics.org/symbolimages/pella/monogram.demetrius.', $num, '.svg')"/>
+                <xsl:value-of select="nomisma:normalizeLabel($auth, $num, normalize-space(@letters))"/>
             </col>
-            <col>http://nomisma.org/editor/pvalfen</col>
+            <col>
+                <xsl:if test="matches($num, '.*_[1-9]')">
+                    <xsl:value-of select="concat($pieces[1], '.', $pieces[2], '.', substring-before($num, '_'))"/>
+                </xsl:if>
+            </col>
+            <col>
+                <xsl:choose>
+                    <xsl:when test="$auth = 'Bopearachchi'">http://nomisma.org/id/bopearachchi-1991</xsl:when>
+                    <xsl:otherwise>http://nomisma.org/id/bigr</xsl:otherwise>
+                </xsl:choose>
+            </col>
+            <col>
+                <xsl:value-of select="concat('https://numismatics.org/symbolimages/bigr/', @name)"/>
+            </col>
+            <col>
+                <xsl:value-of select="concat('http://nomisma.org/editor/', @editor)"/>
+            </col>
             <col>http://nomisma.org/editor/ltomanelli</col>
         </row>
     </xsl:template>
 
     <xsl:function name="nomisma:normalizeLabel">
+        <xsl:param name="auth"/>
         <xsl:param name="num"/>
         <xsl:param name="letters"/>
-        
-        <xsl:variable name="letter-sequence" select="for $c in string-to-codepoints($letters) return codepoints-to-string($c)"/>
+
+        <xsl:variable name="letter-sequence"
+            select="
+                for $c in string-to-codepoints($letters)
+                return
+                    codepoints-to-string($c)"/>
 
         <!-- definition boilerplate -->
-        <xsl:text>Monogram </xsl:text>
-        <xsl:value-of select="$num"/>
-        <xsl:text> from The Coinages of Demetrius Poliorcetes, by Edward T. Newell. Oxford University Press, 1927.</xsl:text>
-        
+        <xsl:value-of select="$auth"/>
+        <xsl:text> </xsl:text>
+        <xsl:value-of select="replace($num, '_', '.')"/>
+
+        <xsl:choose>
+            <xsl:when test="$auth = 'Bopearachchi'">
+                <xsl:text> from Monnaies gréco-bactriennes et indo-grecques : catalogue raisonné by Osmund Bopearachchi. Bibliothèque Nationale de France, 1991.</xsl:text>
+            </xsl:when>
+            <xsl:otherwise>
+                <xsl:text> from Bactrian and Indo-Greek Coinage Online.</xsl:text>
+            </xsl:otherwise>
+        </xsl:choose>
+
         <!-- parse constituent letters -->
-        <xsl:text> The monogram contains</xsl:text>
-        <xsl:for-each select="$letter-sequence">
-            <xsl:if test="position() = last()">
-                <xsl:text> and</xsl:text>
-            </xsl:if>
-            <xsl:text> </xsl:text>
-            <xsl:value-of select="."/>
-            <xsl:if test="not(position() = last()) and (count($letter-sequence) &gt; 2)">
-                <xsl:text>,</xsl:text>
-            </xsl:if> 
-        </xsl:for-each>
-        <xsl:text> as identified by Peter van Alfen.</xsl:text>
+        <xsl:choose>
+            <xsl:when test="$auth = 'Kharoshthi'">
+               <!-- <xsl:text> The symbol is transcribed into UTF-8 characters </xsl:text>
+                <xsl:for-each select="$letter-sequence">
+                    <xsl:if test="position() = last()">
+                        <xsl:text> and</xsl:text>
+                    </xsl:if>
+                    <xsl:text> </xsl:text>
+                    <xsl:value-of select="."/>
+                    <xsl:if test="not(position() = last()) and (count($letter-sequence) &gt; 2)">
+                        <xsl:text>,</xsl:text>
+                    </xsl:if>
+                </xsl:for-each>
+                <xsl:text> as identified by Gunnar Dumke.</xsl:text>-->
+            </xsl:when>
+            <xsl:otherwise>
+                <xsl:text> The monogram contains</xsl:text>
+                <xsl:for-each select="$letter-sequence">
+                    <xsl:if test="position() = last()">
+                        <xsl:text> and</xsl:text>
+                    </xsl:if>
+                    <xsl:text> </xsl:text>
+                    <xsl:value-of select="."/>
+                    <xsl:if test="not(position() = last()) and (count($letter-sequence) &gt; 2)">
+                        <xsl:text>,</xsl:text>
+                    </xsl:if>
+                </xsl:for-each>
+                <xsl:text> as identified by Peter van Alfen.</xsl:text>
+            </xsl:otherwise>
+        </xsl:choose>
     </xsl:function>
 
 
