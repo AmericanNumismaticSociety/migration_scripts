@@ -2,7 +2,7 @@
 
 
 //first process pella spreadsheet
-$data = generate_json('bigr.csv');
+$data = generate_json('bigr-temp.csv');
 $records = parse_oai($data);
 
 //then process CRRO
