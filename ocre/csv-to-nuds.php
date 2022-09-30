@@ -2,33 +2,14 @@
 
 /*****
  * Author: Ethan Gruber
- * Date: June 2020
- * Function: A rewrite of the CSV to NUDS script from the ocre branch of the Numishare GitHub repository.
- * It has been extended to implement concordances from another spreadsheet (for Hadrian)
+ * Date: October 2022
+ * Function: Read Google Sheet and generate NUDS for OCRE
  *****/
 
 $data = generate_json('https://docs.google.com/spreadsheets/d/e/2PACX-1vRN0XNkxqZ0H0ZtP6VwFguDWKLVwPWFSd3STsOsrDk1Ldqrx7QzGcPzbhUKsxKE0uXhvTIMJu-kJqal/pub?output=csv');
-$deities = generate_json('https://docs.google.com/spreadsheet/pub?hl=en_US&hl=en_US&key=0Avp6BVZhfwHAdHk2ZXBuX0RYMEZzUlNJUkZOLXRUTmc&single=true&gid=0&output=csv');
-$con = generate_json('https://docs.google.com/spreadsheets/d/e/2PACX-1vQvfKQcmqOyIGhGzfWqVGUka8Lx3gx6923h3CZRVkzd9demKe3zzJqIYv-M8XxjIhAPMBXsw994E13O/pub?output=csv');
-$concordance = array();
 
 //get the eXist-db password from disk
 $eXist_config_path = '/usr/local/projects/numishare/exist-config.xml';
-
-
-
-//generate a condordance
-foreach ($con as $row){
-    if (strlen(trim($row['new'])) > 0){
-        $new_ids = explode('|', $row['new']);
-        
-        foreach ($new_ids as $id){
-            $concordance[$id] = explode('|', $row['old']);
-        }
-    }
-}
-
-//var_dump($concordance);
 
 
 $nomismaUris = array();
@@ -39,7 +20,7 @@ $count = 1;
 foreach($data as $row){    
     generate_nuds($row, $count);    
     
-    if (file_exists($eXist_config_path)) {
+    /*if (file_exists($eXist_config_path)) {
         $eXist_config = simplexml_load_file($eXist_config_path);
         $eXist_credentials = $eXist_config->username . ':' . $eXist_config->password;
         
@@ -47,7 +28,7 @@ foreach($data as $row){
         $recordId = trim($row['ID']);
         $filename =  'nuds/' . $recordId . '.xml';
         put_to_exist($filename, $recordId, $eXist_credentials);
-    }
+    }*/
     
     
 }
@@ -86,28 +67,12 @@ function generate_nuds($row, $count){
 			//control
 			$doc->startElement('control');
 				$doc->writeElement('recordId', $recordId);
-				
+								
 				//insert typeNumber just to capture the num.
-				/*$doc->startElement('otherRecordId');
-					$doc->writeAttribute('localType', 'typeNumber');
-					$doc->text(str_replace('sc.1.', '', $recordId));
-				$doc->endElement();*/
-				
-				//handle semantic relation with other record
-				if (array_key_exists($recordId, $concordance)){
-    				foreach ($concordance[$recordId] as $id){
-    				    if (strlen(trim($id)) > 0){
-        				    $doc->startElement('otherRecordId');
-        				        $doc->writeAttribute('semantic', 'dcterms:replaces');
-            				    $doc->text(trim($id));
-        				    $doc->endElement();
-            				$doc->startElement('otherRecordId');
-            				    $doc->writeAttribute('semantic', 'skos:exactMatch');
-            				    $doc->text($uri_space . trim($id));
-        				    $doc->endElement();    
-    				    }
-    				}    
-				}				
+				$doc->startElement('otherRecordId');
+    				$doc->writeAttribute('localType', 'typeNumber');
+    				$doc->text(explode('.', $recordId)[3]);
+				$doc->endElement();	
 				
 				//hierarchy
 				if (strlen($row['Parent ID']) > 0){
@@ -118,6 +83,23 @@ function generate_nuds($row, $count){
 				    $doc->writeElement('publicationStatus', 'approvedSubtype');
 				} else {
 				    $doc->writeElement('publicationStatus', 'approved');
+				}
+				
+				//handle semantic relation with other record
+				if (strlen($row['Deprecated ID']) > 0){
+				    $replaces = explode('|', $row['Deprecated ID']);
+				    
+				    foreach ($replaces as $deprecatedID){
+				        $deprecatedID = trim($deprecatedID);				    
+				        $doc->startElement('otherRecordId');
+        				    $doc->writeAttribute('semantic', 'dcterms:replaces');
+        				    $doc->text($deprecatedID);
+    				    $doc->endElement();
+    				    $doc->startElement('otherRecordId');
+        				    $doc->writeAttribute('semantic', 'skos:exactMatch');
+        				    $doc->text($uri_space . $deprecatedID);
+    				    $doc->endElement();
+				    }
 				}
 				
 				$doc->writeElement('maintenanceStatus', 'derived');
@@ -166,24 +148,43 @@ function generate_nuds($row, $count){
 			//end control
 			$doc->endElement();
 		
+			
 			//start descMeta
 			$doc->startElement('descMeta');
 		
 			//title
 			$doc->startElement('title');
     			$doc->writeAttribute('xml:lang', 'en');
-    			$doc->text(get_title($recordId));
+    			$doc->text(get_ocre_title($recordId));
 			$doc->endElement();
 			
 			/***** TYPEDESC *****/
 			$doc->startElement('typeDesc');
 			
 				//objectType
-				$doc->startElement('objectType');
-					$doc->writeAttribute('xlink:type', 'simple');
-					$doc->writeAttribute('xlink:href', 'http://nomisma.org/id/coin');
-					$doc->text('Coin');
-				$doc->endElement();
+    			if (strlen($row['Object Type URI']) > 0){
+    			    $vals = explode('|', $row['Object Type URI']);
+    			    foreach ($vals as $val){
+    			        if (substr($val, -1) == '?'){
+    			            $uri = substr($val, 0, -1);
+    			            $uncertainty = true;
+    			            $content = processUri($uri);
+    			        } else {
+    			            $uri =  $val;
+    			            $uncertainty = false;
+    			            $content = processUri($uri);
+    			        }
+    			        
+    			        $doc->startElement($content['element']);
+        			        $doc->writeAttribute('xlink:type', 'simple');
+        			        $doc->writeAttribute('xlink:href', $uri);
+        			        if($uncertainty == true){
+        			            $doc->writeAttribute('certainty', 'http://nomisma.org/id/uncertain_value');
+        			        }
+        			        $doc->text($content['label']);
+    			        $doc->endElement();
+    			    }
+    			}
 				
 				//sort dates
 				if (strlen($row['From Date']) > 0 || strlen($row['To Date']) > 0){
@@ -240,11 +241,29 @@ function generate_nuds($row, $count){
 					}
 				}
 				
-				$doc->startElement('manufacture');
-    				$doc->writeAttribute('xlink:type', 'simple');
-    				$doc->writeAttribute('xlink:href', 'http://nomisma.org/id/struck');
-    				$doc->text('Struck');
-				$doc->endElement();
+				if (strlen($row['Manufacture URI']) > 0){
+				    $vals = explode('|', $row['Manufacture URI']);
+				    foreach ($vals as $val){
+				        if (substr($val, -1) == '?'){
+				            $uri = substr($val, 0, -1);
+				            $uncertainty = true;
+				            $content = processUri($uri);
+				        } else {
+				            $uri =  $val;
+				            $uncertainty = false;
+				            $content = processUri($uri);
+				        }
+				        
+				        $doc->startElement($content['element']);
+    				        $doc->writeAttribute('xlink:type', 'simple');
+    				        $doc->writeAttribute('xlink:href', $uri);
+    				        if($uncertainty == true){
+    				            $doc->writeAttribute('certainty', 'http://nomisma.org/id/uncertain_value');
+    				        }
+    				        $doc->text($content['label']);
+				        $doc->endElement();
+				    }
+				}
 				
 				
 				if (strlen($row['Material URI']) > 0){
@@ -413,47 +432,31 @@ function generate_nuds($row, $count){
 					
 					
 					//deity
-					if (strlen($row['Obverse Deity']) > 0){
-            			$vals = explode('|', $row['Obverse Deity']);
-            			foreach ($vals as $val){
-            			    $val = trim($val);
-            			    if (substr($val, -1) == '?'){
-            			        $val = substr($val, 0, -1);
-            			        $uncertainty = true;
-            			    } else {
-            			        $val =  $val;
-            			        $uncertainty = false;
-            			    }
-            			    
-            			    foreach($deities as $deity){
-            			        if ($deity['matches'] == $val) {
-            			            if (strlen($deity['bm_uri']) > 0){
-            			               $bm_uri = $deity['bm_uri'];
-            			            }
-            			            if (strlen($deity['name']) > 0){
-            			                $val = $deity['name'];
-            			            }
-            			            
-            			            break;
-            			        }
-            			    }
-            			    
-            			    $doc->startElement('persname');
-                			    $doc->writeAttribute('xlink:type', 'simple');
-                			    $doc->writeAttribute('xlink:role', 'deity');
-                			    if (isset($bm_uri)){
-                			        $doc->writeAttribute('xlink:href', $bm_uri);
-                			    }                			    
-                			    if ($uncertainty == true){
-                			        $doc->writeAttribute('certainty', 'http://nomisma.org/id/uncertain_value');
-                			    }
-                                $doc->text($val);
-            			    $doc->endElement();
-            			    
-            			    unset($uncertainty);
-            			    unset($bm_uri);            			    
-            			}
-            		}		
+					if (strlen($row['Obverse Deity URI']) > 0){
+					    $vals = explode('|', $row['Obverse Deity URI']);
+					    foreach ($vals as $val){
+					        $val = trim($val);
+					        if (substr($val, -1) == '?'){
+					            $uri = substr($val, 0, -1);
+					            $uncertainty = true;
+					            $content = processUri($uri);
+					        } else {
+					            $uri =  $val;
+					            $uncertainty = false;
+					            $content = processUri($uri);
+					        }
+					        
+					        $doc->startElement($content['element']);
+    					        $doc->writeAttribute('xlink:type', 'simple');
+    					        $doc->writeAttribute('xlink:role', 'deity');
+    					        $doc->writeAttribute('xlink:href', $uri);
+    					        if($uncertainty == true){
+    					            $doc->writeAttribute('certainty', 'http://nomisma.org/id/uncertain_value');
+    					        }
+    					        $doc->text($content['label']);
+					        $doc->endElement();
+					    }
+					}
 					
 					//portrait
 					if (strlen($row['Obverse Portrait URI']) > 0){
@@ -525,61 +528,47 @@ function generate_nuds($row, $count){
 					        $role = 'portrait';
 					        
 					        $doc->startElement($content['element']);
-					        $doc->writeAttribute('xlink:type', 'simple');
-					        $doc->writeAttribute('xlink:role', $role);
-					        $doc->writeAttribute('xlink:href', $uri);
-					        if($uncertainty == true){
-					            $doc->writeAttribute('certainty', 'http://nomisma.org/id/uncertain_value');
-					        }
-					        $doc->text($content['label']);
+    					        $doc->writeAttribute('xlink:type', 'simple');
+    					        $doc->writeAttribute('xlink:role', $role);
+    					        $doc->writeAttribute('xlink:href', $uri);
+    					        if($uncertainty == true){
+    					            $doc->writeAttribute('certainty', 'http://nomisma.org/id/uncertain_value');
+    					        }
+    					        $doc->text($content['label']);
 					        $doc->endElement();
 					    }
-					}
-					
-					//symbols (later)
+					}				
 					
 					//deity
-					if (strlen($row['Reverse Deity']) > 0){
-					    $vals = explode('|', $row['Reverse Deity']);
+					if (strlen($row['Reverse Deity URI']) > 0){
+					    $vals = explode('|', $row['Reverse Deity URI']);
 					    foreach ($vals as $val){
 					        $val = trim($val);
 					        if (substr($val, -1) == '?'){
-					            $val = substr($val, 0, -1);
+					            $uri = substr($val, 0, -1);
 					            $uncertainty = true;
+					            $content = processUri($uri);
 					        } else {
-					            $val =  $val;
+					            $uri =  $val;
 					            $uncertainty = false;
+					            $content = processUri($uri);
 					        }
 					        
-					        foreach($deities as $deity){
-					            if ($deity['matches'] == $val) {
-					                if (strlen($deity['bm_uri']) > 0){
-					                    $bm_uri = $deity['bm_uri'];
-					                }
-					                if (strlen($deity['name']) > 0){
-					                    $val = $deity['name'];
-					                }
-					                
-					                break;
-					            }
-					        }
-					        
-					        $doc->startElement('persname');
-					        $doc->writeAttribute('xlink:type', 'simple');
-					        $doc->writeAttribute('xlink:role', 'deity');
-					        if (isset($bm_uri)){
-					            $doc->writeAttribute('xlink:href', $bm_uri);
-					        }
-					        if ($uncertainty == true){
-					            $doc->writeAttribute('certainty', 'http://nomisma.org/id/uncertain_value');
-					        }
-					        $doc->text($val);
+					        $doc->startElement($content['element']);
+    					        $doc->writeAttribute('xlink:type', 'simple');
+    					        $doc->writeAttribute('xlink:role', 'deity');
+    					        $doc->writeAttribute('xlink:href', $uri);
+    					        if($uncertainty == true){
+    					            $doc->writeAttribute('certainty', 'http://nomisma.org/id/uncertain_value');
+    					        }
+    					        $doc->text($content['label']);
 					        $doc->endElement();
-					        
-					        unset($uncertainty);
-					        unset($bm_uri);
 					    }
 					}
+					
+					
+					//symbols
+					
 				//end reverse
 				$doc->endElement();
 				
@@ -589,24 +578,18 @@ function generate_nuds($row, $count){
 				/***** REFDESC *****/				
 				//create references to previous volumes
 				
-				if (array_key_exists($recordId, $concordance)){
-				    
-				    if (strlen($concordance[$recordId][0]) > 0){	
-				    
+				if (strlen($row['Deprecated ID']) > 0){
+				    $replaces = explode('|', $row['Deprecated ID']);
 				    $doc->startElement('refDesc');
-				    foreach ($concordance[$recordId] as $id){
-				        $id = trim($id); 
-				        if (strlen($id) > 0){
+    				    foreach ($replaces as $deprecatedID){
+    				        $deprecatedID = trim($deprecatedID);
     				        $doc->startElement('reference');
-    				            $doc->writeAttribute('xlink:type', 'simple');
-    				            $doc->writeAttribute('xlink:href', $uri_space . $id);
-    				            $doc->text(get_title($id));    				           
-    			            $doc->endElement();      
-				        }
-			              
-				    }
+        				        $doc->writeAttribute('xlink:type', 'simple');
+        				        $doc->writeAttribute('xlink:href', $uri_space . $deprecatedID);
+        				        $doc->text(get_ocre_title($deprecatedID));
+    				        $doc->endElement();      
+    				    }
 				    $doc->endElement();
-				    }
 				}
 				
 			//end descMeta
@@ -663,7 +646,7 @@ function put_to_exist($filename, $recordId, $eXist_credentials){
 }
 
 //parse the ID sequence to create a title
-function get_title($recordId){
+function get_ocre_title($recordId){
     $pieces = explode('.', $recordId);
     switch ($pieces[1]) {
         case '1':
@@ -1203,90 +1186,100 @@ function processUri($uri){
 		}
 	} else {
 		//if the key does not exist, look the URI up in Nomisma
-		$pieces = explode('/', $uri);
-		$id = $pieces[4];
-		if (strlen($id) > 0){
-			$uri = 'http://nomisma.org/id/' . $id;
-			$file_headers = @get_headers($uri);
-			
-			//only get RDF if the ID exists
-			if ($file_headers[0] == 'HTTP/1.1 200 OK'){
-				$xmlDoc = new DOMDocument();
-				$xmlDoc->load('http://nomisma.org/id/' . $id . '.rdf');
-				$xpath = new DOMXpath($xmlDoc);
-				$xpath->registerNamespace('skos', 'http://www.w3.org/2004/02/skos/core#');
-				$xpath->registerNamespace('rdf', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#');
-				$type = $xpath->query("/rdf:RDF/*")->item(0)->nodeName;
-				$label = $xpath->query("descendant::skos:prefLabel[@xml:lang='en']")->item(0)->nodeValue;
-				
-				if (!isset($label)){
-					echo "Error with {$id}\n";
-				}
-				
-				//get the parent, if applicable
-				$parents = $xpath->query("descendant::org:organization");
-				if ($parents->length > 0){
-					$nomismaUris[$uri] = array('label'=>$label,'type'=>$type, 'parent'=>$parents->item(0)->getAttribute('rdf:resource'));
-					$parent = $parents->item(0)->getAttribute('rdf:resource');
-				} else {
-					$nomismaUris[$uri] = array('label'=>$label,'type'=>$type);
-				}
-			} else {
-				//otherwise output the error
-				echo "Error: {$uri} not found.\n";
-				$nomismaUris[$uri] = array('label'=>$uri,'type'=>'nmo:Mint');
-			}
+		$file_headers = @get_headers($uri);
+		
+		//only get RDF if the ID exists
+		if ($file_headers[0] == 'HTTP/1.1 200 OK'){
+		    $xmlDoc = new DOMDocument();
+		    $xmlDoc->load($uri . '.rdf');
+		    $xpath = new DOMXpath($xmlDoc);
+		    $xpath->registerNamespace('skos', 'http://www.w3.org/2004/02/skos/core#');
+		    $xpath->registerNamespace('rdf', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#');
+		    $type = $xpath->query("/rdf:RDF/*")->item(0)->nodeName;
+		    $label = $xpath->query("descendant::skos:prefLabel[@xml:lang='en']")->item(0)->nodeValue;
+		    
+		    if (!isset($label)){
+		        echo "Error with {$uri}\n";
+		    }
+		    
+		    //get the parent, if applicable
+		    $parents = $xpath->query("descendant::org:organization");
+		    if ($parents->length > 0){
+		        $nomismaUris[$uri] = array('label'=>$label,'type'=>$type, 'parent'=>$parents->item(0)->getAttribute('rdf:resource'));
+		        $parent = $parents->item(0)->getAttribute('rdf:resource');
+		    } else {
+		        $nomismaUris[$uri] = array('label'=>$label,'type'=>$type);
+		    }
+		} else {
+		    //otherwise output the error
+		    echo "Error: {$uri} not found.\n";
+		    $nomismaUris[$uri] = array('label'=>$uri,'type'=>'nmo:Mint');
 		}
 	}
 	switch($type){
-		case 'nmo:Mint':
-		case 'nmo:Region':
-			$content['element'] = 'geogname';
-			$content['label'] = $label;
-			if (isset($parent)){
-				$content['parent'] = $parent;
-			}
-			break;
-		case 'nmo:Material':
-			$content['element'] = 'material';
-			$content['label'] = $label;
-			break;
-		case 'nmo:Denomination':
-			$content['element'] = 'denomination';
-			$content['label'] = $label;
-			break;
-		case 'nmo:Manufacture':
-			$content['element'] = 'manufacture';
-			$content['label'] = $label;
-			break;
-		case 'nmo:ObjectType':
-			$content['element'] = 'objectType';
-			$content['label'] = $label;
-			break;
-		case 'rdac:Family':
-			$content['element'] = 'famname';
-			$content['label'] = $label;
-			break;
-		case 'foaf:Organization':
-		case 'foaf:Group':
-		case 'nmo:Ethnic':
-			$content['element'] = 'corpname';
-			$content['label'] = $label;
-			break;
-		case 'foaf:Person':
-			$content['element'] = 'persname';
-			$content['label'] = $label;
-			if (isset($parent)){
-				$content['parent'] = $parent;
-			}
-			break;
-		case 'crm:E4_Period':
-			$content['element'] = 'periodname';
-			$content['label'] = $label;
-			break;
-		default:
-			$content['element'] = 'ERR';
-			$content['label'] = $label;
+	    case 'nmo:Mint':
+	    case 'nmo:Region':
+	        $content['element'] = 'geogname';
+	        $content['label'] = $label;
+	        if (isset($parent)){
+	            $content['parent'] = $parent;
+	        }
+	        break;
+	    case 'nmo:Material':
+	        $content['element'] = 'material';
+	        $content['label'] = $label;
+	        break;
+	    case 'nmo:Denomination':
+	        $content['element'] = 'denomination';
+	        $content['label'] = $label;
+	        break;
+	    case 'nmo:Manufacture':
+	        $content['element'] = 'manufacture';
+	        $content['label'] = $label;
+	        break;
+	    case 'nmo:Monogram':
+	    case 'crm:E37_Mark':
+	        $content['element'] = 'symbol';
+	        $content['label'] = $label;
+	        break;
+	    case 'nmo:ObjectType':
+	        $content['element'] = 'objectType';
+	        $content['label'] = $label;
+	        break;
+	    case 'nmo:Shape':
+	        $content['element'] = 'shape';
+	        $content['label'] = $label;
+	        break;
+	    case 'rdac:Family':
+	        $content['element'] = 'famname';
+	        $content['label'] = $label;
+	        break;
+	    case 'foaf:Organization':
+	    case 'foaf:Group':
+	    case 'nmo:Ethnic':
+	        $content['element'] = 'corpname';
+	        $content['label'] = $label;
+	        break;
+	    case 'foaf:Person':
+	        $content['element'] = 'persname';
+	        $content['label'] = $label;
+	        $content['role'] = 'portrait';
+	        if (isset($parent)){
+	            $content['parent'] = $parent;
+	        }
+	        break;
+	    case 'wordnet:Deity':
+	        $content['element'] = 'persname';
+	        $content['role'] = 'deity';
+	        $content['label'] = $label;
+	        break;
+	    case 'crm:E4_Period':
+	        $content['element'] = 'periodname';
+	        $content['label'] = $label;
+	        break;
+	    default:
+	        $content['element'] = 'ERR';
+	        $content['label'] = $label;
 	}
 	return $content;
 }
