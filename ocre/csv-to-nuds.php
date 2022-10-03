@@ -6,37 +6,105 @@
  * Function: Read Google Sheet and generate NUDS for OCRE
  *****/
 
-$data = generate_json('https://docs.google.com/spreadsheets/d/e/2PACX-1vRN0XNkxqZ0H0ZtP6VwFguDWKLVwPWFSd3STsOsrDk1Ldqrx7QzGcPzbhUKsxKE0uXhvTIMJu-kJqal/pub?output=csv');
+//load JSON projects
+$projects_json = file_get_contents('projects.json');
+$projects = json_decode($projects_json, false);
 
-//get the eXist-db password from disk
-$eXist_config_path = '/usr/local/projects/numishare/exist-config.xml';
+$projectExists = false;
 
-
-$nomismaUris = array();
-//$records = array();
-
-$count = 1;
-
-foreach($data as $row){    
-    generate_nuds($row, $count);    
+//require arguments
+if (isset($argv[1])){
+    foreach ($projects->projects as $project){
+        if ($project->name == $argv[1]){
+            $projectExists = true;
+            
+            //if the project has been found, then look for parts            
+            if (array_key_exists('parts', $project)){
+                if (isset($argv[2])){
+                    $partExists = false;
+                    
+                    foreach ($project->parts as $part){
+                        if ($part->name == $argv[2]){
+                            $partExists = true;
+                            $spreadsheet_url = $part->types;
+                            $types_url = $part->descriptions;
+                        }
+                    }
+                    
+                    //output message if there is no part with the second argument
+                    if ($partExists == false) {
+                        echo "No part matching the second argument has been found.\n";
+                    }
+                } else {
+                    echo "No part has been selected.\n";
+                }
+            } else {
+                $spreadsheet_url = $project->types;
+                $types_url = $project->descriptions;
+            }
+        }
+    }
     
-    /*if (file_exists($eXist_config_path)) {
-        $eXist_config = simplexml_load_file($eXist_config_path);
-        $eXist_credentials = $eXist_config->username . ':' . $eXist_config->password;
+    if ($projectExists == false) {
+        echo "No project matching the first argument has been found.\n";
+    }
+} else {
+    echo "No arguments set, terminating script.\n";
+}
+
+//var_dump($projects);
+
+//if the URLs are set, then proceed
+if (isset($spreadsheet_url) && isset($types_url)){
+    $data = generate_json($spreadsheet_url);
+    $types = generate_json($types_url);
+    
+    //get the eXist-db password from disk
+    $eXist_config_path = '/usr/local/projects/numishare/exist-config.xml';
+    $eXist_config = simplexml_load_file($eXist_config_path);
+    $eXist_url = $eXist_config->url;
+    $eXist_credentials = $eXist_config->username . ':' . $eXist_config->password;
+    
+    $errors = array();
+    $nomismaUris = array();
+    //$records = array();
+    
+    $count = 1;
+    
+    //evaluate an argument for IDs
+    
+    if (isset($argv[3])){
+        $ids = explode('&', $argv[3]);
         
+        foreach($data as $row){
+            if (in_array($row['ID'], $ids)){
+                generate_nuds($row, $count, $spreadsheet_url);
+            }
+        }
         
-        $recordId = trim($row['ID']);
-        $filename =  'nuds/' . $recordId . '.xml';
-        put_to_exist($filename, $recordId, $eXist_credentials);
-    }*/
+    } else {
+        echo "Process all\n";
+        
+        /*foreach($data as $row){
+            
+            generate_nuds($row, $count, $spreadsheet_url);
+            
+            if (file_exists($eXist_config_path)) {
+                $recordId = trim($row['ID']);
+                $filename =  'nuds/' . $recordId . '.xml';
+                put_to_exist($filename, $recordId, $eXist_url, $eXist_credentials);
+            }
+        }*/
+    }
     
     
 }
 
+
+
 //functions
-function generate_nuds($row, $count){
-	GLOBAL $deities;
-	GLOBAL $concordance;
+function generate_nuds($row, $count, $spreadsheet){
+    GLOBAL $types;
 	
 	$uri_space = 'http://numismatics.org/ocre/id/';
 	
@@ -47,8 +115,8 @@ function generate_nuds($row, $count){
 		echo "Processing {$recordId}\n";
 		$doc = new XMLWriter();
 		
-		//$doc->openUri('php://output');
-		$doc->openUri('nuds/' . $recordId . '.xml');
+		$doc->openUri('php://output');
+		//$doc->openUri('nuds/' . $recordId . '.xml');
 		$doc->setIndent(true);
 		//now we need to define our Indent string,which is basically how many blank spaces we want to have for the indent
 		$doc->setIndentString("    ");
@@ -118,6 +186,7 @@ function generate_nuds($row, $count){
 						$doc->writeElement('agentType', 'machine');
 						$doc->writeElement('agent', 'PHP');
 						$doc->writeElement('eventDescription', 'Generated from CSV from ANS Curatorial Google Drive.');
+						$doc->writeElement('source', $spreadsheet);
 					$doc->endElement();
 				$doc->endElement();
 				
@@ -408,169 +477,222 @@ function generate_nuds($row, $count){
 				}
 				
 				//obverse
-				$doc->startElement('obverse');
 				
-					//legend
-					if (strlen(trim($row['Obverse Legend'])) > 0){
-					    $legend = trim($row['Obverse Legend']);    					    
-					    
-					    $doc->startElement('legend');
-    					    $doc->writeAttribute('scriptCode', 'Latn');
-    					    $doc->writeAttribute('xml:lang', 'la');
-    					    $doc->text($legend);
-					    $doc->endElement();
-					}
-				
-					if (strlen(trim($row['Obverse Type'])) > 0) {
-					    $doc->startElement('type');
-    					    $doc->startElement('description');
-    					    $doc->writeAttribute('xml:lang', 'en');
-    					    $doc->text(trim($row['Obverse Type']));
+				if (strlen($row['Obverse Type Code']) > 0) {
+				    $key = $row['Obverse Type Code'];
+				    
+    				$doc->startElement('obverse');
+    				
+    					//legend
+    					if (strlen(trim($row['Obverse Legend'])) > 0){
+    					    $legend = trim($row['Obverse Legend']);    					    
+    					    
+    					    $doc->startElement('legend');
+        					    $doc->writeAttribute('scriptCode', 'Latn');
+        					    $doc->writeAttribute('xml:lang', 'la');
+        					    $doc->text($legend);
     					    $doc->endElement();
-					    $doc->endElement();
-					}
-					
-					
-					//deity
-					if (strlen($row['Obverse Deity URI']) > 0){
-					    $vals = explode('|', $row['Obverse Deity URI']);
-					    foreach ($vals as $val){
-					        $val = trim($val);
-					        if (substr($val, -1) == '?'){
-					            $uri = substr($val, 0, -1);
-					            $uncertainty = true;
-					            $content = processUri($uri);
-					        } else {
-					            $uri =  $val;
-					            $uncertainty = false;
-					            $content = processUri($uri);
-					        }
-					        
-					        $doc->startElement($content['element']);
-    					        $doc->writeAttribute('xlink:type', 'simple');
-    					        $doc->writeAttribute('xlink:role', 'deity');
-    					        $doc->writeAttribute('xlink:href', $uri);
-    					        if($uncertainty == true){
-    					            $doc->writeAttribute('certainty', 'http://nomisma.org/id/uncertain_value');
-    					        }
-    					        $doc->text($content['label']);
-					        $doc->endElement();
-					    }
-					}
-					
-					//portrait
-					if (strlen($row['Obverse Portrait URI']) > 0){
-					    $vals = explode('|', $row['Obverse Portrait URI']);
-					    foreach ($vals as $val){
-					        if (substr($val, -1) == '?'){
-					            $uri = substr($val, 0, -1);
-					            $uncertainty = true;
-					            $content = processUri($uri);
-					        } else {
-					            $uri =  $val;
-					            $uncertainty = false;
-					            $content = processUri($uri);
-					        }
-					        $role = 'portrait';
-					        
-					        $doc->startElement($content['element']);
-					        $doc->writeAttribute('xlink:type', 'simple');
-					        $doc->writeAttribute('xlink:role', $role);
-					        $doc->writeAttribute('xlink:href', $uri);
-					        if($uncertainty == true){
-					            $doc->writeAttribute('certainty', 'http://nomisma.org/id/uncertain_value');
-					        }
-					        $doc->text($content['label']);
-					        $doc->endElement();
-					    }
-					}
-				
-				//end obverse
-				$doc->endElement();
-				
-				//reverse					
-				$doc->startElement('reverse');
-				
-					//legend
-					if (strlen(trim($row['Reverse Legend'])) > 0){
-						$legend = trim($row['Reverse Legend']);							
-						
-						$doc->startElement('legend');
-    						$doc->writeAttribute('scriptCode', 'Latn');
-    						$doc->writeAttribute('xml:lang', 'la');
-    						$doc->text($legend);
-						$doc->endElement();
-					}
-				
-					//multilingual type descriptions
-					if (strlen(trim($row['Reverse Type'])) > 0) {
-					    $doc->startElement('type');
-    					    $doc->startElement('description');
-    					    $doc->writeAttribute('xml:lang', 'en');
-    					    $doc->text(trim($row['Reverse Type']));
+    					}
+    				
+    					//multilingual type descriptions
+    					$doc->startElement('type');
+        					foreach ($types as $desc){
+        					    if ($desc['code'] == $key){
+        					        foreach ($desc as $k=>$v){
+        					            if ($k != 'code'){
+        					                if (strlen($v) > 0){
+        					                    $doc->startElement('description');
+            					                    $doc->writeAttribute('xml:lang', $k);
+            					                    $doc->text(trim($v));
+        					                    $doc->endElement();
+        					                }
+        					            }
+        					        }
+        					        break;
+        					    }
+        					}
+    					$doc->endElement();
+    					
+    					if (strlen($row['Obverse Symbol']) > 0){
+    					    $doc->startElement('symbol');
+    					       parse_symbol($doc, trim($row['Obverse Symbol']));
     					    $doc->endElement();
-					    $doc->endElement();
-					}
-					
-					//portrait
-					if (strlen($row['Reverse Portrait URI']) > 0){
-					    $vals = explode('|', $row['Reverse Portrait URI']);
-					    foreach ($vals as $val){
-					        if (substr($val, -1) == '?'){
-					            $uri = substr($val, 0, -1);
-					            $uncertainty = true;
-					            $content = processUri($uri);
-					        } else {
-					            $uri =  $val;
-					            $uncertainty = false;
-					            $content = processUri($uri);
-					        }
-					        $role = 'portrait';
-					        
-					        $doc->startElement($content['element']);
-    					        $doc->writeAttribute('xlink:type', 'simple');
-    					        $doc->writeAttribute('xlink:role', $role);
-    					        $doc->writeAttribute('xlink:href', $uri);
-    					        if($uncertainty == true){
-    					            $doc->writeAttribute('certainty', 'http://nomisma.org/id/uncertain_value');
+    					}
+    					
+    					//deity
+    					if (strlen($row['Obverse Deity URI']) > 0){
+    					    $vals = explode('|', $row['Obverse Deity URI']);
+    					    foreach ($vals as $val){
+    					        $val = trim($val);
+    					        if (substr($val, -1) == '?'){
+    					            $uri = substr($val, 0, -1);
+    					            $uncertainty = true;
+    					            $content = processUri($uri);
+    					        } else {
+    					            $uri =  $val;
+    					            $uncertainty = false;
+    					            $content = processUri($uri);
     					        }
-    					        $doc->text($content['label']);
-					        $doc->endElement();
-					    }
-					}				
-					
-					//deity
-					if (strlen($row['Reverse Deity URI']) > 0){
-					    $vals = explode('|', $row['Reverse Deity URI']);
-					    foreach ($vals as $val){
-					        $val = trim($val);
-					        if (substr($val, -1) == '?'){
-					            $uri = substr($val, 0, -1);
-					            $uncertainty = true;
-					            $content = processUri($uri);
-					        } else {
-					            $uri =  $val;
-					            $uncertainty = false;
-					            $content = processUri($uri);
-					        }
-					        
-					        $doc->startElement($content['element']);
-    					        $doc->writeAttribute('xlink:type', 'simple');
-    					        $doc->writeAttribute('xlink:role', 'deity');
-    					        $doc->writeAttribute('xlink:href', $uri);
-    					        if($uncertainty == true){
-    					            $doc->writeAttribute('certainty', 'http://nomisma.org/id/uncertain_value');
+    					        
+    					        $doc->startElement($content['element']);
+        					        $doc->writeAttribute('xlink:type', 'simple');
+        					        $doc->writeAttribute('xlink:role', 'deity');
+        					        $doc->writeAttribute('xlink:href', $uri);
+        					        if($uncertainty == true){
+        					            $doc->writeAttribute('certainty', 'http://nomisma.org/id/uncertain_value');
+        					        }
+        					        $doc->text($content['label']);
+    					        $doc->endElement();
+    					    }
+    					}
+    					
+    					//portrait
+    					if (strlen($row['Obverse Portrait URI']) > 0){
+    					    $vals = explode('|', $row['Obverse Portrait URI']);
+    					    foreach ($vals as $val){
+    					        if (substr($val, -1) == '?'){
+    					            $uri = substr($val, 0, -1);
+    					            $uncertainty = true;
+    					            $content = processUri($uri);
+    					        } else {
+    					            $uri =  $val;
+    					            $uncertainty = false;
+    					            $content = processUri($uri);
     					        }
-    					        $doc->text($content['label']);
-					        $doc->endElement();
-					    }
-					}
-					
-					
-					//symbols
-					
-				//end reverse
-				$doc->endElement();
+    					        $role = 'portrait';
+    					        
+    					        $doc->startElement($content['element']);
+        					        $doc->writeAttribute('xlink:type', 'simple');
+        					        $doc->writeAttribute('xlink:role', $role);
+        					        $doc->writeAttribute('xlink:href', $uri);
+        					        if($uncertainty == true){
+        					            $doc->writeAttribute('certainty', 'http://nomisma.org/id/uncertain_value');
+        					        }
+        					        $doc->text($content['label']);
+    					        $doc->endElement();
+    					    }
+    					}
+    					
+    				
+    				//end obverse
+    				$doc->endElement();				
+				}
+				
+				//reverse			
+				if (strlen($row['Obverse Type Code']) > 0) {
+				    $key = $row['Obverse Type Code'];
+				    
+    				$doc->startElement('reverse');
+    				
+    					//legend
+    					if (strlen(trim($row['Reverse Legend'])) > 0){
+    						$legend = trim($row['Reverse Legend']);							
+    						
+    						$doc->startElement('legend');
+        						$doc->writeAttribute('scriptCode', 'Latn');
+        						$doc->writeAttribute('xml:lang', 'la');
+        						$doc->text($legend);
+    						$doc->endElement();
+    					}
+    				
+    					//multilingual type descriptions
+    					$doc->startElement('type');
+        					foreach ($types as $desc){
+        					    if ($desc['code'] == $key){
+        					        foreach ($desc as $k=>$v){
+        					            if ($k != 'code'){
+        					                if (strlen($v) > 0){
+        					                    $doc->startElement('description');
+            					                    $doc->writeAttribute('xml:lang', $k);
+            					                    $doc->text(trim($v));
+        					                    $doc->endElement();
+        					                }
+        					            }
+        					        }
+        					        break;
+        					    }
+        					}
+    					$doc->endElement();
+    					
+    					//portrait
+    					if (strlen($row['Reverse Portrait URI']) > 0){
+    					    $vals = explode('|', $row['Reverse Portrait URI']);
+    					    foreach ($vals as $val){
+    					        if (substr($val, -1) == '?'){
+    					            $uri = substr($val, 0, -1);
+    					            $uncertainty = true;
+    					            $content = processUri($uri);
+    					        } else {
+    					            $uri =  $val;
+    					            $uncertainty = false;
+    					            $content = processUri($uri);
+    					        }
+    					        $role = 'portrait';
+    					        
+    					        $doc->startElement($content['element']);
+        					        $doc->writeAttribute('xlink:type', 'simple');
+        					        $doc->writeAttribute('xlink:role', $role);
+        					        $doc->writeAttribute('xlink:href', $uri);
+        					        if($uncertainty == true){
+        					            $doc->writeAttribute('certainty', 'http://nomisma.org/id/uncertain_value');
+        					        }
+        					        $doc->text($content['label']);
+    					        $doc->endElement();
+    					    }
+    					}				
+    					
+    					//deity
+    					if (strlen($row['Reverse Deity URI']) > 0){
+    					    $vals = explode('|', $row['Reverse Deity URI']);
+    					    foreach ($vals as $val){
+    					        $val = trim($val);
+    					        if (substr($val, -1) == '?'){
+    					            $uri = substr($val, 0, -1);
+    					            $uncertainty = true;
+    					            $content = processUri($uri);
+    					        } else {
+    					            $uri =  $val;
+    					            $uncertainty = false;
+    					            $content = processUri($uri);
+    					        }
+    					        
+    					        $doc->startElement($content['element']);
+        					        $doc->writeAttribute('xlink:type', 'simple');
+        					        $doc->writeAttribute('xlink:role', 'deity');
+        					        $doc->writeAttribute('xlink:href', $uri);
+        					        if($uncertainty == true){
+        					            $doc->writeAttribute('certainty', 'http://nomisma.org/id/uncertain_value');
+        					        }
+        					        $doc->text($content['label']);
+    					        $doc->endElement();
+    					    }
+    					}					
+    					
+    					//symbols
+    					foreach ($row as $k=>$v){
+    					    //reverse symbols are preceded with R:
+    					    if (substr($k, 0, 2) == 'R:'){
+    					        if (strlen(trim($v)) > 0){
+    					            $position = trim(str_replace('R:', '', $k));
+    					            $position = strpos($position, '_') !== FALSE ? substr($position, 0, strpos($position, '_')) : $position;
+    					            					           
+    					            $doc->startElement('symbol');
+        					            if ($position == 'officinaMark' || $position == 'mintMark'){
+        					                $doc->writeAttribute('localType', $position);
+        					            } else {
+        					                $doc->writeAttribute('position', $position);
+        					            }
+        					            parse_symbol($doc, trim($v));
+    					            $doc->endElement();
+    					            
+    					            
+    					        }
+    					    }
+    					}
+    					
+    				//end reverse
+    				$doc->endElement();
+				}
 				
 				//end typeDesc
 				$doc->endElement();
@@ -607,7 +729,7 @@ function generate_nuds($row, $count){
 
 
  /***** FUNCTIONS *****/
-function put_to_exist($filename, $recordId, $eXist_credentials){
+function put_to_exist($filename, $recordId, $eXist_url, $eXist_credentials){
     if (($readFile = fopen($filename, 'r')) === FALSE){
         echo "Unable to read {$recordId}.xml\n";
     } else {
@@ -615,7 +737,7 @@ function put_to_exist($filename, $recordId, $eXist_credentials){
         $putToExist=curl_init();
         
         //set curl opts
-        curl_setopt($putToExist,CURLOPT_URL,'http://localhost:8080/exist/rest/db/ocre/objects/' . $recordId . '.xml');
+        curl_setopt($putToExist,CURLOPT_URL, $eXist_url . 'ocre/objects/' . $recordId . '.xml');
         curl_setopt($putToExist,CURLOPT_HTTPHEADER, array("Content-Type: text/xml; charset=utf-8"));
         curl_setopt($putToExist,CURLOPT_CONNECTTIMEOUT,2);
         curl_setopt($putToExist,CURLOPT_RETURNTRANSFER,1);
@@ -642,6 +764,188 @@ function put_to_exist($filename, $recordId, $eXist_credentials){
         //close files and delete from /tmp
         fclose($readFile);
         //unlink($filename);
+    }
+}
+
+/***** FUNCTIONS FOR PROCESSING SYMBOLS INTO EPIDOC TEI *****/
+//parse symbol text into TEI
+function parse_symbol($doc, $text){
+    
+    $doc->startElement('tei:div');
+    $doc->writeAttribute('type', 'edition');
+    
+    //split into two pieces
+    if (strpos($text, ' above ') !== FALSE){
+        $positions = explode(' above ', $text);
+        
+        foreach ($positions as $k=>$pos){
+            $pos = trim($pos);
+            
+            $doc->startElement('tei:ab');
+            if ($k == 0) {
+                $rend = 'above';
+            } else {
+                $rend = 'below';
+            }
+            
+            $doc->writeAttribute('rend', $rend);
+                parse_split($doc, $pos, 2);
+            $doc->endElement();
+        }
+    } elseif ($text == '[no monogram]') {
+        //semantically encode intentional blank space for subtypes
+        $doc->startElement('tei:ab');
+            $doc->writeElement('tei:space');
+        $doc->endElement();
+    } elseif ($text == '[unclear]') {
+        //semantically encode intentional blank space for subtypes
+        $doc->startElement('tei:ab');
+            $doc->writeElement('tei:unclear');
+        $doc->endElement();
+    } else {
+        parse_split($doc, $text, 1);
+    }
+    
+    $doc->endElement();
+}
+
+//parse segments separated by ||, a high-level conditional split between options
+function parse_split ($doc, $text, $level){
+    if (strpos($text, '||') !== FALSE){
+        $choices = explode('||', $text);
+        
+        //begin choice element
+        $doc->startElement('tei:choice');
+            foreach ($choices as $choice){
+                $choice = trim($choice);            
+                parse_horizontal($doc, $choice, $level);
+            }
+        $doc->endElement();
+    } else {
+        parse_horizontal($doc, $text, $level);
+    }
+}
+
+//parse segments separated by |, which signifies side-by-side glyphs
+function parse_horizontal ($doc, $text, $level){
+    if (strpos($text, '|') !== FALSE){
+        $horizontal = explode('|', $text);
+        
+        foreach ($horizontal as $seg){
+            $seg = trim($seg);
+            
+            if ($level == 1){
+                $doc->startElement('tei:ab');
+                    parse_conditional($doc, $seg, true);
+                $doc->endElement();
+            } else {
+                $doc->startElement('tei:seg');
+                    parse_conditional($doc, $seg, true);
+                $doc->endElement();
+            }
+        }
+    } else {
+        //no horizontal configuration, so parse ' or '
+        parse_conditional($doc, $text, false);
+    }
+}
+
+//split choices separated by ' or '
+function parse_conditional($doc, $text, $parent){
+    if (strpos($text, ' or ') !== FALSE){
+        $choices = explode(' or ', $text);
+        
+        //begin choice element
+        $doc->startElement('tei:choice');
+            foreach ($choices as $choice){
+                $choice = trim($choice);
+                
+                parse_seg($doc, $choice, true);
+            }
+        $doc->endElement();
+    } else {
+        parse_seg($doc, $text, $parent);
+    }
+}
+
+//parse an atomized seg into a monogram glyph, seg, or just cdata
+function parse_seg($doc, $seg, $parent){
+    
+    if (preg_match('/(.*)\s?\((.*)\)$/', $seg, $matches)){
+        write_seg_tei($doc, trim($matches[1]), trim($matches[2]), $parent);
+    } else {
+        write_seg_tei($doc, trim($seg), null, $parent);
+    }
+}
+
+function write_seg_tei ($doc, $seg, $rend, $parent){
+    GLOBAL $errors;
+    
+    if (preg_match('/^(https?:\/\/.*)/', $seg, $matches)){
+        $uri = trim($matches[1]);
+               
+        if ($parent == false){
+            $doc->startElement('tei:ab');
+        }
+        //insert a single monogram into an ab, if applicable
+        $doc->startElement('tei:am');
+            $doc->startElement('tei:g');
+            $doc->writeAttribute('type', 'nmo:Monogram');
+            if (isset($rend)){
+                if ($rend == '?'){
+                    $doc->writeAttribute('rend', 'unclear');
+                } else {
+                    $doc->writeAttribute('rend', $rend);
+                }
+            }
+            
+            //validate monogram URI before inserting the ref attribute
+            $content = processUri($uri);
+            
+            $doc->writeAttribute('ref', $uri);
+            $doc->text($content['label']);
+            
+            $doc->endElement();
+        $doc->endElement();
+        
+        if ($parent == false){
+            $doc->endElement();
+        }
+    } else {
+        //if there are parent TEI elements, then use tei:seg, otherwise tei:ab (tei:seg cannot appear directly in tei:div)
+        
+        if ($parent == true){
+            if (isset($rend)){
+                if ($rend == '?'){
+                    $doc->startElement('tei:seg');
+                    $doc->writeElement('tei:unclear', $seg);
+                    $doc->endElement();
+                } else {
+                    $doc->startElement('tei:seg');
+                    $doc->writeAttribute('rend', $rend);
+                    $doc->text($seg);
+                    $doc->endElement();
+                }
+            } else {
+                $doc->writeElement('tei:seg', $seg);
+            }
+            
+        } else {
+            if (isset($rend)){
+                if ($rend == '?'){
+                    $doc->startElement('tei:ab');
+                    $doc->writeElement('tei:unclear', $seg);
+                    $doc->endElement();
+                } else {
+                    $doc->startElement('tei:ab');
+                    $doc->writeAttribute('rend', $rend);
+                    $doc->text($seg);
+                    $doc->endElement();
+                }
+            } else {
+                $doc->writeElement('tei:ab', $seg);
+            }
+        }
     }
 }
 
@@ -1169,6 +1473,7 @@ function get_ocre_title($recordId){
     return $title;
 }
 
+//validate Nomisma or Monogram/Symbol URI and return the label
 function processUri($uri){
 	GLOBAL $nomismaUris;
 	$content = array();
@@ -1189,12 +1494,13 @@ function processUri($uri){
 		$file_headers = @get_headers($uri);
 		
 		//only get RDF if the ID exists
-		if ($file_headers[0] == 'HTTP/1.1 200 OK'){
+		if (strpos($file_headers[0], '200') !== FALSE){
 		    $xmlDoc = new DOMDocument();
 		    $xmlDoc->load($uri . '.rdf');
 		    $xpath = new DOMXpath($xmlDoc);
 		    $xpath->registerNamespace('skos', 'http://www.w3.org/2004/02/skos/core#');
 		    $xpath->registerNamespace('rdf', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#');
+		    $xpath->registerNamespace('org', 'http://www.w3.org/ns/org#');
 		    $type = $xpath->query("/rdf:RDF/*")->item(0)->nodeName;
 		    $label = $xpath->query("descendant::skos:prefLabel[@xml:lang='en']")->item(0)->nodeValue;
 		    
@@ -1213,7 +1519,7 @@ function processUri($uri){
 		} else {
 		    //otherwise output the error
 		    echo "Error: {$uri} not found.\n";
-		    $nomismaUris[$uri] = array('label'=>$uri,'type'=>'nmo:Mint');
+		    $nomismaUris[$uri] = array('label'=>$uri,'type'=>null);
 		}
 	}
 	switch($type){
@@ -1288,12 +1594,12 @@ function get_date_textual($year){
     $textual_date = '';
     //display start date
     if($year < 0){
-        $textual_date .= abs($year) . ' BC';
-    } elseif ($year > 0) {
-        if ($year <= 600){
-            $textual_date .= 'AD ';
-        }
+        $textual_date .= abs($year) . ' BCE';
+    } elseif ($year > 0) {        
         $textual_date .= $year;
+        if ($year <= 600){
+            $textual_date .= ' CE';
+        }
     }
     return $textual_date;
 }

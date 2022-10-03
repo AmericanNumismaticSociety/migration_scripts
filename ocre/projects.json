@@ -1,0 +1,13 @@
+{
+  "projects": [
+     { "name": "ocre",        
+       "parts": [
+            {
+                "name" : "ric.8",
+                "types": "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ592qdkYhbCJjyjd0I9RwnOSI8GQdonPo7P_-3lbf-fks7a0fy-Af80RpjigYgyJt_ShTbCSGWpcEC/pub?output=csv",
+                "descriptions" : "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ592qdkYhbCJjyjd0I9RwnOSI8GQdonPo7P_-3lbf-fks7a0fy-Af80RpjigYgyJt_ShTbCSGWpcEC/pub?gid=1270156667&single=true&output=csv"
+            }
+        ]
+     }
+  ]
+}
