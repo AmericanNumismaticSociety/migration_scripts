@@ -141,13 +141,15 @@ foreach ($collections as $collection){
 					$doc->writeAttribute('style', 'depiction');
 				}
 				
+				//all images are 3000 pixels wide and 4000 tall
+				
 				$doc->startElement('media');
 					$doc->writeAttribute('url', "https://images.numismatics.org/archivesimages%2Farchive%2F{$filename}");
 					$doc->writeAttribute('n', $page['Note/Description']);
 					$doc->writeAttribute('mimeType', 'image/jpeg');
 					$doc->writeAttribute('type', 'IIIFService');
-					//$doc->writeAttribute('height', "{$page['height']}px");
-					//$doc->writeAttribute('width', "{$page['width']}px");
+					$doc->writeAttribute('height', "4000px");
+					$doc->writeAttribute('width', "3000px");
 				$doc->endElement();
 			$doc->endElement();
 		}
