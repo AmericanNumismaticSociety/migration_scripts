@@ -4,12 +4,14 @@
  * Author: Ethan Gruber
  * Date: October 2022
  * Function: Transform the Shubin collection spreadsheet into TEI documents with IIIF image references
- */
+*****/
 
 $collections = generate_json('https://docs.google.com/spreadsheets/d/e/2PACX-1vRGoDJlDraepfvM_NSxbNkOatn6JR6KakrivUDrB0bksuM2fWmXHR94qB19P_Ch90kGVGwLdemFtgKo/pub?gid=0&single=true&output=csv');
 
 foreach ($collections as $collection){
 	$id = $collection['ID'];
+	
+	echo "Generating {$id}\n";
 	
 	//get sheet URL for current box
 	switch($id){
@@ -34,8 +36,8 @@ foreach ($collections as $collection){
 	
 	$doc = new XMLWriter();
 	
-	$doc->openUri('php://output');
-	//$doc->openUri("tei/{$id}.xml");
+	//$doc->openUri('php://output');
+	$doc->openUri("tei/{$id}.xml");
 	$doc->setIndent(true);
 	//now we need to define our Indent string,which is basically how many blank spaces we want to have for the indent
 	$doc->setIndentString("    ");
@@ -57,7 +59,7 @@ foreach ($collections as $collection){
 					$doc->startElement('author');
 						$doc->startElement('persName');
 							$doc->writeAttribute('ref', 'http://numismatics.org/authority/shubin_michael');
-							$doc->text('Shubin, Michael');
+							$doc->text('Shubin, Michael J., 1950-2008');
 						$doc->endElement();
 					$doc->endElement();
 				$doc->endElement();
@@ -82,13 +84,13 @@ foreach ($collections as $collection){
 							$doc->startElement('author');
 								$doc->startElement('persName');
 									$doc->writeAttribute('ref', 'http://numismatics.org/authority/shubin_michael');
-									$doc->text('Shubin, Michael');
+									$doc->text('Shubin, Michael J., 1950-2008');
 								$doc->endElement();
 							$doc->endElement();
 							$doc->startElement('imprint');
 								$doc->startElement('date');
-									$doc->writeAttribute('min', '1970');
-									$doc->writeAttribute('max', '2000');
+									$doc->writeAttribute('from', '1970');
+									$doc->writeAttribute('to', '2000');
 									$doc->text('1970-2000');
 								$doc->endElement();
 							$doc->endElement();
@@ -100,8 +102,18 @@ foreach ($collections as $collection){
 			//end fileDesc
 			$doc->endElement();
 			
+			//encodingDesc
+			$doc->startElement('encodingDesc');
+                $doc->startElement('editorialDecl');
+                    $doc->writeElement('p', $collection['Photograph Numbering']);
+                $doc->endElement();
+			$doc->endElement();
+			
 			//profileDesc (general document metadata)
 			$doc->startElement('profileDesc');
+                $doc->startElement('abstract');
+                    $doc->writeElement('p', $collection['Description']);  	
+                $doc->endElement();			    		
 				$doc->startElement('langUsage');
 					$doc->startElement('language');
 						$doc->writeAttribute('ident', 'en');
@@ -112,7 +124,7 @@ foreach ($collections as $collection){
 				$doc->startElement('textClass');
 					$doc->startElement('classCode');
 						$doc->writeAttribute('scheme', 'http://vocab.getty.edu/aat/');
-						$doc->text('300264354');
+						$doc->text('300417667');
 					$doc->endElement();
 				$doc->endElement();
 			//end profileDesc
@@ -141,8 +153,7 @@ foreach ($collections as $collection){
 					$doc->writeAttribute('style', 'depiction');
 				}
 				
-				//all images are 3000 pixels wide and 4000 tall
-				
+				//all images are 3000 pixels wide and 4000 tall				
 				$doc->startElement('media');
 					$doc->writeAttribute('url', "https://images.numismatics.org/archivesimages%2Farchive%2F{$filename}");
 					$doc->writeAttribute('n', $page['Note/Description']);
@@ -152,6 +163,8 @@ foreach ($collections as $collection){
 					$doc->writeAttribute('width', "3000px");
 				$doc->endElement();
 			$doc->endElement();
+			
+			$num++;
 		}
 	
 	//end TEI file
