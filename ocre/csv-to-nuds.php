@@ -27,7 +27,8 @@ if (isset($argv[1])){
                         if ($part->name == $argv[2]){
                             $partExists = true;
                             $spreadsheet_url = $part->types;
-                            $types_url = $part->descriptions;
+                            $o_url = $part->o;
+                            $r_url = $part->r;
                         }
                     }
                     
@@ -40,7 +41,8 @@ if (isset($argv[1])){
                 }
             } else {
                 $spreadsheet_url = $project->types;
-                $types_url = $project->descriptions;
+                $o_url = $project->o;
+                $r_url = $project->r;
             }
         }
     }
@@ -55,9 +57,10 @@ if (isset($argv[1])){
 //var_dump($projects);
 
 //if the URLs are set, then proceed
-if (isset($spreadsheet_url) && isset($types_url)){
+if (isset($spreadsheet_url) && isset($o_url) && isset($r_url)){
     $data = generate_json($spreadsheet_url);
-    $types = generate_json($types_url);
+    $obverses = generate_json($o_url);
+    $reverses = generate_json($r_url);
     
     //get the eXist-db password from disk
     $eXist_config_path = '/usr/local/projects/numishare/exist-config.xml';
@@ -85,16 +88,16 @@ if (isset($spreadsheet_url) && isset($types_url)){
     } else {
         echo "Process all\n";
         
-        /*foreach($data as $row){
+        foreach($data as $row){
             
             generate_nuds($row, $count, $spreadsheet_url);
             
-            if (file_exists($eXist_config_path)) {
+            /*if (file_exists($eXist_config_path)) {
                 $recordId = trim($row['ID']);
                 $filename =  'nuds/' . $recordId . '.xml';
                 put_to_exist($filename, $recordId, $eXist_url, $eXist_credentials);
-            }
-        }*/
+            }*/
+        }
     }
     
     
@@ -104,7 +107,8 @@ if (isset($spreadsheet_url) && isset($types_url)){
 
 //functions
 function generate_nuds($row, $count, $spreadsheet){
-    GLOBAL $types;
+    GLOBAL $obverses;
+    GLOBAL $reverses;
 	
 	$uri_space = 'http://numismatics.org/ocre/id/';
 	
@@ -496,7 +500,7 @@ function generate_nuds($row, $count, $spreadsheet){
     				
     					//multilingual type descriptions
     					$doc->startElement('type');
-        					foreach ($types as $desc){
+        					foreach ($obverses as $desc){
         					    if ($desc['code'] == $key){
         					        foreach ($desc as $k=>$v){
         					            if ($k != 'code'){
@@ -597,7 +601,7 @@ function generate_nuds($row, $count, $spreadsheet){
     				
     					//multilingual type descriptions
     					$doc->startElement('type');
-        					foreach ($types as $desc){
+        					foreach ($reverses as $desc){
         					    if ($desc['code'] == $key){
         					        foreach ($desc as $k=>$v){
         					            if ($k != 'code'){
@@ -728,7 +732,7 @@ function generate_nuds($row, $count, $spreadsheet){
 }
 
 
- /***** FUNCTIONS *****/
+/***** FUNCTIONS *****/
 function put_to_exist($filename, $recordId, $eXist_url, $eXist_credentials){
     if (($readFile = fopen($filename, 'r')) === FALSE){
         echo "Unable to read {$recordId}.xml\n";

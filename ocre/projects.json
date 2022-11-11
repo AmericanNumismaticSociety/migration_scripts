@@ -5,9 +5,15 @@
             {
                 "name" : "ric.8",
                 "types": "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ592qdkYhbCJjyjd0I9RwnOSI8GQdonPo7P_-3lbf-fks7a0fy-Af80RpjigYgyJt_ShTbCSGWpcEC/pub?output=csv",
-                "descriptions" : "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ592qdkYhbCJjyjd0I9RwnOSI8GQdonPo7P_-3lbf-fks7a0fy-Af80RpjigYgyJt_ShTbCSGWpcEC/pub?gid=1270156667&single=true&output=csv"
+                "o" : "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ592qdkYhbCJjyjd0I9RwnOSI8GQdonPo7P_-3lbf-fks7a0fy-Af80RpjigYgyJt_ShTbCSGWpcEC/pub?gid=1270156667&single=true&output=csv",
+                "r" : "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ592qdkYhbCJjyjd0I9RwnOSI8GQdonPo7P_-3lbf-fks7a0fy-Af80RpjigYgyJt_ShTbCSGWpcEC/pub?gid=1885710815&single=true&output=csv"
             }
         ]
+     },
+     { "name": "crro",        
+       "types": "https://docs.google.com/spreadsheets/d/e/2PACX-1vRxzNNLc4uLaPfNO60mNG4QJ09nWg0D4mosOCM-eQfbO4vqTj8skEE6zkJ7IbLdCrHVbWslehKDh5LN/pub?gid=1579772728&single=true&output=csv",
+       "o" : "https://docs.google.com/spreadsheets/d/e/2PACX-1vRxzNNLc4uLaPfNO60mNG4QJ09nWg0D4mosOCM-eQfbO4vqTj8skEE6zkJ7IbLdCrHVbWslehKDh5LN/pub?gid=1411485313&single=true&output=csv",
+       "r": "https://docs.google.com/spreadsheets/d/e/2PACX-1vRxzNNLc4uLaPfNO60mNG4QJ09nWg0D4mosOCM-eQfbO4vqTj8skEE6zkJ7IbLdCrHVbWslehKDh5LN/pub?gid=1676912151&single=true&output=csv"
      }
   ]
 }
