@@ -187,10 +187,10 @@ function generate_nuds($row, $count){
 				$doc->endElement();
 				
 				//sort dates
-				if (strlen($row['fromDate']) > 0 || strlen($row['toDate']) > 0){
+				if (strlen($row['From Date']) > 0 || strlen($row['To Date']) > 0){
 				    if (strlen($row['Textual Date']) > 0){
-				        $fromDate = intval(trim($row['fromDate']));
-				        $toDate = intval(trim($row['toDate']));
+				        $fromDate = intval(trim($row['From Date']));
+				        $toDate = intval(trim($row['To Date']));
 				        
 				        $doc->startElement('date');
     				        $doc->writeAttribute('notBefore', number_pad($fromDate, 4));
@@ -198,17 +198,17 @@ function generate_nuds($row, $count){
 				        $doc->text(trim($row['Textual Date']));
 				        $doc->endElement();
 				    } else {
-				        if (($row['fromDate'] == $row['toDate']) || (strlen($row['fromDate']) > 0 && strlen($row['toDate']) == 0)){
+				        if (($row['From Date'] == $row['To Date']) || (strlen($row['From Date']) > 0 && strlen($row['To Date']) == 0)){
 				            //ascertain whether or not the date is a range
-				            $fromDate = intval(trim($row['fromDate']));
+				            $fromDate = intval(trim($row['From Date']));
 				            
 				            $doc->startElement('date');
     				            $doc->writeAttribute('standardDate', number_pad($fromDate, 4));
     				            $doc->text(get_date_textual($fromDate));
 				            $doc->endElement();
 				        } else {
-				            $fromDate = intval(trim($row['fromDate']));
-				            $toDate = intval(trim($row['toDate']));
+				            $fromDate = intval(trim($row['From Date']));
+				            $toDate = intval(trim($row['To Date']));
 				            
 				            //only write date if both are integers
 				            if (is_int($fromDate) && is_int($toDate)){
@@ -283,8 +283,8 @@ function generate_nuds($row, $count){
 					}
 				}
 				
-				if (strlen($row['Flan shape']) > 0){
-				    $uri = trim($row['Flan shape']);
+				if (strlen($row['Shape URI']) > 0){
+				    $uri = trim($row['Shape URI']);
 				    $content = processUri($uri);
 				    
 				    $doc->startElement('shape');
@@ -395,33 +395,33 @@ function generate_nuds($row, $count){
 				}*/
 				
 				//obverse
-				if (strlen($row['O']) > 0){
-					$key = trim($row['O']);
+				if (strlen($row['Obverse Type Code']) > 0){
+					$key = trim($row['Obverse Type Code']);
 					
 					$doc->startElement('obverse');	
 					
     					//legend
-    					if (strlen(trim($row['O Legend'])) > 0){
-    					    $legend = trim($row['O Legend']);
+    					if (strlen(trim($row['Obverse Legend (Grek)'])) > 0){
+    					    $legend = trim($row['Obverse Legend (Grek)']);
     					    
     					    $doc->startElement('legend');
     					    //edition
     					    $doc->startElement('tei:div');
         					    $doc->writeAttribute('type', 'edition');
             					    $doc->startElement('tei:ab');
-            					    if (strlen($row['O Legend Orientation']) > 0){
-            					        $doc->writeAttribute('rend', trim($row['O Legend Orientation']));
+            					    if (strlen($row['Obverse Legend Orientation']) > 0){
+            					        $doc->writeAttribute('rend', trim($row['Obverse Legend Orientation']));
             					    }
             					    $doc->text($legend);
         					    $doc->endElement();
     					    $doc->endElement();
     					    
-    					    if (strlen(trim($row['O Legend transliteration'])) > 0){
+    					    if (strlen(trim($row['Obverse Legend Transliteration'])) > 0){
     					        //transliteration
     					        $doc->startElement('tei:div');
         					        $doc->writeAttribute('type', 'transliteration');
         					        $doc->startElement('tei:ab');
-        					           $doc->text(trim($row['O Legend transliteration']));
+        					           $doc->text(trim($row['Obverse Legend Transliteration']));
         					        $doc->endElement();
     					        $doc->endElement();
     					    }
@@ -500,9 +500,9 @@ function generate_nuds($row, $count){
 						}
 						
 						//symbols
-						if (strlen($row['OBV Symbol']) > 0){
+						if (strlen($row['Obverse Symbol']) > 0){
 							$doc->startElement('symbol');
-							     parse_symbol($doc, trim($row['OBV Symbol']));
+							     parse_symbol($doc, trim($row['Obverse Symbol']));
 							$doc->endElement();
 						}
 						if (strlen($row['O:leftField']) > 0){
@@ -511,39 +511,44 @@ function generate_nuds($row, $count){
                                 parse_symbol($doc, trim($row['O:leftField']));
 						    $doc->endElement();
 						}
-					
+						if (strlen($row['O:rightField']) > 0){
+						    $doc->startElement('symbol');
+    						    $doc->writeAttribute('position', 'rightField');
+    						    parse_symbol($doc, trim($row['O:rightField']));
+						    $doc->endElement();
+						}
 					//end obverse
 					$doc->endElement();
 				}
 				
 				//reverse
-				if (strlen($row['R']) > 0){
-					$key = trim($row['R']);					
+				if (strlen($row['Reverse Type Code']) > 0){
+					$key = trim($row['Reverse Type Code']);					
 					
 					$doc->startElement('reverse');
 					
 						//legend
-						if (strlen(trim($row['R Legend'])) > 0){
-							$legend = trim($row['R Legend']);							
+						if (strlen(trim($row['Reverse Legend'])) > 0){
+							$legend = trim($row['Reverse Legend']);							
 							
                             $doc->startElement('legend');                            
                                 //edition
                                 $doc->startElement('tei:div');
                                     $doc->writeAttribute('type', 'edition');
                                     $doc->startElement('tei:ab');
-                                        if (strlen($row['R Legend Orientation']) > 0){
-                                            $doc->writeAttribute('rend', trim($row['R Legend Orientation']));
+                                        if (strlen($row['Reverse Legend Orientation']) > 0){
+                                            $doc->writeAttribute('rend', trim($row['Reverse Legend Orientation']));
                                         }
                                         $doc->text($legend);
                                     $doc->endElement();
                                 $doc->endElement();
                             
-                               if (strlen(trim($row['R Legend transliteration'])) > 0){
+                               if (strlen(trim($row['Reverse Legend Transliteration'])) > 0){
                                     //transliteration
                                     $doc->startElement('tei:div');
                                         $doc->writeAttribute('type', 'transliteration');
                                         $doc->startElement('tei:ab');
-                                            $doc->text(trim($row['R Legend transliteration']));
+                                            $doc->text(trim($row['Reverse Legend Transliteration']));
                                         $doc->endElement();
                                     $doc->endElement();
                                 }
@@ -899,8 +904,13 @@ function write_seg_tei ($doc, $seg, $rend, $parent){
                 $auth = 'Other';                
         }
         
-        //echo "{$id}\n";        
-        $uri = "https://numismatics.org/bigr/symbol/" . $id;
+        //echo "{$id}\n";
+        
+        if (strpos($id, 'lorber') !== FALSE) {
+            $uri = "http://numismatics.org/pco/symbol/" . $id;
+        } else {
+            $uri = "https://numismatics.org/bigr/symbol/" . $id;
+        }
         
         if ($parent == false){
             $doc->startElement('tei:ab');

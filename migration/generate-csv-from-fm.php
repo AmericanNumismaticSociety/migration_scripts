@@ -31,10 +31,10 @@ AddHandler cgi-script cgi php py
 ************************/
 
 //$csv_id = $_GET['id'];
-$csv_id = 'fmexport-medals';
+$csv_id = 'medal3-mer';
 
 //create an array with pre-defined labels and values passed from the Filemaker POST
-$labels = array("accnum","department","objtype","material","manufacture",
+/*$labels = array("accnum","department","objtype","material","manufacture",
     "shape","weight","measurements","axis","denomination","era","dob",
     "startdate","enddate","refs","published","info","prevcoll","region","subregion",
     "locality","series","dynasty","mint","mintabbr","person","issuer",
@@ -44,7 +44,7 @@ $labels = array("accnum","department","objtype","material","manufacture",
     "edge","undertype","counterstamp","conservation","symbol",
     "obversesymbol","reversesymbol","signature","watermark",
     "imageavailable","acknowledgment","category","imagesponsor",
-    "OrigIntenUse","Authenticity","PostManAlt","diameter","height","width","depth","privateinfo");
+    "OrigIntenUse","Authenticity","PostManAlt","diameter","height","width","depth","privateinfo");*/
 
 
 //open CSV file from FileMaker and clean it, writing it back to /tmp
@@ -52,15 +52,15 @@ $file = file_get_contents($csv_id . ".csv");
 $cleanFile = $csv_id . '-cleaned.csv';
 //escape conflicting XML characters
 
-$cleaned = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x80-\x9F]/u', '', preg_replace("[\x1D]", "|", str_replace('>', '&gt;', str_replace('<', '&lt;', str_replace('&', 'and', preg_replace("[\x0D]", "\n", $file))))));
+$cleaned = preg_replace("[\x1D]", "|", $file);
 $cleaned = preg_replace('/\|+/', '|', $cleaned);
 $cleaned = preg_replace('/\|\"/', '"', $cleaned);
 
 //$lines = explode("\n", $cleaned);
 
 
-file_put_contents($cleanFile, implode(',', $labels) . "\n");
-file_put_contents($cleanFile, $cleaned, FILE_APPEND);
+//file_put_contents($cleanFile, implode(',', $labels) . "\n");
+file_put_contents($cleanFile, $cleaned);
 
 
 /***** JSON PARSING FUNCTIONS *****/
