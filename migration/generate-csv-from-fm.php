@@ -31,7 +31,7 @@ AddHandler cgi-script cgi php py
 ************************/
 
 //$csv_id = $_GET['id'];
-$csv_id = 'medal3-mer';
+$csv_id = 'Collection-Islamic-header';
 
 //create an array with pre-defined labels and values passed from the Filemaker POST
 /*$labels = array("accnum","department","objtype","material","manufacture",
@@ -52,9 +52,18 @@ $file = file_get_contents($csv_id . ".csv");
 $cleanFile = $csv_id . '-cleaned.csv';
 //escape conflicting XML characters
 
-$cleaned = preg_replace("[\x1D]", "|", $file);
-$cleaned = preg_replace('/\|+/', '|', $cleaned);
-$cleaned = preg_replace('/\|\"/', '"', $cleaned);
+if (($handle = fopen($csv_id . ".csv", "r")) !== FALSE) {
+    //$cleaned = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x80-\x9F]/u', '', preg_replace("[\x1D]", "|", str_replace('>', '&gt;', str_replace('<', '&lt;', str_replace('&', 'and', preg_replace("[\x0D]", "\n", $file))))));
+    
+    $cleaned = preg_replace("/[\x0D]/", "\n", $file);
+    $cleaned = preg_replace("/[\x1D]/", "|", $cleaned);   
+    //$cleaned = preg_replace('/\|+/', "x", $cleaned);
+    //$cleaned = preg_replace('/\|\"/', '"', $cleaned);
+} else {
+    echo "Unable to open file.\n";
+}
+
+fclose($handle);
 
 //$lines = explode("\n", $cleaned);
 
