@@ -2,7 +2,7 @@
 
 /*****
  * Author: Ethan Gruber
- * Date: July 2021
+ * Date: February 2024
  * Function: Read the RRDP specimen spreadsheet and perform Solr queries of the simpleAnnotationStore endpoint in order to join 
  * coin metadata with IIIF URIs for obverse and reverse images. This script performs data validation and will report errors via email.
  * It also PUTs the XML data to eXist-db and triggers Solr indexing in Numishare. It is intended to run in a cron job to facilitate regular updates without
@@ -19,12 +19,14 @@ define("COLLECTION_NAME", 'sitnam');
 
 //an array of sheets for batches of RRC numbers
 $sheets = array('https://docs.google.com/spreadsheets/d/e/2PACX-1vR7jfpBFfSzCLTTXLNCjU0p49GLFUMxbgrb1I5daS0uUjSFrBeM3SjHLUOTYE3NGd7ugMpi29qzu8cn/pub?gid=0&single=true&output=csv',
+    'https://docs.google.com/spreadsheets/d/e/2PACX-1vR7jfpBFfSzCLTTXLNCjU0p49GLFUMxbgrb1I5daS0uUjSFrBeM3SjHLUOTYE3NGd7ugMpi29qzu8cn/pub?gid=1351881890&single=true&output=csv',
     'https://docs.google.com/spreadsheets/d/e/2PACX-1vR7jfpBFfSzCLTTXLNCjU0p49GLFUMxbgrb1I5daS0uUjSFrBeM3SjHLUOTYE3NGd7ugMpi29qzu8cn/pub?gid=1880415193&single=true&output=csv',
     'https://docs.google.com/spreadsheets/d/e/2PACX-1vR7jfpBFfSzCLTTXLNCjU0p49GLFUMxbgrb1I5daS0uUjSFrBeM3SjHLUOTYE3NGd7ugMpi29qzu8cn/pub?gid=949141746&single=true&output=csv',
     'https://docs.google.com/spreadsheets/d/e/2PACX-1vR7jfpBFfSzCLTTXLNCjU0p49GLFUMxbgrb1I5daS0uUjSFrBeM3SjHLUOTYE3NGd7ugMpi29qzu8cn/pub?gid=1239303383&single=true&output=csv',
     'https://docs.google.com/spreadsheets/d/e/2PACX-1vR7jfpBFfSzCLTTXLNCjU0p49GLFUMxbgrb1I5daS0uUjSFrBeM3SjHLUOTYE3NGd7ugMpi29qzu8cn/pub?gid=1931963948&single=true&output=csv',
     'https://docs.google.com/spreadsheets/d/e/2PACX-1vR7jfpBFfSzCLTTXLNCjU0p49GLFUMxbgrb1I5daS0uUjSFrBeM3SjHLUOTYE3NGd7ugMpi29qzu8cn/pub?gid=799072239&single=true&output=csv',
-    'https://docs.google.com/spreadsheets/d/e/2PACX-1vR7jfpBFfSzCLTTXLNCjU0p49GLFUMxbgrb1I5daS0uUjSFrBeM3SjHLUOTYE3NGd7ugMpi29qzu8cn/pub?gid=777226094&single=true&output=csv'
+    'https://docs.google.com/spreadsheets/d/e/2PACX-1vR7jfpBFfSzCLTTXLNCjU0p49GLFUMxbgrb1I5daS0uUjSFrBeM3SjHLUOTYE3NGd7ugMpi29qzu8cn/pub?gid=777226094&single=true&output=csv',
+    'https://docs.google.com/spreadsheets/d/e/2PACX-1vR7jfpBFfSzCLTTXLNCjU0p49GLFUMxbgrb1I5daS0uUjSFrBeM3SjHLUOTYE3NGd7ugMpi29qzu8cn/pub?gid=953185103&single=true&output=csv'
 );
 
 //load sources sheet separately
