@@ -14,7 +14,7 @@
         <xsl:variable name="all-types" as="item()">
             <types>
                 <xsl:for-each
-                    select="collection(iri-to-uri('file:///home/komet/ans_migration/ocre/nuds_to_csv/old_nuds?select=ric.10*.xml'))//nuds:type/nuds:description">
+                    select="collection(iri-to-uri('file:///usr/local/projects/migration_scripts/ocre/nuds_to_csv/old_nuds?select=ric.3*.xml'))//nuds:type/nuds:description">
                     <xsl:variable name="type" select="normalize-space(.)"/>
 
                     <type>
@@ -80,7 +80,7 @@
 
         <xsl:variable name="row" as="item()">
             <sheet>
-                <xsl:for-each select="collection(iri-to-uri('file:///home/komet/ans_migration/ocre/nuds_to_csv/old_nuds?select=ric.10*.xml'))">
+                <xsl:for-each select="collection(iri-to-uri('file:///usr/local/projects/migration_scripts/ocre/nuds_to_csv/old_nuds?select=ric.3*.xml'))">
                     <row>
                         <xsl:apply-templates select="/nuds:nuds">
                             <xsl:with-param name="types" select="$types"/>
@@ -91,7 +91,7 @@
         </xsl:variable>
 
         <!-- output the types -->
-        <!--<xsl:text>code,en&#x0A;</xsl:text>
+       <!-- <xsl:text>code,en&#x0A;</xsl:text>
         <xsl:for-each select="$types//type">
 
             <xsl:value-of select="@code"/>
