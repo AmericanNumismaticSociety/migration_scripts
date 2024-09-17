@@ -31,7 +31,7 @@ AddHandler cgi-script cgi php py
 ************************/
 
 //$csv_id = $_GET['id'];
-$csv_id = 'Collection-NorthAmerican';
+$csv_id = 'Collection-LA';
 
 //create an array with pre-defined labels and values passed from the Filemaker POST
 /*$labels = array("accnum","department","objtype","material","manufacture",

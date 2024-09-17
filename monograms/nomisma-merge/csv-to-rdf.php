@@ -1,0 +1,219 @@
+<?php 
+/*****
+ * Author: Ethan Gruber 
+ * Date: September 2024
+ * Function: Generate Monogram RDF/XML for Nomisma based on merged CSV file.
+ *****/
+
+$namespaces = array(
+    'agco'=>'http://numismatics.org/agco/symbol/',
+    'bigr'=>'https://numismatics.org/bigr/symbol/',
+    'ocre'=>'http://numismatics.org/ocre/symbol/',
+    'pella'=>'http://numismatics.org/pella/symbol/',
+    'sco'=>'http://numismatics.org/sco/symbol/',
+    'pco'=>'http://numismatics.org/pco/symbol/',
+    'cn'=>'https://data.corpus-nummorum.eu/api/monograms/'
+);
+
+$data = generate_json('2024_07_16_monogram.csv');
+
+$monograms = array();
+
+$count = 1;
+
+foreach ($data as $row) {
+    
+    if ($row['delete'] != 'delete' && $count <= 10){
+        $monogram = array();        
+        
+        $id = 'monogram.' . number_pad($count, 5);
+        
+        $monogram['id'] = "http://nomisma.org/symbol/" . $id;
+        
+        //prefLabel and definition
+        $monogram['prefLabel'] = "Monogram {$count}";
+        $monogram['definition'] = "Monogram {$count} published by Nomisma.org. See matching URIs and bibliographic references for further information about the usage of this symbol on coinage.";
+        
+        $monogram['image_url'] = 'https://nomisma.org/svg/' . $id . '.svg';
+        
+        //add field of numismatics and source. Hard code for CN and OCRE but query RDF for others
+        $values = source_and_fon($row, $namespaces);
+        
+        if (array_key_exists('fon', $values)){
+            foreach ($values['fon'] as $fon) {
+                $monogram['fon'][] = $fon;
+            }
+        }
+        if (array_key_exists('source', $values)){
+            foreach ($values['source'] as $source) {
+                $monogram['source'][] = $source;
+            }
+        }
+        
+        unset($values);
+        
+        //add matching IDs
+        $monogram['matches'][] = $namespaces[$row['category']] . $row['image'];      
+        
+        if (strlen($row['delete']) > 0) {
+            $otherLinks = explode(',', $row['delete']);
+            array_filter($otherLinks);
+            
+            foreach ($otherLinks as $otherLink){                
+                
+                //perform fon/source lookup on $otherLink id
+                foreach ($data as $otherRow) {
+                    if ($otherRow['image'] == $otherLink){
+                        
+                        $monogram['matches'][] = $namespaces[$otherRow['category']] . $otherLink;
+                        
+                        $values = source_and_fon($otherRow, $namespaces);
+                        
+                        if (array_key_exists('fon', $values)){
+                            foreach ($values['fon'] as $fon) {
+                                if (!in_array($fon, $monogram['fon'])){
+                                    $monogram['fon'][] = $fon;
+                                }
+                            }
+                        }
+                        if (array_key_exists('source', $values)){
+                            foreach ($values['source'] as $source) {
+                                if (!in_array($source, $monogram['source'])){
+                                    $monogram['source'][] = $source;
+                                }
+                            }
+                        }
+                        
+                        unset($values);
+                    }
+                }                
+            }
+        }
+        
+        //add letters
+        if (strlen($row['Lettercombo_NEW']) > 0) {
+            $letters = str_replace(' ', '', $row['Lettercombo_NEW']);
+            
+            //replace accidental Latin with Greek letters in any combo that isn't in OCRE
+            if ($row['category'] != 'ocre'){
+                $latin = array('A','B','E','H', 'I','K','M','N','O','P','T','X','Y','Z');
+                $greek = array('Α','Β','Ε','Η','Ι','Κ','Μ','Ν','Ο','Ρ','Τ','Χ','Υ','Ζ');
+                
+                $letters = str_replace($latin, $greek, $letters);
+            }
+            
+            $monogram['letters'] = preg_split('//u', $letters, -1, PREG_SPLIT_NO_EMPTY);
+        }
+        
+        $count ++;
+        
+        $monograms[] = $monogram;
+        var_dump($monogram);
+    }
+}
+
+
+write_monogram_rdf ($monograms);
+
+
+/***** FUNCTIONS *****/
+function write_monogram_rdf($monograms){
+    
+}
+
+function source_and_fon($row, $namespaces) {
+    
+    $values = array();
+    
+    if ($row['category'] == 'cn') {
+        
+        $values['fon'][] = 'http://nomisma.org/id/greek_numismatics';
+        $values['source'][] = 'http://nomisma.org/id/CN';
+    } elseif ($row['category'] == 'ocre') {
+        $values['fon'][] = 'http://nomisma.org/id/roman_numismatics';
+        $values['source'][] = 'http://nomisma.org/id/ric';
+    } else {
+        $uri = $namespaces[$row['category']] . trim($row['image']);
+        $values = processUri($uri);
+    }
+    
+    return $values;
+}
+
+function processUri($uri) {
+    echo "Querying {$uri}.\n";
+    
+    $values = array();
+    
+    $xmlDoc = new DOMDocument();
+    $xmlDoc->load($uri . '.rdf');
+    $xpath = new DOMXpath($xmlDoc);
+    $xpath->registerNamespace('skos', 'http://www.w3.org/2004/02/skos/core#');
+    $xpath->registerNamespace('rdf', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#');
+    $xpath->registerNamespace('dcterms', 'http://purl.org/dc/terms/');
+    
+    $fons = $xpath->query("descendant::dcterms:isPartOf");
+    $sources = $xpath->query("descendant::dcterms:source");
+    
+    foreach ($fons as $fon) {
+        $values['fon'][] = $fon->getAttribute('rdf:resource');
+    }
+    
+    foreach ($sources as $source) {
+        $values['source'][] = $source->getAttribute('rdf:resource');
+    }
+    
+    return $values;
+}
+
+
+function number_pad($number,$n) {
+    if ($number > 0){
+        $gYear = str_pad((int) $number,$n,"0",STR_PAD_LEFT);
+    } elseif ($number < 0) {
+        $gYear = '-' . str_pad((int) abs($number),$n,"0",STR_PAD_LEFT);
+    }
+    return $gYear;
+}
+
+function generate_json($doc){
+    $keys = array();
+    $geoData = array();
+    
+    $data = csvToArray($doc, ',');
+    
+    // Set number of elements (minus 1 because we shift off the first row)
+    $count = count($data) - 1;
+    
+    //Use first row for names
+    $labels = array_shift($data);
+    
+    foreach ($labels as $label) {
+        $keys[] = $label;
+    }
+    
+    // Bring it all together
+    for ($j = 0; $j < $count; $j++) {
+        $d = array_combine($keys, $data[$j]);
+        $geoData[$j] = $d;
+    }
+    return $geoData;
+}
+
+// Function to convert CSV into associative array
+function csvToArray($file, $delimiter) {
+    if (($handle = fopen($file, 'r')) !== FALSE) {
+        $i = 0;
+        while (($lineArray = fgetcsv($handle, 4000, $delimiter, '"')) !== FALSE) {
+            for ($j = 0; $j < count($lineArray); $j++) {
+                $arr[$i][$j] = $lineArray[$j];
+            }
+            $i++;
+        }
+        fclose($handle);
+    }
+    return $arr;
+}
+
+
+?>
