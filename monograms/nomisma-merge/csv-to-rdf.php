@@ -15,7 +15,7 @@ $namespaces = array(
     'cn'=>'https://data.corpus-nummorum.eu/api/monograms/'
 );
 
-$data = generate_json('2024_07_16_monogram.csv');
+$data = generate_json('2024-07-16-monogram.csv');
 
 $monograms = array();
 
@@ -23,12 +23,15 @@ $count = 1;
 
 foreach ($data as $row) {
     
-    if ($row['delete'] != 'delete' && $count <= 10){
+    if ($row['delete'] != 'delete'){
         $monogram = array();        
         
         $id = 'monogram.' . number_pad($count, 5);
         
         $monogram['id'] = $id;
+        
+        echo "Processing {$row['image']}\n";
+        
         $monogram['uri'] = "http://nomisma.org/symbol/" . $id;
         
         //prefLabel and definition
@@ -114,7 +117,7 @@ foreach ($data as $row) {
             $monogram['letters'] = preg_split('//u', $letters, -1, PREG_SPLIT_NO_EMPTY);
         }
         
-        $count ++;
+        $count++;
         
         $monograms[] = $monogram;
         //var_dump($monogram);
@@ -169,21 +172,28 @@ function write_monogram_rdf($monograms){
                     $doc->text($monogram['definition']);
                 $doc->endElement();
                 
-                foreach ($monogram['letters'] as $letter) {
-                    $doc->writeElement('crm:P106_is_composed_of', $letter);
+                if (array_key_exists('letters', $monogram)) {
+                    foreach ($monogram['letters'] as $letter) {
+                        $doc->writeElement('crm:P106_is_composed_of', $letter);
+                    }
+                }                
+                
+                if (array_key_exists('matches', $monogram)){
+                    foreach ($monogram['matches'] as $match) {
+                        $doc->startElement('skos:exactMatch');
+                            $doc->writeAttribute('rdf:resource', $match);
+                        $doc->endElement();
+                    }
                 }
                 
-                foreach ($monogram['matches'] as $match) {
-                    $doc->startElement('skos:exactMatch');
-                        $doc->writeAttribute('rdf:resource', $match);
-                    $doc->endElement();
+                if (array_key_exists('fon', $monogram)) {
+                    foreach ($monogram['fon'] as $fon) {
+                        $doc->startElement('dcterms:isPartOf');
+                            $doc->writeAttribute('rdf:resource', $fon);
+                        $doc->endElement();
+                    }
                 }
                 
-                foreach ($monogram['fon'] as $fon) {
-                    $doc->startElement('dcterms:isPartOf');
-                        $doc->writeAttribute('rdf:resource', $fon);
-                    $doc->endElement();
-                }
                 
                 foreach ($monogram['source'] as $source) {
                     $doc->startElement('dcterms:source');
@@ -285,8 +295,17 @@ function source_and_fon($row, $namespaces) {
         $values['fon'][] = 'http://nomisma.org/id/roman_numismatics';
         $values['source'][] = 'http://nomisma.org/id/ric';
     } else {
-        $uri = $namespaces[$row['category']] . trim($row['image']);
+        $image = trim($row['image']);
+        
+        if ($row['category'] == 'pco' && strpos($row['image'], '_') !== FALSE) {
+            $image = strtok($image, '_');
+            $uri = $namespaces[$row['category']] . $image;
+        } else {
+            $uri = $namespaces[$row['category']] . $image;            
+        }
+        
         $values = processUri($uri);
+        
     }
     
     return $values;
