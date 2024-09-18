@@ -28,7 +28,8 @@ foreach ($data as $row) {
         
         $id = 'monogram.' . number_pad($count, 5);
         
-        $monogram['id'] = "http://nomisma.org/symbol/" . $id;
+        $monogram['id'] = $id;
+        $monogram['uri'] = "http://nomisma.org/symbol/" . $id;
         
         //prefLabel and definition
         $monogram['prefLabel'] = "Monogram {$count}";
@@ -48,6 +49,10 @@ foreach ($data as $row) {
             foreach ($values['source'] as $source) {
                 $monogram['source'][] = $source;
             }
+        }
+        
+        if (array_key_exists('creator', $values)){
+            $monogram['creator'] = $values['creator'];
         }
         
         unset($values);
@@ -84,6 +89,10 @@ foreach ($data as $row) {
                             }
                         }
                         
+                        if (array_key_exists('creator', $values)){
+                            $monogram['creator'] = $values['creator'];
+                        }
+                        
                         unset($values);
                     }
                 }                
@@ -108,17 +117,160 @@ foreach ($data as $row) {
         $count ++;
         
         $monograms[] = $monogram;
-        var_dump($monogram);
+        //var_dump($monogram);
     }
 }
 
 
-write_monogram_rdf ($monograms);
+write_monogram_rdf($monograms);
 
 
 /***** FUNCTIONS *****/
 function write_monogram_rdf($monograms){
-    
+    foreach ($monograms as $monogram) {
+       
+        $doc = new XMLWriter();
+        //$doc->openUri('php://output');
+        
+        $doc->openUri('rdf/' . $monogram['id'] . '.rdf');
+        
+        $doc->setIndent(true);
+        //now we need to define our Indent string,which is basically how many blank spaces we want to have for the indent
+        $doc->setIndentString("    ");
+        
+        $doc->startDocument('1.0','UTF-8');
+        
+        $doc->startElement('rdf:RDF');
+        $doc->writeAttribute('xmlns:rdf', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#');
+        $doc->writeAttribute('xmlns:xsd', 'http://www.w3.org/2001/XMLSchema');
+        $doc->writeAttribute('xmlns:skos', 'http://www.w3.org/2004/02/skos/core#');
+        $doc->writeAttribute('xmlns:rdfs', 'http://www.w3.org/2000/01/rdf-schema#');
+        $doc->writeAttribute('xmlns:crmdig', 'http://www.ics.forth.gr/isl/CRMdig/');
+        $doc->writeAttribute('xmlns:nmo', 'http://nomisma.org/ontology#');
+        $doc->writeAttribute('xmlns:dcterms', 'http://purl.org/dc/terms/');
+        $doc->writeAttribute('xmlns:prov', 'http://www.w3.org/ns/prov#');
+        $doc->writeAttribute('xmlns:foaf', 'http://xmlns.com/foaf/0.1/');
+        $doc->writeAttribute('xmlns:crm', 'http://www.cidoc-crm.org/cidoc-crm/');
+        
+            //monogram RDF
+            $doc->startElement('nmo:Monogram');
+                $doc->writeAttribute('rdf:about', $monogram['uri']);
+                $doc->startElement('rdf:type');
+                    $doc->writeAttribute('rdf:resource', 'http://www.w3.org/2004/02/skos/core#Concept');
+                $doc->endElement();
+                
+                $doc->startElement('skos:prefLabel');
+                    $doc->writeAttribute('xml:lang', 'en');
+                    $doc->text($monogram['prefLabel']);
+                $doc->endElement();
+                
+                $doc->startElement('skos:definition');
+                    $doc->writeAttribute('xml:lang', 'en');
+                    $doc->text($monogram['definition']);
+                $doc->endElement();
+                
+                foreach ($monogram['letters'] as $letter) {
+                    $doc->writeElement('crm:P106_is_composed_of', $letter);
+                }
+                
+                foreach ($monogram['matches'] as $match) {
+                    $doc->startElement('skos:exactMatch');
+                        $doc->writeAttribute('rdf:resource', $match);
+                    $doc->endElement();
+                }
+                
+                foreach ($monogram['fon'] as $fon) {
+                    $doc->startElement('dcterms:isPartOf');
+                        $doc->writeAttribute('rdf:resource', $fon);
+                    $doc->endElement();
+                }
+                
+                foreach ($monogram['source'] as $source) {
+                    $doc->startElement('dcterms:source');
+                        $doc->writeAttribute('rdf:resource', $source);
+                    $doc->endElement();
+                }
+                
+                //image
+                $doc->startElement('crm:P165i_is_incorporated_in');
+                    $doc->startElement('crmdig:D1_Digital_Object');
+                        $doc->writeAttribute('rdf:about', $monogram['image_url']);
+                        $doc->writeElement('dcterms:format', 'image/svg+xml');
+                        
+                        $doc->startElement('dcterms:license');
+                            $doc->writeAttribute('rdf:resource', 'https://creativecommons.org/choose/mark/');
+                        $doc->endElement();
+                        
+                        if (array_key_exists('creator', $monogram)) {
+                            $doc->startElement('dcterms:creator');
+                                $doc->writeAttribute('rdf:resource', $monogram['creator']);
+                            $doc->endElement();
+                        }
+                        
+                    $doc->endElement();
+                $doc->endElement();
+                
+                $doc->startElement('skos:changeNote');
+                    $doc->writeAttribute('rdf:resource', $monogram['uri'] . '#provenance');
+                $doc->endElement();
+                
+                //end nmo:Monogram
+            $doc->endElement();
+        
+            //data provenance
+            $doc->startElement('dcterms:ProvenanceStatement');
+                $doc->writeAttribute('rdf:about', $monogram['uri'] . '#provenance');
+                
+                $doc->startElement('foaf:topic');
+                    $doc->writeAttribute('rdf:resource', $monogram['uri']);
+                $doc->endElement();
+                
+                //creation activity
+                $doc->startElement('prov:wasGeneratedBy');
+                    $doc->startElement('prov:Activity');
+                    
+                        $doc->startElement('rdf:type');
+                            $doc->writeAttribute('rdf:resource', 'http://www.w3.org/ns/prov#Create');
+                        $doc->endElement(); 
+                        
+                        $doc->startElement('prov:atTime');
+                            $doc->writeAttribute('rdf:datatype', 'http://www.w3.org/2001/XMLSchema#dateTime');
+                            $doc->text(date(DATE_W3C));
+                        $doc->endElement();
+                        
+                        //add Nomisma editors
+                        $doc->startElement('prov:wasAssociatedWith');
+                            $doc->writeAttribute('rdf:resource', 'http://nomisma.org/editor/ktolle');
+                        $doc->endElement();
+                        $doc->startElement('prov:wasAssociatedWith');
+                            $doc->writeAttribute('rdf:resource', 'http://nomisma.org/editor/upeter');
+                        $doc->endElement();
+                        $doc->startElement('prov:wasAssociatedWith');
+                            $doc->writeAttribute('rdf:resource', 'http://nomisma.org/editor/pvalfen');
+                        $doc->endElement();
+                        $doc->startElement('prov:wasAssociatedWith');
+                            $doc->writeAttribute('rdf:resource', 'http://nomisma.org/editor/egruber');
+                        $doc->endElement();
+                        
+                        //description
+                        $doc->startElement('dcterms:description');
+                            $doc->writeAttribute('xml:lang', 'en');
+                            $doc->text("Unique Greek monogram shapes were extracted by Computer Vision methods implemented by Karsten Tolle. Ulrike Peter and Peter van Alfen performed quality assurance and contributed to original metadata production. Ethan Gruber merged data derived from source material.");
+                        $doc->endElement();
+                        
+                    $doc->endElement();
+                $doc->endElement();
+                
+                //end dcterms:ProvenanceStatement
+            $doc->endElement();
+        
+        //close rdf:RDF
+        $doc->endElement();
+        
+        //close file
+        $doc->endDocument();
+        $doc->flush();
+    }
 }
 
 function source_and_fon($row, $namespaces) {
@@ -162,6 +314,9 @@ function processUri($uri) {
     foreach ($sources as $source) {
         $values['source'][] = $source->getAttribute('rdf:resource');
     }
+    
+    $creator = $xpath->query("descendant::dcterms:creator")->item(0);
+    $values['creator'] = $creator->getAttribute('rdf:resource');
     
     return $values;
 }
