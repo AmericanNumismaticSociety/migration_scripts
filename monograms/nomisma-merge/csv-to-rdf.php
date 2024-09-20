@@ -125,11 +125,36 @@ foreach ($data as $row) {
 }
 
 
-write_monogram_rdf($monograms);
+//write_monogram_rdf($monograms);
+
+write_csv($monograms);
 
 
 /***** FUNCTIONS *****/
-function write_monogram_rdf($monograms){
+function write_csv($monograms) {
+    
+    $rows[] = array('URI', 'exactMatch 1', 'exactMatch 2');
+    
+    foreach ($monograms as $monogram) {
+        $row = array();
+        $row[] = $monogram['uri'];
+        foreach ($monogram['matches'] as $match) {
+            $row[] = $match;
+        }
+        
+        $rows[] = $row;
+    }
+    
+    $fp = fopen('concordance.csv', 'w');
+    
+    foreach ($rows as $row) {
+        fputcsv($fp, $row);
+    }
+    
+    fclose($fp);
+}
+
+function write_monogram_rdf($monograms) {
     foreach ($monograms as $monogram) {
        
         $doc = new XMLWriter();
