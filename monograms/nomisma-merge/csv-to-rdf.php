@@ -61,7 +61,13 @@ foreach ($data as $row) {
         unset($values);
         
         //add matching IDs
-        $monogram['matches'][] = $namespaces[$row['category']] . $row['image'];      
+        $image = trim($row['image']);
+        if ($row['category'] == 'pco' && strpos($image, '_') !== FALSE) {
+            $image = strtok($image, '_');
+            $monogram['matches'][] = $namespaces[$row['category']] . $image;
+        } else {
+            $monogram['matches'][] = $namespaces[$row['category']] . $image;
+        }   
         
         if (strlen($row['delete']) > 0) {
             $otherLinks = explode(',', $row['delete']);
@@ -73,7 +79,12 @@ foreach ($data as $row) {
                 foreach ($data as $otherRow) {
                     if ($otherRow['image'] == $otherLink){
                         
-                        $monogram['matches'][] = $namespaces[$otherRow['category']] . $otherLink;
+                        if ($otherRow['category'] == 'pco' && strpos($otherLink, '_') !== FALSE) {
+                            $otherLink = strtok($otherLink, '_');                            
+                            $monogram['matches'][] = $namespaces[$otherRow['category']] . $otherLink;
+                        } else {
+                            $monogram['matches'][] = $namespaces[$otherRow['category']] . $otherLink;
+                        }
                         
                         $values = source_and_fon($otherRow, $namespaces);
                         
@@ -125,7 +136,7 @@ foreach ($data as $row) {
 }
 
 
-//write_monogram_rdf($monograms);
+write_monogram_rdf($monograms);
 
 write_csv($monograms);
 
@@ -322,7 +333,7 @@ function source_and_fon($row, $namespaces) {
     } else {
         $image = trim($row['image']);
         
-        if ($row['category'] == 'pco' && strpos($row['image'], '_') !== FALSE) {
+        if ($row['category'] == 'pco' && strpos($image, '_') !== FALSE) {
             $image = strtok($image, '_');
             $uri = $namespaces[$row['category']] . $image;
         } else {
