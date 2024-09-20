@@ -5,8 +5,6 @@
  * Function: Rename SVG files to new sequential Nomisma IDs
  *****/
 
-
-
 $data = generate_json('2024-07-16-monogram.csv');
 
 
