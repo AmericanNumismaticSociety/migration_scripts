@@ -212,6 +212,10 @@ function write_monogram_rdf($monograms) {
                     $doc->writeAttribute('rdf:resource', 'http://www.w3.org/2004/02/skos/core#Concept');
                 $doc->endElement();
                 
+                $doc->startElement('skos:inScheme');
+                    $doc->writeAttribute('rdf:resource', 'http://nomisma.org/symbol/');
+                $doc->endElement();
+                
                 $doc->startElement('skos:prefLabel');
                     $doc->writeAttribute('xml:lang', 'en');
                     $doc->text($monogram['prefLabel']);
