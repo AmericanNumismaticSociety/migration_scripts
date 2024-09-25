@@ -5,14 +5,14 @@
  * Function: Rename SVG files to new sequential Nomisma IDs
  *****/
 
-$data = generate_json('2024-07-16-monogram.csv');
+$data = generate_json('2024-09-25-monogram.csv');
 
 
 $count = 1;
 
 foreach ($data as $row) {
     
-    if ($row['delete'] != 'delete'){   
+    if ($row['duplicate'] != 'delete'){   
         
         $id = 'monogram.' . number_pad($count, 5) . '.svg';
         

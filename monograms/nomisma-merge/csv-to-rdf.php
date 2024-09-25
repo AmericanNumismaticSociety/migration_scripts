@@ -15,7 +15,7 @@ $namespaces = array(
     'cn'=>'https://data.corpus-nummorum.eu/api/monograms/'
 );
 
-$data = generate_json('2024-07-16-monogram.csv');
+$data = generate_json('2024-09-25-monogram.csv');
 
 $monograms = array();
 
@@ -23,7 +23,7 @@ $count = 1;
 
 foreach ($data as $row) {
     
-    if ($row['delete'] != 'delete'){
+    if ($row['duplicate'] != 'delete'){
         $monogram = array();        
         
         $id = 'monogram.' . number_pad($count, 5);
@@ -65,13 +65,22 @@ foreach ($data as $row) {
         if ($row['category'] == 'pco' && strpos($image, '_') !== FALSE) {
             $image = strtok($image, '_');
             $monogram['matches'][] = $namespaces[$row['category']] . $image;
+        } elseif ($row['category'] == 'cn') {
+            $monogram['matches'][] = $namespaces[$row['category']] . str_replace('cn_controlmark_', '', $image);
         } else {
             $monogram['matches'][] = $namespaces[$row['category']] . $image;
         }   
         
-        if (strlen($row['delete']) > 0) {
-            $otherLinks = explode(',', $row['delete']);
-            array_filter($otherLinks);
+        if (strlen(trim($row['duplicate'])) > 0) {
+            $otherLinks = array();
+            $otherLinks[] = trim($row['duplicate']);
+            
+            if (strlen(trim($row['duplicate2'])) > 0) {
+                $otherLinks[] = trim($row['duplicate2']);
+            }
+            if (strlen(trim($row['duplicate3'])) > 0) {
+                $otherLinks[] = trim($row['duplicate3']);
+            }
             
             foreach ($otherLinks as $otherLink){                
                 
@@ -82,6 +91,8 @@ foreach ($data as $row) {
                         if ($otherRow['category'] == 'pco' && strpos($otherLink, '_') !== FALSE) {
                             $otherLink = strtok($otherLink, '_');                            
                             $monogram['matches'][] = $namespaces[$otherRow['category']] . $otherLink;
+                        } elseif ($otherRow['category'] == 'cn') {
+                            $monogram['matches'][] = $namespaces[$otherRow['category']] . str_replace('cn_controlmark_', '', $otherLink);
                         } else {
                             $monogram['matches'][] = $namespaces[$otherRow['category']] . $otherLink;
                         }
@@ -111,6 +122,8 @@ foreach ($data as $row) {
                     }
                 }                
             }
+            
+            unset($otherLinks);
         }
         
         //add letters
@@ -132,6 +145,8 @@ foreach ($data as $row) {
         
         $monograms[] = $monogram;
         //var_dump($monogram);
+    } else {
+        echo "Skipping {$row['image']}\n";
     }
 }
 
@@ -144,7 +159,7 @@ write_csv($monograms);
 /***** FUNCTIONS *****/
 function write_csv($monograms) {
     
-    $rows[] = array('URI', 'exactMatch 1', 'exactMatch 2');
+    $rows[] = array('URI', 'exactMatch 1', 'exactMatch 2', 'exactMatch 3', 'exactMatch 4');
     
     foreach ($monograms as $monogram) {
         $row = array();
@@ -170,7 +185,6 @@ function write_monogram_rdf($monograms) {
        
         $doc = new XMLWriter();
         //$doc->openUri('php://output');
-        
         $doc->openUri('rdf/' . $monogram['id'] . '.rdf');
         
         $doc->setIndent(true);
@@ -323,10 +337,10 @@ function source_and_fon($row, $namespaces) {
     
     $values = array();
     
-    if ($row['category'] == 'cn') {
-        
+    if ($row['category'] == 'cn') {        
         $values['fon'][] = 'http://nomisma.org/id/greek_numismatics';
         $values['source'][] = 'http://nomisma.org/id/CN';
+        $values['creator'] = 'http://nomisma.org/editor/vstolba';
     } elseif ($row['category'] == 'ocre') {
         $values['fon'][] = 'http://nomisma.org/id/roman_numismatics';
         $values['source'][] = 'http://nomisma.org/id/ric';
