@@ -7,7 +7,8 @@
 
 $data = generate_json('Asia_Minor_Hoards.csv');
 $findspots = generate_json('Findspots_CH.csv');
-$counts = generate_json('Hoard_Total_Counts_CH.csv');
+$counts_csv = generate_json('Hoard_Total_Counts_CH.csv');
+$contents_csv = generate_json('Hoard_contents_CH.csv');
 
 //generate an array of duplicate hoards to exclude
 $duplicates = find_duplicates($data);
@@ -63,27 +64,139 @@ foreach ($hoards as $id=>$hoard) {
         }
     } // end findspots
     
-    //process total counts
-    
-    foreach ($counts as $row) {
+    //process total counts    
+    foreach ($counts_csv as $row) {
         foreach ($row as $k=>$v) {
             if (substr($k, 0, 2) == 'CH' && strlen(trim($v)) > 0) {
                 if ($v == $id) {
-                    $contents = array();
+                    $counts = array();
                     
                     if (strlen($row['Contents']) > 0) {
-                        $contents['description'] = trim($row['Contents']);
+                        $counts['description'] = trim($row['Contents']);
                     }
                     
                     if (is_numeric($row['Total count'])) {
-                        $contents['count'] = trim($row['Total count']);
+                        $counts['count'] = trim($row['Total count']);
+                    }                    
+                    if (is_numeric($row['Min. count'])) {
+                        $counts['minCount'] = trim($row['Min. count']);
+                    }
+                    if (is_numeric($row['Max. count'])) {
+                        $counts['maxCount'] = trim($row['Max. count']);
+                    }
+                    if ($row['Approximate'] == 'yes') {
+                        $counts['approximate'] = true;
                     }
                     
-                    $hoards[$id]['contents'] = $contents;
+                    
+                    $hoards[$id]['counts'] = $counts;
+                }
+            }
+        }
+    } //end counts
+    
+    //contents
+    $contents = array();
+    foreach ($contents_csv as $row) {
+        foreach ($row as $k=>$v) {
+            if (substr($k, 0, 2) == 'CH' && strlen(trim($v)) > 0) {
+                if ($v == $id) {
+                    $group = array();
+                    //counts
+                    if (is_numeric($row['Coin count'])) {
+                        //echo $row['Coin count'] . "\n";
+                        $group['count'] = trim($row['Coin count']);
+                    }
+                    if (is_numeric($row['min coin count'])) {
+                        $group['minCount'] = trim($row['min coin count']);
+                    }
+                    if (is_numeric($row['max coin count'])) {
+                        $group['maxCount'] = trim($row['max coin count']);
+                    }
+                    //uncertainty
+                    if ($row['coin count approximate'] == 'TRUE') {
+                        $group['approximate'] = true;
+                    }
+                    if ($row['coin count uncertain'] == 'TRUE') {
+                        $group['uncertain'] = true;
+                    }
+                    
+                    //Nomisma types
+                    //geographic
+                    if (strpos($row['Mint 1 URI'], 'nomisma.org') !== FALSE) {
+                        $group['mint'][] = trim($row['Mint 1 URI']);
+                    }
+                    if (strpos($row['Mint 2 URI'], 'nomisma.org') !== FALSE) {
+                        $group['mint'][] = trim($row['Mint 2 URI']);
+                    }
+                    if ($row['mint uncertain'] == 'TRUE') {
+                        $group['mint_uncertain'] = true;
+                    }
+                    if (strpos($row['Region 1 URI'], 'nomisma.org') !== FALSE) {
+                        $group['region'][] = trim($row['Region 1 URI']);
+                    }
+                    if (strpos($row['Region 2 URI'], 'nomisma.org') !== FALSE) {
+                        $group['region'][] = trim($row['Region 2 URI']);
+                    }
+                    if (strpos($row['Region 3 URI'], 'nomisma.org') !== FALSE) {
+                        $group['region'][] = trim($row['Region 3 URI']);
+                    }
+                    
+                    //authority
+                    if (strpos($row['Authority 1 URI'], 'nomisma.org') !== FALSE) {
+                        $group['authority'][] = trim($row['Authority 1 URI']);
+                    }
+                    if (strpos($row['Authority 2 URI'], 'nomisma.org') !== FALSE) {
+                        $group['authority'][] = trim($row['Authority 2 URI']);
+                    }
+                    if ($row['authority uncertain'] == 'TRUE') {
+                        $group['authority_uncertain'] = true;
+                    }
+                    
+                    if (strpos($row['Stated authority'], 'nomisma.org') !== FALSE) {
+                        $group['authority'][] = trim($row['Stated authority']);
+                    }
+                    if (strpos($row['Dynasty URI'], 'nomisma.org') !== FALSE) {
+                        $group['authority'][] = trim($row['Dynasty URI']);
+                    }
+                    
+                    //material
+                    if (strpos($row['Material 1 URI'], 'nomisma.org') !== FALSE) {
+                        $group['material'][] = trim($row['Material 1 URI']);
+                    }
+                    if (strpos($row['Material 2 URI'], 'nomisma.org') !== FALSE) {
+                        $group['material'][] = trim($row['Material 2 URI']);
+                    }
+                    if ($row['material uncertain'] == 'TRUE') {
+                        $group['material_uncertain'] = true;
+                    }
+                    
+                    //denomination
+                    if (strpos($row['Denomination 1 URI'], 'nomisma.org') !== FALSE) {
+                        $group['denomination'][] = trim($row['Denomination 1 URI']);
+                    }
+                    if (strpos($row['Denomination 2 URI'], 'nomisma.org') !== FALSE) {
+                        $group['denomination'][] = trim($row['Denomination 2 URI']);
+                    }
+                    if ($row['denomination uncertain'] == 'TRUE') {
+                        $group['denomination_uncertain'] = true;
+                    }
+                    
+                    if (strpos($row['Authenticity'], 'nomisma.org') !== FALSE) {
+                        $group['authenticity'] = trim($row['Authenticity']);
+                    }
+                    
+                    //add coinGrp into $contents array
+                    $contents[] = $group;
+                    
                 }
             }
         }
     } //end contents
+    
+    $hoards[$id]['contents'] = $contents;
+    
+    unset($contents);
 }
 
 var_dump($hoards);
