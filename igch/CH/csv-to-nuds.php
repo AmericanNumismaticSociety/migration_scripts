@@ -13,199 +13,481 @@ $contents_csv = generate_json('Hoard_contents_CH.csv');
 //generate an array of duplicate hoards to exclude
 $duplicates = find_duplicates($data);
 
-//generate concordance structure of hoards between CH volumes and IGCH
-$hoards = generate_concordance($data, $duplicates);
+//process the hoard list, minus ones with duplicate entries, into a data object
+$hoards = process_hoards_csv($data, $duplicates);
 
-foreach ($hoards as $id=>$hoard) {
-    
-    //iterate through findspots CSV and look for the CH ID that matches the $hoard ID
-    foreach ($findspots as $row) {
-        foreach ($row as $k=>$v) {
-            if (substr($k, 0, 2) == 'CH' && strlen(trim($v)) > 0) {
-                if ($v == $id) {
-                    
-                    if (strlen($row['Period']) > 0) {
-                        $hoards[$id]['period'] = $row['Period'];
-                    }
-                    
-                    $findspot = array();
-                    $findspot['name'] = $row['Name'];
-                    
-                    if (strlen($row['Canonical Geonames URI'] > 0)) {
-                        $findspot['geonames'] = trim($row['Canonical Geonames URI']);
-                    }
-                    if (strlen($row['Pleiades URI'] > 0)) {
-                        $findspot['pleiades'] = trim($row['Pleiades URI']);
-                    }
-                    
-                    //discovery
-                    if (strlen($row['Discovery Date Start']) > 0) {
-                        $findspot['discovery']['start'] = $row['Discovery Date Start'];
-                    }
-                    if (strlen($row['Discovery Date End']) > 0) {
-                        $findspot['discovery']['end'] = $row['Discovery Date End'];
-                    }
-                    if ($row['Discovery Date Uncertain'] == 'true') {
-                        $findspot['discovery']['uncertain'] = true;
-                    }
-                    
-                    //burial
-                    if (strlen($row['Burial Date Start']) > 0) {
-                        $findspot['burial']['start'] = $row['Burial Date Start'];
-                    }
-                    if (strlen($row['Burial Date End']) > 0) {
-                        $findspot['burial']['end'] = $row['Burial Date End'];
-                    }
-                    
-                    $hoards[$id]['findspot'] = $findspot;
-                    unset($findspot);
-                }
-            }
-        }
-    } // end findspots
-    
-    //process total counts    
-    foreach ($counts_csv as $row) {
-        foreach ($row as $k=>$v) {
-            if (substr($k, 0, 2) == 'CH' && strlen(trim($v)) > 0) {
-                if ($v == $id) {
-                    $counts = array();
-                    
-                    if (strlen($row['Contents']) > 0) {
-                        $counts['description'] = trim($row['Contents']);
-                    }
-                    
-                    if (is_numeric($row['Total count'])) {
-                        $counts['count'] = trim($row['Total count']);
-                    }                    
-                    if (is_numeric($row['Min. count'])) {
-                        $counts['minCount'] = trim($row['Min. count']);
-                    }
-                    if (is_numeric($row['Max. count'])) {
-                        $counts['maxCount'] = trim($row['Max. count']);
-                    }
-                    if ($row['Approximate'] == 'yes') {
-                        $counts['approximate'] = true;
-                    }
-                    
-                    
-                    $hoards[$id]['counts'] = $counts;
-                }
-            }
-        }
-    } //end counts
-    
-    //contents
-    $contents = array();
-    foreach ($contents_csv as $row) {
-        foreach ($row as $k=>$v) {
-            if (substr($k, 0, 2) == 'CH' && strlen(trim($v)) > 0) {
-                if ($v == $id) {
-                    $group = array();
-                    //counts
-                    if (is_numeric($row['Coin count'])) {
-                        //echo $row['Coin count'] . "\n";
-                        $group['count'] = trim($row['Coin count']);
-                    }
-                    if (is_numeric($row['min coin count'])) {
-                        $group['minCount'] = trim($row['min coin count']);
-                    }
-                    if (is_numeric($row['max coin count'])) {
-                        $group['maxCount'] = trim($row['max coin count']);
-                    }
-                    //uncertainty
-                    if ($row['coin count approximate'] == 'TRUE') {
-                        $group['approximate'] = true;
-                    }
-                    if ($row['coin count uncertain'] == 'TRUE') {
-                        $group['uncertain'] = true;
-                    }
-                    
-                    //Nomisma types
-                    //geographic
-                    if (strpos($row['Mint 1 URI'], 'nomisma.org') !== FALSE) {
-                        $group['mint'][] = trim($row['Mint 1 URI']);
-                    }
-                    if (strpos($row['Mint 2 URI'], 'nomisma.org') !== FALSE) {
-                        $group['mint'][] = trim($row['Mint 2 URI']);
-                    }
-                    if ($row['mint uncertain'] == 'TRUE') {
-                        $group['mint_uncertain'] = true;
-                    }
-                    if (strpos($row['Region 1 URI'], 'nomisma.org') !== FALSE) {
-                        $group['region'][] = trim($row['Region 1 URI']);
-                    }
-                    if (strpos($row['Region 2 URI'], 'nomisma.org') !== FALSE) {
-                        $group['region'][] = trim($row['Region 2 URI']);
-                    }
-                    if (strpos($row['Region 3 URI'], 'nomisma.org') !== FALSE) {
-                        $group['region'][] = trim($row['Region 3 URI']);
-                    }
-                    
-                    //authority
-                    if (strpos($row['Authority 1 URI'], 'nomisma.org') !== FALSE) {
-                        $group['authority'][] = trim($row['Authority 1 URI']);
-                    }
-                    if (strpos($row['Authority 2 URI'], 'nomisma.org') !== FALSE) {
-                        $group['authority'][] = trim($row['Authority 2 URI']);
-                    }
-                    if ($row['authority uncertain'] == 'TRUE') {
-                        $group['authority_uncertain'] = true;
-                    }
-                    
-                    if (strpos($row['Stated authority'], 'nomisma.org') !== FALSE) {
-                        $group['authority'][] = trim($row['Stated authority']);
-                    }
-                    if (strpos($row['Dynasty URI'], 'nomisma.org') !== FALSE) {
-                        $group['authority'][] = trim($row['Dynasty URI']);
-                    }
-                    
-                    //material
-                    if (strpos($row['Material 1 URI'], 'nomisma.org') !== FALSE) {
-                        $group['material'][] = trim($row['Material 1 URI']);
-                    }
-                    if (strpos($row['Material 2 URI'], 'nomisma.org') !== FALSE) {
-                        $group['material'][] = trim($row['Material 2 URI']);
-                    }
-                    if ($row['material uncertain'] == 'TRUE') {
-                        $group['material_uncertain'] = true;
-                    }
-                    
-                    //denomination
-                    if (strpos($row['Denomination 1 URI'], 'nomisma.org') !== FALSE) {
-                        $group['denomination'][] = trim($row['Denomination 1 URI']);
-                    }
-                    if (strpos($row['Denomination 2 URI'], 'nomisma.org') !== FALSE) {
-                        $group['denomination'][] = trim($row['Denomination 2 URI']);
-                    }
-                    if ($row['denomination uncertain'] == 'TRUE') {
-                        $group['denomination_uncertain'] = true;
-                    }
-                    
-                    if (strpos($row['Authenticity'], 'nomisma.org') !== FALSE) {
-                        $group['authenticity'] = trim($row['Authenticity']);
-                    }
-                    
-                    //add coinGrp into $contents array
-                    $contents[] = $group;
-                    
-                }
-            }
-        }
-    } //end contents
-    
-    $hoards[$id]['contents'] = $contents;
-    
-    unset($contents);
+$count = 1;
+foreach ($hoards as $recordId=>$hoard) {    
+    if ($count == 3) {
+        var_dump($hoard);
+        
+        generate_nuds($recordId, $hoard);
+    }
+    $count++;
 }
 
-var_dump($hoards);
+
 
 
 
 /*****
  * FUNCTIONS *
 *****/
+function generate_nuds($recordId, $hoard) {
+        
+    $writer = new XMLWriter();
+    //$writer->openURI("nuds/{$recordId}.xml");
+    $writer->openURI('php://output');
+    $writer->setIndent(true);
+    $writer->setIndentString("    ");
+    $writer->startDocument('1.0','UTF-8');
+    
+    //begin XML document
+    $writer->startElement('nudsHoard');
+        $writer->writeAttribute('xmlns', 'http://nomisma.org/nudsHoard');
+        $writer->writeAttribute('xmlns:xlink', "http://www.w3.org/1999/xlink");
+        $writer->writeAttribute('xmlns:nuds', "http://nomisma.org/nuds");
+        $writer->writeAttribute('xmlns:mods', "http://www.loc.gov/mods/v3");
+        $writer->writeAttribute('xmlns:gml', "http://www.opengis.net/gml");
+        $writer->writeAttribute('xmlns:xsi', "http://www.w3.org/2001/XMLSchema-instance");	
+
+        //begin control
+        $writer->startElement('control');
+            $writer->writeElement('recordId', $recordId);
+            $writer->writeElement('maintenanceStatus', 'derived');
+            $writer->writeElement('publicationStatus', 'approved');
+            $writer->startElement('maintenanceAgency');
+                $writer->writeElement('agencyName', 'American Numismatic Society');
+            $writer->endElement();
+            $writer->startElement('maintenanceHistory');
+                $writer->startElement('maintenanceEvent');
+                    $writer->writeElement('eventType', 'derived');
+                    $writer->startElement('eventDateTime');
+                        $writer->writeAttribute('standardDateTime', date(DATE_W3C));
+                        $writer->text(date(DATE_RFC2822));
+                    $writer->endElement();
+                    $writer->writeElement('agentType', 'human');
+                    $writer->writeElement('agent', 'Ethan Gruber');
+                    $writer->writeElement('eventDescription', 'NUDS-Hoard records generated by Ethan Gruber from spreadsheets created by Leah Lazar');
+                $writer->endElement();
+            $writer->endElement();
+            $writer->startElement('rightsStmt');
+                $writer->writeElement('copyrightHolder', 'American Numismatic Society');
+                $writer->writeElement('license', 'http://opendatacommons.org/licenses/odbl/');
+            $writer->endElement();
+        //end control
+        $writer->endElement();
+        
+        $writer->startElement('descMeta');
+            $writer->startElement('title');
+                $writer->writeAttribute('xml:lang', 'en');
+                $writer->text('CH ' . $recordId);
+            $writer->endElement();
+            
+            if (array_key_exists('period', $hoard)){
+                $writer->startElement('subjectSet');
+                    $writer->startElement('subject');
+                        $writer->writeAttribute('localType', 'period');
+                        $writer->writeAttribute('xlink:type', 'simple');
+                        $writer->writeAttribute('xlink:href', $hoard['period']);
+                        
+                        switch($hoard['period']){
+                            case 'http://nomisma.org/id/archaic_greece':
+                                $label = 'Archaic Greece';
+                                break;
+                            case 'http://nomisma.org/id/classical_greece':
+                                $label = 'Classical Greece';
+                                break;
+                            case 'http://nomisma.org/id/hellenistic_greece':
+                                $label = 'Hellenistic Period';
+                                break;
+                        }
+                        $writer->text($label);
+                    $writer->endElement();
+                $writer->endElement();
+                
+                unset($label);
+            }
+            
+            
+            //hoardDesc
+            $writer->startElement('hoardDesc');            
+                if (array_key_exists('findspot', $hoard)) {
+                    $writer->startElement('findspot');
+                        $writer->startElement('description');
+                            $writer->writeAttribute('xml:lang', 'en');
+                            $writer->text($hoard['findspot']['name']);
+                        $writer->endElement();
+                        
+                        if (array_key_exists('geonames', $hoard['findspot']) || array_key_exists('geonames', $hoard['pleiades'])) {
+                            $writer->startElement('fallsWithin');
+                            if (array_key_exists('coords', $hoard['findspot'])){
+                                $writer->startElement('gml:location');
+                                    $writer->startElement('gml:Point');
+                                        $writer->writeElement('gml:coordinates', $hoard['findspot']['coords']);
+                                    $writer->endElement();
+                                $writer->endElement();
+                            }
+                            
+                            if (array_key_exists('geonames', $hoard['findspot'])) {
+                                $writer->startElement('geogname');
+                                    $writer->writeAttribute('xlink:type', 'simple');
+                                    $writer->writeAttribute('xlink:role', 'findspot');
+                                    $writer->writeAttribute('xlink:href', $hoard['findspot']['geonames']);
+                                    $writer->text($hoard['findspot']['name']);
+                                $writer->endElement();    
+                            }
+                            if (array_key_exists('geonames', $hoard['findspot'])) {
+                                $writer->startElement('geogname');
+                                    $writer->writeAttribute('xlink:type', 'simple');
+                                    $writer->writeAttribute('xlink:role', 'ancient_place');
+                                    $writer->writeAttribute('xlink:href', $hoard['findspot']['pleiades']);                                    
+                                    $writer->text($hoard['findspot']['pleiades_label']);
+                                $writer->endElement();
+                            }
+                            
+                            //feature type
+                            if (array_key_exists('type', $hoard['findspot'])){
+                                $writer->startElement('type');
+                                    $writer->writeAttribute('xlink:type', 'simple');
+                                    //$writer->writeAttribute('xlink:href', $hoard['findspot']['type']['uri']);
+                                    $writer->text($hoard['findspot']['type']['label']);
+                                $writer->endElement();
+                            }
+                            
+                            $writer->endElement();
+                        }
+                    
+                    $writer->endElement();
+                    
+                     //deposit
+                    if (array_key_exists('deposit', $hoard['findspot'])){                    
+                        $writer->startElement('deposit');
+                        if ($hoard['findspot']['deposit']['fromDate'] == $hoard['findspot']['deposit']['toDate']){
+                                $writer->startElement('date');
+                                    $writer->writeAttribute('standardDate', number_pad($hoard['findspot']['deposit']['fromDate'], 4));
+                                $writer->text(get_date_textual($hoard['findspot']['deposit']['fromDate']));
+                            $writer->endElement();
+                        } else {
+                            $writer->startElement('dateRange');
+                                $writer->startElement('fromDate');
+                                    $writer->writeAttribute('standardDate', number_pad($hoard['findspot']['deposit']['fromDate'], 4));
+                                    $writer->text(get_date_textual($hoard['findspot']['deposit']['fromDate']));
+                                $writer->endElement();
+                                $writer->startElement('toDate');
+                                    $writer->writeAttribute('standardDate', number_pad($hoard['findspot']['deposit']['toDate'], 4));
+                                    $writer->text(get_date_textual($hoard['findspot']['deposit']['toDate']));
+                                $writer->endElement();
+                            $writer->endElement();
+                        }
+                        $writer->endElement();
+                    }
+                    
+                } //end findspot
+                
+               
+                //discovery
+                if (array_key_exists('discovery', $hoard)){
+                    $writer->startElement('discovery');
+                    if (array_key_exists('date', $hoard['discovery'])){
+                        $writer->startElement('date');
+                            $writer->writeAttribute('standardDate', number_pad($hoard['discovery']['date'], 4));
+                            if (array_key_exists('uncertain', $hoard['discovery'])){
+                                $writer->writeAttribute('certainty', 'http://nomisma.org/id/uncertain_value');
+                            }
+                            $writer->text(get_date_textual($hoard['discovery']['date']));
+                        
+                        $writer->endElement();
+                    } elseif (array_key_exists('notAfter', $hoard['discovery'])){
+                        $writer->startElement('date');
+                            $writer->writeAttribute('notAfter', number_pad($hoard['discovery']['notAfter'], 4));
+                            if (array_key_exists('uncertain', $hoard['discovery'])){
+                                $writer->writeAttribute('certainty', 'http://nomisma.org/id/uncertain_value');
+                            }
+                            $writer->text('before ' . get_date_textual($hoard['discovery']['notAfter']));
+                        $writer->endElement();
+                    } elseif (array_key_exists('fromDate', $hoard['discovery']) && array_key_exists('toDate', $hoard['discovery'])){
+                        $writer->startElement('dateRange');
+                            $writer->startElement('fromDate');
+                                $writer->writeAttribute('standardDate', number_pad($hoard['discovery']['fromDate'], 4));
+                                if (array_key_exists('uncertain', $hoard['discovery'])){
+                                    $writer->writeAttribute('certainty', 'http://nomisma.org/id/uncertain_value');
+                                }
+                                $writer->text(get_date_textual($hoard['discovery']['fromDate']));
+                            $writer->endElement();
+                            $writer->startElement('toDate');
+                                $writer->writeAttribute('standardDate', number_pad($hoard['discovery']['toDate'], 4));
+                                if (array_key_exists('uncertain', $hoard['discovery'])){
+                                    $writer->writeAttribute('certainty', 'http://nomisma.org/id/uncertain_value');
+                                }
+                                $writer->text(get_date_textual($hoard['discovery']['toDate']));
+                            $writer->endElement();
+                        $writer->endElement();
+                    }
+                    $writer->endElement();
+                }
+            //end hoardDesc
+            $writer->endElement();
+            
+            //contentsDesc
+            if (array_key_exists('contents', $hoard)) {
+                $writer->startElement('contentsDesc');
+                    foreach ($hoard['contents'] as $group) {
+                        if (array_key_exists('count', $group) && $group['count'] == 1) {
+                            $element = 'coin';
+                        } else {
+                            $element = 'coinGrp';
+                        }
+                        
+                        $writer->startElement($element);
+                            if (array_key_exists('count', $group)) {
+                                $writer->writeAttribute('count', $group['count']);
+                            } else {
+                                if (array_key_exists('minCount', $group)) {
+                                    $writer->writeAttribute('minCount', $group['minCount']);
+                                }
+                                if (array_key_exists('maxCount', $group)) {
+                                    $writer->writeAttribute('maxCount', $group['maxCount']);
+                                }
+                            }
+                        $writer->endElement();
+                    }
+                $writer->endElement();
+            }
+            
+        //end descMeta    
+        $writer->endElement();
+        
+    //end nudsHoard
+    $writer->endElement();
+    //end document
+    return $writer->flush();
+   
+
+}
+
+//process all CSV files into an array of objects
+function process_hoards_csv($data, $duplicates) {
+    
+    GLOBAL $findspots;
+    GLOBAL $counts_csv;
+    GLOBAL $contents_csv;
+    
+    //generate a concordance structure between CH volumes and IGCH hoards
+    $hoards = generate_concordance($data, $duplicates);
+    
+    foreach ($hoards as $id=>$hoard) {
+        
+        //iterate through findspots CSV and look for the CH ID that matches the $hoard ID
+        foreach ($findspots as $row) {
+            foreach ($row as $k=>$v) {
+                if (substr($k, 0, 2) == 'CH' && strlen(trim($v)) > 0) {
+                    if ($v == $id) {
+                        
+                        if (strlen($row['Period']) > 0) {
+                            $hoards[$id]['period'] = $row['Period'];
+                        }
+                        
+                        $findspot = array();
+                        $findspot['name'] = $row['Name'];
+                        
+                        if (strlen($row['Canonical Geonames URI'] > 0)) {
+                            $findspot['geonames'] = trim($row['Canonical Geonames URI']);
+                        }
+                        if (strlen($row['Pleiades URI'] > 0)) {
+                            $findspot['pleiades'] = trim($row['Pleiades URI']);
+                        }
+                        if (strlen($row['Pleiades URI'] > 0)) {
+                            $findspot['pleiades'] = trim($row['Pleiades URI']);
+                        }
+                        if (strlen($row['Pleiades label']) > 0) {
+                            $findspot['pleiades_label'] = trim($row['Pleiades label']);
+                        }
+                        if (strlen($row['GML-compliant Coordinates']) > 0) {
+                            $findspot['coords'] = trim($row['GML-compliant Coordinates']);
+                        }
+                        /*if (strlen($row['Geonames Feature Code Cat']) > 0) {
+                            $findspot['type'] = $row['Geonames Feature Code Cat'];
+                        }*/
+                        
+                        //discovery
+                        if (is_numeric($row['Discovery Date Start']) || is_numeric($row['Discovery Date End'])) {
+                            $discovery = array();
+                            
+                            if (is_numeric($row['Discovery Date Start']) && is_numeric($row['Discovery Date End'])){
+                                if ($row['Discovery Date Start'] == $row['Discovery Date End']) {
+                                    $discovery['date'] = $row['Discovery Date Start'];
+                                } else {
+                                    $discovery['fromDate'] = $row['Discovery Date Start'];
+                                    $discovery['toDate'] = $row['Discovery Date End'];
+                                }
+                            } elseif (!is_numeric($row['Discovery Date Start']) && is_numeric($row['Discovery Date End'])) {
+                                $discovery['notAfter'] = $row['Discovery Date End'];
+                            }
+                            
+                            //uncertain
+                            if ($row['Discovery Date Uncertain'] == 'true') {
+                                $discovery['uncertain'] = true;
+                            }
+                            
+                            $hoards[$id]['discovery'] = $discovery;
+                            unset($discovery);
+                        }
+                       
+                        
+                        //burial
+                        if (strlen($row['Burial Date Start']) > 0) {
+                            $findspot['deposit']['fromDate'] = $row['Burial Date Start'];
+                        }
+                        if (strlen($row['Burial Date End']) > 0) {
+                            $findspot['deposit']['toDate'] = $row['Burial Date End'];
+                        }
+                        
+                        $hoards[$id]['findspot'] = $findspot;
+                        unset($findspot);
+                    }
+                }
+            }
+        } // end findspots
+        
+        //process total counts
+        foreach ($counts_csv as $row) {
+            foreach ($row as $k=>$v) {
+                if (substr($k, 0, 2) == 'CH' && strlen(trim($v)) > 0) {
+                    if ($v == $id) {
+                        $counts = array();
+                        
+                        if (strlen($row['Contents']) > 0) {
+                            $counts['description'] = trim($row['Contents']);
+                        }
+                        
+                        if (is_numeric($row['Total count'])) {
+                            $counts['count'] = (int)trim($row['Total count']);
+                        }
+                        if (is_numeric($row['Min. count'])) {
+                            $counts['minCount'] = (int)trim($row['Min. count']);
+                        }
+                        if (is_numeric($row['Max. count'])) {
+                            $counts['maxCount'] = (int)trim($row['Max. count']);
+                        }
+                        if ($row['Approximate'] == 'yes') {
+                            $counts['approximate'] = true;
+                        }
+                        
+                        
+                        $hoards[$id]['counts'] = $counts;
+                    }
+                }
+            }
+        } //end counts
+        
+        //contents
+        $contents = array();
+        foreach ($contents_csv as $row) {
+            foreach ($row as $k=>$v) {
+                if (substr($k, 0, 2) == 'CH' && strlen(trim($v)) > 0) {
+                    if ($v == $id) {
+                        $group = array();
+                        //counts
+                        if (is_numeric($row['Coin count'])) {
+                            //echo $row['Coin count'] . "\n";
+                            $group['count'] = (int)trim($row['Coin count']);
+                        }
+                        if (is_numeric($row['min coin count'])) {
+                            $group['minCount'] = (int)trim($row['min coin count']);
+                        }
+                        if (is_numeric($row['max coin count'])) {
+                            $group['maxCount'] = (int)trim($row['max coin count']);
+                        }
+                        //uncertainty
+                        if ($row['coin count approximate'] == 'TRUE') {
+                            $group['approximate'] = true;
+                        }
+                        if ($row['coin count uncertain'] == 'TRUE') {
+                            $group['uncertain'] = true;
+                        }
+                        
+                        //Nomisma types
+                        //geographic
+                        if (strpos($row['Mint 1 URI'], 'nomisma.org') !== FALSE) {
+                            $group['mint'][] = trim($row['Mint 1 URI']);
+                        }
+                        if (strpos($row['Mint 2 URI'], 'nomisma.org') !== FALSE) {
+                            $group['mint'][] = trim($row['Mint 2 URI']);
+                        }
+                        if ($row['mint uncertain'] == 'TRUE') {
+                            $group['mint_uncertain'] = true;
+                        }
+                        if (strpos($row['Region 1 URI'], 'nomisma.org') !== FALSE) {
+                            $group['region'][] = trim($row['Region 1 URI']);
+                        }
+                        if (strpos($row['Region 2 URI'], 'nomisma.org') !== FALSE) {
+                            $group['region'][] = trim($row['Region 2 URI']);
+                        }
+                        if (strpos($row['Region 3 URI'], 'nomisma.org') !== FALSE) {
+                            $group['region'][] = trim($row['Region 3 URI']);
+                        }
+                        
+                        //authority
+                        if (strpos($row['Authority 1 URI'], 'nomisma.org') !== FALSE) {
+                            $group['authority'][] = trim($row['Authority 1 URI']);
+                        }
+                        if (strpos($row['Authority 2 URI'], 'nomisma.org') !== FALSE) {
+                            $group['authority'][] = trim($row['Authority 2 URI']);
+                        }
+                        if ($row['authority uncertain'] == 'TRUE') {
+                            $group['authority_uncertain'] = true;
+                        }
+                        
+                        if (strpos($row['Stated authority'], 'nomisma.org') !== FALSE) {
+                            $group['authority'][] = trim($row['Stated authority']);
+                        }
+                        if (strpos($row['Dynasty URI'], 'nomisma.org') !== FALSE) {
+                            $group['authority'][] = trim($row['Dynasty URI']);
+                        }
+                        
+                        //material
+                        if (strpos($row['Material 1 URI'], 'nomisma.org') !== FALSE) {
+                            $group['material'][] = trim($row['Material 1 URI']);
+                        }
+                        if (strpos($row['Material 2 URI'], 'nomisma.org') !== FALSE) {
+                            $group['material'][] = trim($row['Material 2 URI']);
+                        }
+                        if ($row['material uncertain'] == 'TRUE') {
+                            $group['material_uncertain'] = true;
+                        }
+                        
+                        //denomination
+                        if (strpos($row['Denomination 1 URI'], 'nomisma.org') !== FALSE) {
+                            $group['denomination'][] = trim($row['Denomination 1 URI']);
+                        }
+                        if (strpos($row['Denomination 2 URI'], 'nomisma.org') !== FALSE) {
+                            $group['denomination'][] = trim($row['Denomination 2 URI']);
+                        }
+                        if ($row['denomination uncertain'] == 'TRUE') {
+                            $group['denomination_uncertain'] = true;
+                        }
+                        
+                        if (strpos($row['Authenticity'], 'nomisma.org') !== FALSE) {
+                            $group['authenticity'] = trim($row['Authenticity']);
+                        }
+                        
+                        //add coinGrp into $contents array
+                        $contents[] = $group;
+                        
+                    }
+                }
+            }
+        } //end contents
+        
+        $hoards[$id]['contents'] = $contents;
+        
+        unset($contents);
+    }
+    
+    return $hoards;
+}
+
 
 //generate concordance structure between hoards
 function generate_concordance($data, $duplicates) {
@@ -250,7 +532,7 @@ function generate_concordance($data, $duplicates) {
                     $igch_nums = explode(',', $row['IGCH']);
                     
                     foreach ($igch_nums as $igch_num) {
-                        $hoards[$id]['igch'][] = 'igch' . trim($igch_num);
+                        $hoards[$id]['igch'][] = 'igch' . number_pad(trim($igch_num), 4);
                     }
                 }
             }
