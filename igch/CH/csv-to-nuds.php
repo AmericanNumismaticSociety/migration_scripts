@@ -17,27 +17,30 @@ $nomisma = array();
 //generate an array of duplicate hoards to exclude
 $duplicates = find_duplicates($data);
 
-$hoards = generate_concordance($data, $duplicates);
-
-var_dump($hoards);
-
 //process the hoard list, minus ones with duplicate entries, into a data object
-//$hoards = process_hoards_csv($data, $duplicates);
+$hoards = process_hoards_csv($data, $duplicates);
 
-/*$count = 1;
+$count = 1;
 foreach ($hoards as $recordId=>$hoard) {    
     if ($count == 6) {
         var_dump($hoard);
         
-        generate_nuds($recordId, $hoard);
+        generate_nuds($recordId, $hoard, null);
+        
+        //generate abbreviated CH NUDS documents
+        if (array_key_exists('replaces', $hoard)) {
+            foreach($hoard['replaces'] as $replacesId) {
+                generate_nuds($recordId, $hoard, $replacesId);
+            }
+        }
     }
     $count++;
-}*/
+}
 
 /*****
  * FUNCTIONS *
 *****/
-function generate_nuds($recordId, $hoard) {
+function generate_nuds($recordId, $hoard, $replacesId) {
         
     $writer = new XMLWriter();
     //$writer->openURI("nuds/{$recordId}.xml");
@@ -57,9 +60,47 @@ function generate_nuds($recordId, $hoard) {
 
         //begin control
         $writer->startElement('control');
-            $writer->writeElement('recordId', $recordId);
-            $writer->writeElement('maintenanceStatus', 'derived');
-            $writer->writeElement('publicationStatus', 'approved');
+        
+            $writer->writeElement('recordId', ($replacesId == null) ? $recordId : 'ch.' . $replacesId);
+            
+            //other URIs
+            if ($replacesId == null) {
+                foreach ($hoard['replaces'] as $replacement) {
+                    $writer->startElement('otherRecordId');
+                        $writer->writeAttribute('semantic', 'skos:exactMatch');
+                        $writer->text('http://coinhoards.org/id/ch.' . $replacement);
+                    $writer->endElement();
+                    $writer->startElement('otherRecordId');
+                        $writer->writeAttribute('semantic', 'dcterms:replaces');
+                        $writer->text('ch.' . $replacement);
+                    $writer->endElement();
+                }
+            } else {
+                $writer->startElement('otherRecordId');
+                    $writer->writeAttribute('semantic', 'skos:exactMatch');
+                    $writer->text('http://coinhoards.org/id/' . $recordId);
+                $writer->endElement();
+                $writer->startElement('otherRecordId');
+                    $writer->writeAttribute('semantic', 'dcterms:isReplacedBy');
+                    $writer->text($recordId);
+                $writer->endElement();
+            }
+            
+            if ($replacesId == null && array_key_exists('igch', $hoard)) {
+                foreach ($hoard['igch'] as $replacement) {
+                    $writer->startElement('otherRecordId');
+                        $writer->writeAttribute('semantic', 'skos:exactMatch');
+                        $writer->text('http://coinhoards.org/id/' . $replacement);
+                    $writer->endElement();
+                    $writer->startElement('otherRecordId');
+                        $writer->writeAttribute('semantic', 'dcterms:replaces');
+                        $writer->text($replacement);
+                    $writer->endElement();
+                }                    
+            }
+            
+            $writer->writeElement('publicationStatus', ($replacesId == null) ? 'approved' : 'deprecatedType');
+            $writer->writeElement('maintenanceStatus', ($replacesId == null) ? 'derived' : 'cancelledReplaced');
             $writer->startElement('maintenanceAgency');
                 $writer->writeElement('agencyName', 'American Numismatic Society');
             $writer->endElement();
@@ -79,13 +120,23 @@ function generate_nuds($recordId, $hoard) {
                 $writer->writeElement('copyrightHolder', 'American Numismatic Society');
                 $writer->writeElement('license', 'http://opendatacommons.org/licenses/odbl/');
             $writer->endElement();
+            
+            $writer->startElement('semanticDeclaration');
+                $writer->writeElement('prefix', 'skos');
+                $writer->writeElement('namespace', 'http://www.w3.org/2004/02/skos/core#');
+            $writer->endElement();
+            $writer->startElement('semanticDeclaration');
+                $writer->writeElement('prefix', 'dcterms');
+                $writer->writeElement('namespace', 'http://purl.org/dc/terms/');
+            $writer->endElement();
+            
         //end control
         $writer->endElement();
         
         $writer->startElement('descMeta');
             $writer->startElement('title');
                 $writer->writeAttribute('xml:lang', 'en');
-                $writer->text('CH ' . $recordId);
+                $writer->text(($replacesId == null) ? $recordId : 'CH ' . $replacesId);
             $writer->endElement();
             
             //period as subject
@@ -174,7 +225,7 @@ function generate_nuds($recordId, $hoard) {
                     $writer->endElement();
                     
                      //deposit
-                    if (array_key_exists('deposit', $hoard['findspot'])){                    
+                    if ($replacesId == null && array_key_exists('deposit', $hoard['findspot'])){                    
                         $writer->startElement('deposit');
                         if ($hoard['findspot']['deposit']['fromDate'] == $hoard['findspot']['deposit']['toDate']){
                                 $writer->startElement('date');
@@ -200,7 +251,7 @@ function generate_nuds($recordId, $hoard) {
                 
                
                 //discovery
-                if (array_key_exists('discovery', $hoard)){
+                if ($replacesId == null && array_key_exists('discovery', $hoard)){
                     $writer->startElement('discovery');
                     if (array_key_exists('date', $hoard['discovery'])){
                         $writer->startElement('date');
@@ -240,8 +291,8 @@ function generate_nuds($recordId, $hoard) {
                     $writer->endElement();
                 }
                 
-                //disposition
-                if (array_key_exists('disposition', $hoard)) {
+                //disposition                
+                if ($replacesId == null && array_key_exists('disposition', $hoard)) {
                     $writer->startElement('disposition');
                         $writer->startElement('description');
                             $writer->writeAttribute('xml:lang', 'en');
@@ -254,7 +305,9 @@ function generate_nuds($recordId, $hoard) {
             $writer->endElement();
             
             //contentsDesc
-            if (array_key_exists('contents', $hoard) || array_key_exists('counts', $hoard)) {
+            
+            
+            if ($replacesId == null && (array_key_exists('contents', $hoard) || array_key_exists('counts', $hoard))) {
                 $writer->startElement('contentsDesc');
                     $writer->startElement('contents');
                     //total count attributes
@@ -484,7 +537,7 @@ function process_hoards_csv($data, $duplicates) {
         foreach ($findspots as $row) {
             foreach ($row as $k=>$v) {
                 if (substr($k, 0, 2) == 'CH' && strlen(trim($v)) > 0) {
-                    if ($v == $id) {
+                    if (in_array($v, $hoard['replaces'])) {
                         
                         if (strlen($row['Period']) > 0) {
                             $hoards[$id]['period'] = $row['Period'];
@@ -547,6 +600,8 @@ function process_hoards_csv($data, $duplicates) {
                         
                         $hoards[$id]['findspot'] = $findspot;
                         unset($findspot);
+                        
+                        break;
                     }
                 }
             }
@@ -556,12 +611,13 @@ function process_hoards_csv($data, $duplicates) {
         foreach ($refs_csv as $row) {
             foreach ($row as $k=>$v) {
                 if (substr($k, 0, 2) == 'CH' && strlen(trim($v)) > 0) {
-                    if ($v == $id) {
+                    if (in_array($v, $hoard['replaces'])) {
                         if (strlen($row['value']) > 0 && strlen($row['type']) > 0) {
                             $type = strtolower($row['type']);
                             
                             $hoards[$id][$type][] = trim($row['value']);
                         }
+                        break;
                     }
                 }
             }
@@ -571,7 +627,7 @@ function process_hoards_csv($data, $duplicates) {
         foreach ($counts_csv as $row) {
             foreach ($row as $k=>$v) {
                 if (substr($k, 0, 2) == 'CH' && strlen(trim($v)) > 0) {
-                    if ($v == $id) {
+                    if (in_array($v, $hoard['replaces'])) {
                         $counts = array();
                         
                         if (strlen($row['Contents']) > 0) {
@@ -593,6 +649,7 @@ function process_hoards_csv($data, $duplicates) {
                         
                         
                         $hoards[$id]['counts'] = $counts;
+                        break;
                     }
                 }
             }
@@ -603,7 +660,7 @@ function process_hoards_csv($data, $duplicates) {
         foreach ($contents_csv as $row) {
             foreach ($row as $k=>$v) {
                 if (substr($k, 0, 2) == 'CH' && strlen(trim($v)) > 0) {
-                    if ($v == $id) {
+                    if (in_array($v, $hoard['replaces'])) {
                         $group = array();
                         //counts
                         if (is_numeric($row['Coin count'])) {
@@ -691,7 +748,7 @@ function process_hoards_csv($data, $duplicates) {
                         
                         //add coinGrp into $contents array
                         $contents[] = $group;
-                        
+                        break;
                     }
                 }
             }
