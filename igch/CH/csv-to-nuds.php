@@ -17,10 +17,14 @@ $nomisma = array();
 //generate an array of duplicate hoards to exclude
 $duplicates = find_duplicates($data);
 
-//process the hoard list, minus ones with duplicate entries, into a data object
-$hoards = process_hoards_csv($data, $duplicates);
+$hoards = generate_concordance($data, $duplicates);
 
-$count = 1;
+var_dump($hoards);
+
+//process the hoard list, minus ones with duplicate entries, into a data object
+//$hoards = process_hoards_csv($data, $duplicates);
+
+/*$count = 1;
 foreach ($hoards as $recordId=>$hoard) {    
     if ($count == 6) {
         var_dump($hoard);
@@ -28,7 +32,7 @@ foreach ($hoards as $recordId=>$hoard) {
         generate_nuds($recordId, $hoard);
     }
     $count++;
-}
+}*/
 
 /*****
  * FUNCTIONS *
@@ -707,7 +711,13 @@ function generate_concordance($data, $duplicates) {
     
     $hoards = array();
     
+    $count = 1;
     foreach ($data as $row) {
+        
+        $recordId = 'change.01.' . number_pad($count, 4);
+        $hasDuplicates = false;
+        $replaces = array();
+        
         foreach ($row as $k=>$v) {
             if (substr($k, 0, 2) == 'CH' && strlen(trim($v)) > 0) {
                 $id = trim($v);
@@ -718,38 +728,34 @@ function generate_concordance($data, $duplicates) {
                     
                     foreach ($ids as $item) {
                         if (!in_array($item, $duplicates)) {
-                            $concordance = match_hoard($id, $row, $duplicates);
-                            
-                            if (array_key_exists('replaces', $concordance)) {
-                                $hoards[$item]['replaces'] = $concordance['replaces'];
-                            }
-                            if (array_key_exists('replacedBy', $concordance)) {
-                                $hoards[$item]['replacedBy'] = $concordance['replacedBy'];
-                            }
+                            $replaces[] = $item;
+                        } else {
+                            $hasDuplicates = true;
                         }
                     }
                 } else {
                     if (!in_array($id, $duplicates)) {
-                        $concordance = match_hoard($id, $row, $duplicates);
-                        
-                        if (array_key_exists('replaces', $concordance)) {
-                            $hoards[$id]['replaces'] = $concordance['replaces'];
-                        }
-                        if (array_key_exists('replacedBy', $concordance)) {
-                            $hoards[$id]['replacedBy'] = $concordance['replacedBy'];
-                        }
+                        $replaces[] = $id;
+                    } else {
+                        $hasDuplicates = true;
                     }
                 }
+            }            
+        }
+        
+        if ($hasDuplicates == false) {
+            $hoards[$recordId]['replaces'] = $replaces;
+            
+            if (strlen($row['IGCH']) > 0) {
+                $igch_nums = explode(',', $row['IGCH']);
                 
-                if (strlen($row['IGCH']) > 0) {
-                    $igch_nums = explode(',', $row['IGCH']);
-                    
-                    foreach ($igch_nums as $igch_num) {
-                        $hoards[$id]['igch'][] = 'igch' . number_pad(trim($igch_num), 4);
-                    }
+                foreach ($igch_nums as $igch_num) {
+                    $hoards[$recordId]['igch'][] = 'igch' . number_pad(trim($igch_num), 4);
                 }
             }
-        }
+            
+            $count++;
+        }        
     }
     
     return $hoards;
@@ -793,33 +799,6 @@ function find_duplicates($data) {
     
     return $duplicates;
     
-}
-
-function match_hoard($id, $row, $duplicates) {
-    $concordance = array();   
-        
-    foreach ($row as $k=>$v) {
-        if (substr($k, 0, 2) == 'CH' && strlen(trim($v)) > 0) {
-            
-            $oid = trim($v);
-            
-            if (strpos($oid, '|') !== FALSE) {
-                $pieces = explode('|', $oid);
-                
-                foreach ($pieces as $piece) {
-                    $concordance['replaces'][] = $piece;
-                }
-            } else {
-                if ($oid < $id) {
-                    $concordance['replaces'][] = $oid;
-                } elseif ($oid > $id) {
-                    $concordance['replacedBy'][] = $oid;
-                }
-            }
-        }
-    }
-    
-    return $concordance;
 }
 
 /*****
