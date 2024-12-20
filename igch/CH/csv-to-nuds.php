@@ -22,8 +22,8 @@ $hoards = process_hoards_csv($data, $duplicates);
 
 $count = 1;
 foreach ($hoards as $recordId=>$hoard) {    
-    if ($count == 6) {
-        var_dump($hoard);
+    if ($count >= 1) {
+        //var_dump($hoard);
         
         generate_nuds($recordId, $hoard, null);
         
@@ -41,10 +41,14 @@ foreach ($hoards as $recordId=>$hoard) {
  * FUNCTIONS *
 *****/
 function generate_nuds($recordId, $hoard, $replacesId) {
-        
+    
+    $filename = ($replacesId == null) ? $recordId : 'ch.' . $replacesId;
+    
+    echo "Writing {$filename}\n";
+    
     $writer = new XMLWriter();
-    //$writer->openURI("nuds/{$recordId}.xml");
-    $writer->openURI('php://output');
+    $writer->openURI("nuds/{$filename}.xml");
+    //$writer->openURI('php://output');
     $writer->setIndent(true);
     $writer->setIndentString("    ");
     $writer->startDocument('1.0','UTF-8');
@@ -183,7 +187,7 @@ function generate_nuds($recordId, $hoard, $replacesId) {
                             $writer->text($hoard['findspot']['name']);
                         $writer->endElement();
                         
-                        if (array_key_exists('geonames', $hoard['findspot']) || array_key_exists('geonames', $hoard['pleiades'])) {
+                        if (array_key_exists('geonames', $hoard['findspot']) || array_key_exists('pleiades', $hoard['findspot'])) {
                             $writer->startElement('fallsWithin');
                             if (array_key_exists('coords', $hoard['findspot'])){
                                 $writer->startElement('gml:location');
@@ -201,7 +205,7 @@ function generate_nuds($recordId, $hoard, $replacesId) {
                                     $writer->text($hoard['findspot']['geonames_label']);
                                 $writer->endElement();    
                             }
-                            if (array_key_exists('geonames', $hoard['findspot'])) {
+                            if (array_key_exists('pleiades', $hoard['findspot'])) {
                                 $writer->startElement('geogname');
                                     $writer->writeAttribute('xlink:type', 'simple');
                                     $writer->writeAttribute('xlink:role', 'ancient_place');
@@ -305,8 +309,6 @@ function generate_nuds($recordId, $hoard, $replacesId) {
             $writer->endElement();
             
             //contentsDesc
-            
-            
             if ($replacesId == null && (array_key_exists('contents', $hoard) || array_key_exists('counts', $hoard))) {
                 $writer->startElement('contentsDesc');
                     $writer->startElement('contents');
@@ -449,7 +451,7 @@ function generate_nuds($recordId, $hoard, $replacesId) {
                                             $writer->endElement();
                                         }
                                     }
-                                $writier->endElement();
+                                $writer->endElement();
                             }
                             
                             //geographic
@@ -501,13 +503,28 @@ function generate_nuds($recordId, $hoard, $replacesId) {
             }
             
             //refDesc
-            if (array_key_exists('reference', $hoard)) {
-                $writer->startElement('refDesc');
-                    foreach($hoard['reference'] as $ref) {
-                        $writer->writeElement('reference', $ref);
+            if ($replacesId == null) {
+                if (array_key_exists('reference', $hoard) || array_key_exists('igch', $hoard) || array_key_exists('replaces', $hoard)) {
+                    $writer->startElement('refDesc');
+                    if (array_key_exists('reference', $hoard)) {
+                        foreach($hoard['reference'] as $ref) {
+                            $writer->writeElement('reference', $ref);
+                        }
                     }
-                $writer->endElement();
+                    if (array_key_exists('igch', $hoard)) {
+                        foreach($hoard['igch'] as $ref) {
+                            $writer->writeElement('reference', str_replace('igch', 'IGCH ', $ref));
+                        }
+                    }
+                    if (array_key_exists('replaces', $hoard)) {
+                        foreach($hoard['replaces'] as $ref) {
+                            $writer->writeElement('reference', 'CH ' . $ref);
+                        }
+                    }                    
+                    $writer->endElement();
+                }
             }
+            
             
         //end descMeta    
         $writer->endElement();
@@ -876,12 +893,14 @@ function get_nomisma_data($uri){
             $string = file_get_contents($uri . '.jsonld');
             $json = json_decode($string, true);
             
+            echo "Reading {$uri}\n";
+            
             foreach ($json["@graph"] as $obj){
                 $curie = str_replace('http://nomisma.org/id/', 'nm:', $uri);
                 
                 if ($obj["@id"] == $uri || $obj["@id"] == $curie){
                     //get the English label                    
-                    if (is_array($obj["skos:prefLabel"][0])) {
+                    if (array_key_exists(0, $obj["skos:prefLabel"])) {
                         foreach ($obj["skos:prefLabel"] as $prefLabel){
                             if ($prefLabel["@language"] == 'en'){
                                 $nm['label'] = $prefLabel["@value"];
