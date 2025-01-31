@@ -87,6 +87,14 @@ foreach($data as $row) {
         $contents['regions'][] = $row['Region URI'];
     }
     
+    //type description
+    if (strlen($row['Obverse Type']) > 0) {
+        $contents['obverse']['type'] = $row['Obverse Type'];
+    }
+    if (strlen($row['Reverse Type']) > 0) {
+        $contents['reverse']['type'] = $row['Reverse Type'];
+    }
+    
     $hoards[$id]['contents'][] = $contents;
 }
 
@@ -104,13 +112,11 @@ foreach ($hoards as $recordId=>$hoard) {
 function generate_nuds($recordId, $hoard){
 	$writer = new XMLWriter();  
 	echo "Writing {$recordId}\n";
-	//$writer->openURI("nuds/{$recordId}.xml");  
-	$writer->openURI('php://output');
+	$writer->openURI("nuds/{$recordId}.xml");  
+	//$writer->openURI('php://output');
 	$writer->setIndent(true);
 	$writer->setIndentString("    ");
 	$writer->startDocument('1.0','UTF-8');
-		
-			
 		
 	//contentsDesc
 	if (count($hoard['contents']) > 0){
@@ -324,6 +330,29 @@ function generate_typeDesc($writer, $content){
 			$writer->endElement();
 		}
 		
+		//obverse and reverse
+		if (array_key_exists('obverse', $content)) {
+		    $writer->startElement('nuds:obverse');
+		      $writer->startElement('nuds:type');
+		          $writer->startElement('nuds:description');
+		              $writer->writeAttribute('xml:lang', 'en');
+		              $writer->text($content['obverse']['type']);
+		          $writer->endElement();
+		      $writer->endElement();
+		    $writer->endElement();
+		}
+		if (array_key_exists('reverse', $content)) {
+		    $writer->startElement('nuds:reverse');
+    		    $writer->startElement('nuds:type');
+        		    $writer->startElement('nuds:description');
+        		      $writer->writeAttribute('xml:lang', 'en');
+        		      $writer->text($content['reverse']['type']);
+        		    $writer->endElement();
+    		    $writer->endElement();
+		    $writer->endElement();
+		}
+		
+		//end TypeDesc
 		$writer->endElement();
 }
 	
@@ -344,7 +373,8 @@ function parse_content($writer, $content){
         //ignore corpusnummorum; embed typeDesc elements
         if (strpos($uri, 'corpus-nummorum') !== FALSE) {
             //generate typeDesc
-            
+            generate_typeDesc($writer, $content);
+            $pieces = explode("/", $uri);
             
             //generate refDesc
             $writer->startElement('nuds:refDesc');
@@ -352,6 +382,7 @@ function parse_content($writer, $content){
                     $writer->writeAttribute('xlink:type', 'simple');
                     $writer->writeAttribute('xlink:arcole', 'nmo:hasTypeSeriesItem');
                     $writer->writeAttribute('xlink:href', $uri);
+                    $writer->text("CN Type " . end($pieces));
                 $writer->endElement();
             $writer->endElement();
         } else {
@@ -431,25 +462,6 @@ function get_nomisma_data($uri){
             }
         }
     }
-}
-
-
-/*
- * Parse the Nomisma JSON-LD for the coin type to extract title and metadata
- */
-function get_type_data($uri){
-    $typeData = array();
-    //get the NUDS XML URL based on domain
-    $string = file_get_contents($uri . '.jsonld');
-    $json = json_decode($string, true);
-    
-    $label = $json["@graph"][0]["skos:prefLabel"][0]["@value"];
-    
-    $typeData['label'] = $label;
-    $typeData['data'] = $json["@graph"][0];
-
-    return $typeData;
-    
 }
 
 /*****
