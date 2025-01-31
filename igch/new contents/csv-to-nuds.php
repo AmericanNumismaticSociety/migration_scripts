@@ -88,11 +88,11 @@ foreach($data as $row) {
     }
     
     //type description
-    if (strlen($row['Obverse Type']) > 0) {
-        $contents['obverse']['type'] = $row['Obverse Type'];
+    if (strlen(trim($row['Obverse Type'])) > 0) {
+        $contents['obverse']['type'] = trim($row['Obverse Type']);
     }
-    if (strlen($row['Reverse Type']) > 0) {
-        $contents['reverse']['type'] = $row['Reverse Type'];
+    if (strlen(trim($row['Reverse Type'])) > 0) {
+        $contents['reverse']['type'] = trim($row['Reverse Type']);
     }
     
     $hoards[$id]['contents'][] = $contents;
@@ -112,7 +112,7 @@ foreach ($hoards as $recordId=>$hoard) {
 function generate_nuds($recordId, $hoard){
 	$writer = new XMLWriter();  
 	echo "Writing {$recordId}\n";
-	$writer->openURI("nuds/{$recordId}.xml");  
+	$writer->openURI("contents/{$recordId}.xml");  
 	//$writer->openURI('php://output');
 	$writer->setIndent(true);
 	$writer->setIndentString("    ");
@@ -234,11 +234,11 @@ function generate_typeDesc($writer, $content){
                 foreach ($content['authorities'] as $uri){
                     if (strpos($uri, 'http') !== FALSE){
                         $nm = get_nomisma_data($uri);
-                        if ($nm['type'] == 'http://xmlns.com/foaf/0.1/Person'){
+                        if ($nm['type'] == 'foaf:Person'){
                             $element = 'nuds:persname';
-                        } elseif ($nm['type'] == 'http://xmlns.com/foaf/0.1/Organization'){
+                        } elseif ($nm['type'] == 'foaf:Organization' || $nm['type'] == 'foaf:Group'){
                             $element = 'nuds:corpname';
-                        } elseif ($nm['type'] == 'http://www.rdaregistry.info/Elements/c/Family'){
+                        } elseif ($nm['type'] == 'rdac:Family'){
                             $element = 'nuds:famname';
                         } else {
                             $element = 'nuds:persname';
@@ -262,11 +262,11 @@ function generate_typeDesc($writer, $content){
                     
                     if (strpos($uri, 'http') !== FALSE){
                         $nm = get_nomisma_data($uri);
-                        if ($nm['type'] == 'http://xmlns.com/foaf/0.1/Person'){
+                        if ($nm['type'] == 'foaf:Person'){
                             $element = 'nuds:persname';
-                        } elseif ($nm['type'] == 'http://xmlns.com/foaf/0.1/Organization'){
+                        } elseif ($nm['type'] == 'foaf:Organization' || $nm['type'] == 'foaf:Group'){
                             $element = 'nuds:corpname';
-                        } elseif ($nm['type'] == 'http://www.rdaregistry.info/Elements/c/Family'){
+                        } elseif ($nm['type'] == 'rdac:Family'){
                             $element = 'nuds:famname';
                         } else {
                             $element = 'nuds:persname';
@@ -393,7 +393,7 @@ function parse_content($writer, $content){
                 $writer->endElement();
             } else {
                 $file_headers = @get_headers($uri);
-                if ($file_headers[0] == 'HTTP/1.1 200 OK'){
+                if (strpos($file_headers[0], '200') !== FALSE){
                     $coinTypes[$uri] = $uri;
                     
                     //write typeDesc
@@ -402,7 +402,7 @@ function parse_content($writer, $content){
                         $writer->writeAttribute('xlink:href', $uri);
                     $writer->endElement();
                     
-                } elseif ($file_headers[0] == 'HTTP/1.1 303 See Other'){
+                } elseif (strpos($file_headers[0], '303') !== FALSE){
                     //redirect Svoronos references to CPE URIs
                     $newuri = str_replace('Location: ', '', $file_headers[7]);
                     $coinTypes[$uri] = $newuri;
@@ -451,6 +451,12 @@ function get_nomisma_data($uri){
                         }
                     } else {
                         $nm['label'] = $obj["skos:prefLabel"]["@value"];
+                    }
+                    
+                    foreach ($obj["@type"] as $type) {
+                        if ($type != 'skos:Concept') {
+                            $nm['type'] = $type;
+                        }
                     }
                     
                     
