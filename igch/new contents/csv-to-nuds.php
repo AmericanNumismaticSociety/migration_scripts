@@ -380,7 +380,7 @@ function parse_content($writer, $content){
             $writer->startElement('nuds:refDesc');
                 $writer->startElement('nuds:reference');
                     $writer->writeAttribute('xlink:type', 'simple');
-                    $writer->writeAttribute('xlink:arcole', 'nmo:hasTypeSeriesItem');
+                    $writer->writeAttribute('xlink:arcrole', 'nmo:hasTypeSeriesItem');
                     $writer->writeAttribute('xlink:href', $uri);
                     $writer->text("CN Type " . end($pieces));
                 $writer->endElement();
