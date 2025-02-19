@@ -137,10 +137,16 @@ function generate_nuds($recordId, $hoard, $replacesId) {
         //end control
         $writer->endElement();
         
+        if ($replacesId == null) {
+            $title = ltrim(str_replace('change.01.', 'CHANGE ', $recordId), '0');
+        } else {
+            $title = 'CH ' . $replacesId;
+        }
+        
         $writer->startElement('descMeta');
             $writer->startElement('title');
                 $writer->writeAttribute('xml:lang', 'en');
-                $writer->text(($replacesId == null) ? $recordId : 'CH ' . $replacesId);
+                $writer->text($title);
             $writer->endElement();
             
             //period as subject
