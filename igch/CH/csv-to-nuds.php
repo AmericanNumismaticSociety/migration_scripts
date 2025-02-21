@@ -1,7 +1,7 @@
 <?php 
 /*****
  * Author: Ethan Gruber
- * Date: December 2024
+ * Date: February 2025
  * Function: Convert CH spreadsheets into NUDS/XML for coinhoards.org
  *****/
 
@@ -20,10 +20,14 @@ $duplicates = find_duplicates($data);
 //process the hoard list, minus ones with duplicate entries, into a data object
 $hoards = process_hoards_csv($data, $duplicates);
 
+//var_dump($hoards);
+
+//output CSV concordance of CHANGE hoards and IGCH
+write_concordance($hoards);
+
 $count = 1;
 foreach ($hoards as $recordId=>$hoard) {    
     if ($count >= 1) {
-        //var_dump($hoard);
         
         generate_nuds($recordId, $hoard, null);
         
@@ -40,6 +44,33 @@ foreach ($hoards as $recordId=>$hoard) {
 /*****
  * FUNCTIONS *
 *****/
+function write_concordance($hoards) {
+    echo "Writing IGCH concordance.\n";
+    
+    $writer = new XMLWriter();
+    $writer->openURI("concordance.xml");
+    //$writer->openURI('php://output');
+    $writer->setIndent(true);
+    $writer->setIndentString("    ");
+    $writer->startDocument('1.0','UTF-8');
+    
+    $writer->startElement('concordance');    
+    foreach ($hoards as $recordId=>$hoard){
+        $writer->startElement('hoard');
+            $writer->writeAttribute('change', $recordId);
+            
+            if (array_key_exists('igch', $hoard)){
+                foreach($hoard['igch'] as $igch) {
+                    $writer->writeElement('igch', $igch);
+                }
+            }           
+        $writer->endElement();
+    }
+    $writer->endElement();
+    //end document
+    return $writer->flush();
+}
+
 function generate_nuds($recordId, $hoard, $replacesId) {
     
     $filename = ($replacesId == null) ? $recordId : 'ch.' . $replacesId;
@@ -138,7 +169,7 @@ function generate_nuds($recordId, $hoard, $replacesId) {
         $writer->endElement();
         
         if ($replacesId == null) {
-            $title = ltrim(str_replace('change.01.', 'CHANGE ', $recordId), '0');
+            $title = ltrim(str_replace('change.', 'CHANGE ', $recordId), '0');
         } else {
             $title = 'CH ' . $replacesId;
         }
@@ -341,138 +372,61 @@ function generate_nuds($recordId, $hoard, $replacesId) {
                     
                 
                     //coin groups
-                    foreach ($hoard['contents'] as $group) {
-                        if (array_key_exists('count', $group) && $group['count'] == 1) {
-                            $element = 'coin';
-                        } else {
-                            $element = 'coinGrp';
-                        }
-                        
-                        $writer->startElement($element);
-                        
-                            //insert count attributes into coin group
-                            
-                            if (array_key_exists('count', $group)) {
-                                //only include the count attribute in a coinGrp, not a single coin element
-                                if ($group['count'] > 1) {
-                                    $writer->writeAttribute('count', $group['count']);
-                                }
+                    if (array_key_exists('contents', $hoard)) {
+                        foreach ($hoard['contents'] as $group) {
+                            if (array_key_exists('count', $group) && $group['count'] == 1) {
+                                $element = 'coin';
                             } else {
-                                if (array_key_exists('minCount', $group)) {
-                                    $writer->writeAttribute('minCount', $group['minCount']);
-                                }
-                                if (array_key_exists('maxCount', $group)) {
-                                    $writer->writeAttribute('maxCount', $group['maxCount']);
-                                }
+                                $element = 'coinGrp';
                             }
                             
-                            //typeDesc
-                            $writer->startElement('nuds:typeDesc');
+                            $writer->startElement($element);
+                            
+                                //insert count attributes into coin group
                                 
-                            if (array_key_exists('denomination', $group)) {
-                                foreach($group['denomination'] as $uri) {
-                                    $nm = get_nomisma_data($uri);
-                                    
-                                    $writer->startElement('nuds:denomination');
-                                        $writer->writeAttribute('xlink:type', 'simple');
-                                        $writer->writeAttribute('xlink:href', $uri);
-                                        
-                                        if (array_key_exists('denomination_uncertain', $group)) {
-                                            $writer->writeAttribute('certainty', 'http://nomisma.org/id/uncertain_value');
-                                        }
-                                        
-                                        $writer->text($nm['label']);
-                                    $writer->endElement();
+                                if (array_key_exists('count', $group)) {
+                                    //only include the count attribute in a coinGrp, not a single coin element
+                                    if ($group['count'] > 1) {
+                                        $writer->writeAttribute('count', $group['count']);
+                                    }
+                                } else {
+                                    if (array_key_exists('minCount', $group)) {
+                                        $writer->writeAttribute('minCount', $group['minCount']);
+                                    }
+                                    if (array_key_exists('maxCount', $group)) {
+                                        $writer->writeAttribute('maxCount', $group['maxCount']);
+                                    }
                                 }
-                            }
-                            
-                            if (array_key_exists('material', $group)) {
-                                foreach($group['material'] as $uri) {
-                                    $nm = get_nomisma_data($uri);
+                                
+                                //typeDesc
+                                $writer->startElement('nuds:typeDesc');
                                     
-                                    $writer->startElement('nuds:material');
-                                    $writer->writeAttribute('xlink:type', 'simple');
-                                    $writer->writeAttribute('xlink:href', $uri);
-                                    
-                                    if (array_key_exists('material_uncertain', $group)) {
-                                        $writer->writeAttribute('certainty', 'http://nomisma.org/id/uncertain_value');
-                                    }
-                                    
-                                    $writer->text($nm['label']);
-                                    $writer->endElement();
-                                }
-                            }
-                            
-                            //authority
-                            if (array_key_exists('authority', $group) || array_key_exists('stated_authority', $group) || array_key_exists('dynasty', $group)) {
-                                $writer->startElement('nuds:authority');
-                                    if (array_key_exists('authority', $group)) {
-                                        foreach($group['authority'] as $uri) {
-                                            $nm = get_nomisma_data($uri);
-                                            
-                                            $writer->startElement('nuds:persname');
-                                            $writer->writeAttribute('xlink:type', 'simple');
-                                            $writer->writeAttribute('xlink:role', 'authority');
-                                            $writer->writeAttribute('xlink:href', $uri);
-                                            
-                                            if (array_key_exists('authority_uncertain', $group)) {
-                                                $writer->writeAttribute('certainty', 'http://nomisma.org/id/uncertain_value');
-                                            }
-                                            
-                                            $writer->text($nm['label']);
-                                            $writer->endElement();
-                                        }
-                                    }
-                                    if (array_key_exists('stated_authority', $group)) {
-                                        foreach($group['stated_authority'] as $uri) {
-                                            $nm = get_nomisma_data($uri);
-                                            
-                                            $writer->startElement('nuds:persname');
-                                            $writer->writeAttribute('xlink:type', 'simple');
-                                            $writer->writeAttribute('xlink:role', 'statedAuthority');
-                                            $writer->writeAttribute('xlink:href', $uri);
-                                            
-                                            if (array_key_exists('stated_authority_uncertain', $group)) {
-                                                $writer->writeAttribute('certainty', 'http://nomisma.org/id/uncertain_value');
-                                            }
-                                            
-                                            $writer->text($nm['label']);
-                                            $writer->endElement();
-                                        }
-                                    }
-                                    if (array_key_exists('dynasty', $group)) {
-                                        foreach($group['dynasty'] as $uri) {
-                                            $nm = get_nomisma_data($uri);
-                                            
-                                            $writer->startElement('nuds:famname');
-                                            $writer->writeAttribute('xlink:type', 'simple');
-                                            $writer->writeAttribute('xlink:role', 'dynasty');
-                                            $writer->writeAttribute('xlink:href', $uri);
-                                            
-                                            if (array_key_exists('dynasty_uncertain', $group)) {
-                                                $writer->writeAttribute('certainty', 'http://nomisma.org/id/uncertain_value');
-                                            }
-                                            
-                                            $writer->text($nm['label']);
-                                            $writer->endElement();
-                                        }
-                                    }
-                                $writer->endElement();
-                            }
-                            
-                            //geographic
-                            if (array_key_exists('mint', $group) || array_key_exists('region', $group)) {
-                                $writer->startElement('nuds:geographic');
-                                if (array_key_exists('mint', $group)) {
-                                    foreach($group['mint'] as $uri) {
+                                if (array_key_exists('denomination', $group)) {
+                                    foreach($group['denomination'] as $uri) {
                                         $nm = get_nomisma_data($uri);
                                         
-                                        $writer->startElement('nuds:geogname');
+                                        $writer->startElement('nuds:denomination');
+                                            $writer->writeAttribute('xlink:type', 'simple');
+                                            $writer->writeAttribute('xlink:href', $uri);
+                                            
+                                            if (array_key_exists('denomination_uncertain', $group)) {
+                                                $writer->writeAttribute('certainty', 'http://nomisma.org/id/uncertain_value');
+                                            }
+                                            
+                                            $writer->text($nm['label']);
+                                        $writer->endElement();
+                                    }
+                                }
+                                
+                                if (array_key_exists('material', $group)) {
+                                    foreach($group['material'] as $uri) {
+                                        $nm = get_nomisma_data($uri);
+                                        
+                                        $writer->startElement('nuds:material');
                                         $writer->writeAttribute('xlink:type', 'simple');
-                                        $writer->writeAttribute('xlink:role', 'mint');
                                         $writer->writeAttribute('xlink:href', $uri);
                                         
-                                        if (array_key_exists('mint_uncertain', $group)) {
+                                        if (array_key_exists('material_uncertain', $group)) {
                                             $writer->writeAttribute('certainty', 'http://nomisma.org/id/uncertain_value');
                                         }
                                         
@@ -480,28 +434,107 @@ function generate_nuds($recordId, $hoard, $replacesId) {
                                         $writer->endElement();
                                     }
                                 }
-                                if (array_key_exists('region', $group)) {
-                                    foreach($group['region'] as $uri) {
-                                        $nm = get_nomisma_data($uri);
-                                        
-                                        $writer->startElement('nuds:geogname');
-                                        $writer->writeAttribute('xlink:type', 'simple');
-                                        $writer->writeAttribute('xlink:role', 'region');
-                                        $writer->writeAttribute('xlink:href', $uri);
-                                        
-                                        if (array_key_exists('mint_uncertain', $group)) {
-                                            $writer->writeAttribute('certainty', 'http://nomisma.org/id/uncertain_value');
+                                
+                                //authority
+                                if (array_key_exists('authority', $group) || array_key_exists('stated_authority', $group) || array_key_exists('dynasty', $group)) {
+                                    $writer->startElement('nuds:authority');
+                                        if (array_key_exists('authority', $group)) {
+                                            foreach($group['authority'] as $uri) {
+                                                $nm = get_nomisma_data($uri);
+                                                
+                                                $writer->startElement('nuds:persname');
+                                                $writer->writeAttribute('xlink:type', 'simple');
+                                                $writer->writeAttribute('xlink:role', 'authority');
+                                                $writer->writeAttribute('xlink:href', $uri);
+                                                
+                                                if (array_key_exists('authority_uncertain', $group)) {
+                                                    $writer->writeAttribute('certainty', 'http://nomisma.org/id/uncertain_value');
+                                                }
+                                                
+                                                $writer->text($nm['label']);
+                                                $writer->endElement();
+                                            }
                                         }
-                                        
-                                        $writer->text($nm['label']);
-                                        $writer->endElement();
-                                    }
+                                        if (array_key_exists('stated_authority', $group)) {
+                                            foreach($group['stated_authority'] as $uri) {
+                                                $nm = get_nomisma_data($uri);
+                                                
+                                                $writer->startElement('nuds:persname');
+                                                $writer->writeAttribute('xlink:type', 'simple');
+                                                $writer->writeAttribute('xlink:role', 'statedAuthority');
+                                                $writer->writeAttribute('xlink:href', $uri);
+                                                
+                                                if (array_key_exists('stated_authority_uncertain', $group)) {
+                                                    $writer->writeAttribute('certainty', 'http://nomisma.org/id/uncertain_value');
+                                                }
+                                                
+                                                $writer->text($nm['label']);
+                                                $writer->endElement();
+                                            }
+                                        }
+                                        if (array_key_exists('dynasty', $group)) {
+                                            foreach($group['dynasty'] as $uri) {
+                                                $nm = get_nomisma_data($uri);
+                                                
+                                                $writer->startElement('nuds:famname');
+                                                $writer->writeAttribute('xlink:type', 'simple');
+                                                $writer->writeAttribute('xlink:role', 'dynasty');
+                                                $writer->writeAttribute('xlink:href', $uri);
+                                                
+                                                if (array_key_exists('dynasty_uncertain', $group)) {
+                                                    $writer->writeAttribute('certainty', 'http://nomisma.org/id/uncertain_value');
+                                                }
+                                                
+                                                $writer->text($nm['label']);
+                                                $writer->endElement();
+                                            }
+                                        }
+                                    $writer->endElement();
                                 }
+                                
+                                //geographic
+                                if (array_key_exists('mint', $group) || array_key_exists('region', $group)) {
+                                    $writer->startElement('nuds:geographic');
+                                    if (array_key_exists('mint', $group)) {
+                                        foreach($group['mint'] as $uri) {
+                                            $nm = get_nomisma_data($uri);
+                                            
+                                            $writer->startElement('nuds:geogname');
+                                            $writer->writeAttribute('xlink:type', 'simple');
+                                            $writer->writeAttribute('xlink:role', 'mint');
+                                            $writer->writeAttribute('xlink:href', $uri);
+                                            
+                                            if (array_key_exists('mint_uncertain', $group)) {
+                                                $writer->writeAttribute('certainty', 'http://nomisma.org/id/uncertain_value');
+                                            }
+                                            
+                                            $writer->text($nm['label']);
+                                            $writer->endElement();
+                                        }
+                                    }
+                                    if (array_key_exists('region', $group)) {
+                                        foreach($group['region'] as $uri) {
+                                            $nm = get_nomisma_data($uri);
+                                            
+                                            $writer->startElement('nuds:geogname');
+                                            $writer->writeAttribute('xlink:type', 'simple');
+                                            $writer->writeAttribute('xlink:role', 'region');
+                                            $writer->writeAttribute('xlink:href', $uri);
+                                            
+                                            if (array_key_exists('mint_uncertain', $group)) {
+                                                $writer->writeAttribute('certainty', 'http://nomisma.org/id/uncertain_value');
+                                            }
+                                            
+                                            $writer->text($nm['label']);
+                                            $writer->endElement();
+                                        }
+                                    }
+                                    $writer->endElement();
+                                }
+                                
                                 $writer->endElement();
-                            }
-                            
                             $writer->endElement();
-                        $writer->endElement();
+                        }
                     }
                     $writer->endElement();
                 //end contents and contents Desc
@@ -519,7 +552,12 @@ function generate_nuds($recordId, $hoard, $replacesId) {
                     }
                     if (array_key_exists('igch', $hoard)) {
                         foreach($hoard['igch'] as $ref) {
-                            $writer->writeElement('reference', str_replace('igch', 'IGCH ', $ref));
+                            $igchNum = str_replace('igch', '', $ref);
+                            $writer->startElement('reference');
+                                $writer->writeAttribute('xlink:type', 'simple');
+                                $writer->writeAttribute('xlink:href', 'http://coinhoards.org/id/' . $ref);
+                                $writer->text('IGCH ' . ltrim($igchNum, '0'));
+                            $writer->endElement();
                         }
                     }
                     if (array_key_exists('replaces', $hoard)) {
@@ -775,9 +813,12 @@ function process_hoards_csv($data, $duplicates) {
                     }
                 }
             }
-        } //end contents
+        }
+        //end contents
         
-        $hoards[$id]['contents'] = $contents;
+        if (count($contents) !== 0) {
+            $hoards[$id]['contents'] = $contents;
+        }
         
         unset($contents);
     }
@@ -794,7 +835,7 @@ function generate_concordance($data, $duplicates) {
     $count = 1;
     foreach ($data as $row) {
         
-        $recordId = 'change.01.' . number_pad($count, 4);
+        $recordId = 'change.' . number_pad($count, 4);
         $hasDuplicates = false;
         $replaces = array();
         
