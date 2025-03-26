@@ -479,48 +479,50 @@ function generate_nuds($record, $fileName){
         
         //refDesc
         if (array_key_exists('citation', $record)){
-            $writer->startElement('refDesc');
-                $writer->startElement('citation');
-                    if (array_key_exists('URI', $record['citation'])){
-                        $writer->writeAttribute('xlink:type', 'simple');
-                        $writer->writeAttribute('xlink:href', $record['citation']['URI']);                    
-                    }
-                    
-                    //authors
-                    if (array_key_exists('authors', $record['citation'])){
-                        foreach ($record['citation']['authors'] as $author){
-                            $writer->writeElement('tei:author', $author);
+            if (is_array($record['citation'])) {
+                $writer->startElement('refDesc');
+                    $writer->startElement('citation');
+                        if (array_key_exists('URI', $record['citation'])){
+                            $writer->writeAttribute('xlink:type', 'simple');
+                            $writer->writeAttribute('xlink:href', $record['citation']['URI']);                    
                         }
-                    }
-                    
-                    $writer->startElement('tei:title');
-                        $writer->writeAttribute('type', 'main');
-                        $writer->text($record['citation']['title']);
-                    $writer->endElement();
-                    
-                    if (array_key_exists('subtitle', $record['citation'])){
+                        
+                        //authors
+                        if (array_key_exists('authors', $record['citation'])){
+                            foreach ($record['citation']['authors'] as $author){
+                                $writer->writeElement('tei:author', $author);
+                            }
+                        }
+                        
                         $writer->startElement('tei:title');
-                            $writer->writeAttribute('type', 'sub');
-                            $writer->text($record['citation']['subtitle']);
+                            $writer->writeAttribute('type', 'main');
+                            $writer->text($record['citation']['title']);
                         $writer->endElement();
-                    }                    
-                    
-                    if (array_key_exists('pubPlaces', $record['citation'])){
-                        foreach ($record['citation']['pubPlaces'] as $place){
-                            $writer->writeElement('tei:pubPlace', $place);
+                        
+                        if (array_key_exists('subtitle', $record['citation'])){
+                            $writer->startElement('tei:title');
+                                $writer->writeAttribute('type', 'sub');
+                                $writer->text($record['citation']['subtitle']);
+                            $writer->endElement();
+                        }                    
+                        
+                        if (array_key_exists('pubPlaces', $record['citation'])){
+                            foreach ($record['citation']['pubPlaces'] as $place){
+                                $writer->writeElement('tei:pubPlace', $place);
+                            }
                         }
-                    }
-                    
-                    if (array_key_exists('publisher', $record['citation'])){
-                        $writer->writeElement('tei:publisher', $record['citation']['publisher']);
-                    }
-                    
-                    if (array_key_exists('date', $record['citation'])){
-                        $writer->writeElement('tei:date', $record['citation']['date']);
-                    }
-                    
+                        
+                        if (array_key_exists('publisher', $record['citation'])){
+                            $writer->writeElement('tei:publisher', $record['citation']['publisher']);
+                        }
+                        
+                        if (array_key_exists('date', $record['citation'])){
+                            $writer->writeElement('tei:date', $record['citation']['date']);
+                        }
+                        
+                    $writer->endElement();
                 $writer->endElement();
-            $writer->endElement();
+            }
         }
         
         //put collection/provenance in adminDesc
