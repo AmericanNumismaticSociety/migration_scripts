@@ -680,7 +680,7 @@ function generate_nuds($record, $fileName){
 function query_solr($id, $side){
     GLOBAL $errors;
     
-    $url = ANNOTATION_SOLR_URL . "?q=body:{$id}_{$side}";
+    $url = ANNOTATION_SOLR_URL . "?q=body:{$id}_{$side}&wt=json";
     $json = file_get_contents($url);
     $obj = json_decode($json);
     
