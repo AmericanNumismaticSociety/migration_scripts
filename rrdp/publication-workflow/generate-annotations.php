@@ -8,7 +8,7 @@
  *****/
 
 ini_set("allow_url_fopen", 1);
-define("DIE_URI_SPACE", "http://numismatics.org/rrdp/id/");
+define("DIE_URI_SPACE", "https://numismatics.org/rrdp/id/");
 define("SPECIMEN_URI_SPACE", "https://numismatics.org/sitnam/id/");
 
 //an array of sheets for batches of RRC numbers
