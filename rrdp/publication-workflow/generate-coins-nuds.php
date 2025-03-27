@@ -719,7 +719,7 @@ function parse_annotation ($id, $base64) {
         $pieces = explode('/', $canvas);
         $filename = $pieces[count($pieces) - 1];
         
-        $image = "http://images.numismatics.org/archivesimages%2Farchive%2F{$filename}.jpg/{$frag}/full/0/default.jpg";
+        $image = "https://images.numismatics.org/archivesimages%2Farchive%2F{$filename}.jpg/{$frag}/full/0/default.jpg";
         return $image;
     } else {
         $errors[] = "{$id}: No fragment identifier found in annotation";
