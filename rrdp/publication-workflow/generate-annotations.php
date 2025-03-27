@@ -48,7 +48,8 @@ foreach ($sheets as $sheet){
     foreach ($data as $row){
         if (strlen($row['Obv. Die ID']) > 0 || strlen($row['Rev. Die ID']) > 0){
             if (strlen($row['Canonical URI (CRRO only)']) > 0){
-                $uri = $row['Canonical URI (CRRO only)'];
+                //escape | characters that are present in CoinArchives URIs
+                $uri = str_replace('|', '%7C', trim($row['Canonical URI (CRRO only)']));
             } else {
                 $uri = SPECIMEN_URI_SPACE . $row['ID'];
             }
