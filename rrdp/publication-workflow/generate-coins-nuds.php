@@ -12,7 +12,7 @@
 ini_set("allow_url_fopen", 1);
 
 //constants
-define("ANNOTATION_SOLR_URL", "http://numismatics.org:8983/solr/annotations/select");
+define("ANNOTATION_SOLR_URL", "http://localhost:8983/solr/annotations/select");
 define("NUMISHARE_SOLR_URL", "http://localhost:8983/solr/numishare/update");
 define("INDEX_COUNT", 500);
 define("COLLECTION_NAME", 'sitnam');
@@ -64,7 +64,7 @@ foreach ($sheets as $sheet){
     echo "Processing {$sheet}\n";
     
     foreach ($data as $row){        
-        if (strlen(trim($row['ID'])) > 0 && $row['ID'] == 'dd628873'){
+        if (strlen(trim($row['ID'])) > 0){
             $id = trim($row['ID']);
             
             //don't process rows with a canonical URI that already exists in CRRO
@@ -109,11 +109,10 @@ foreach ($sheets as $sheet){
                                 
                                 //citations
                                 if (strlen($row['Web Link']) > 0) {
-                                    $seeOther = trim($row['Web Link']);
+                                    $seeOther = str_replace('|', '%7C', trim($row['Web Link']));
                                     
                                     //if there is a Web Link value, then create a citation pointing to it
                                     $record['citation'] = array('title'=>$seeOther, 'URI'=>$seeOther);
-                                    
                                     
                                 } elseif (strlen($source['Donum URI']) > 0){
                                     //if there's also a Donum URI, insert as a citation, since this corresponds to a collection catalog
