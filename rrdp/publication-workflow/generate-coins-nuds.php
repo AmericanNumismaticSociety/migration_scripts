@@ -64,7 +64,7 @@ foreach ($sheets as $sheet){
     echo "Processing {$sheet}\n";
     
     foreach ($data as $row){        
-        if (strlen(trim($row['ID'])) > 0){
+        if (strlen(trim($row['ID'])) > 0 && $row['ID'] == 'dd628873'){
             $id = trim($row['ID']);
             
             //don't process rows with a canonical URI that already exists in CRRO
@@ -95,14 +95,29 @@ foreach ($sheets as $sheet){
                                 if (strpos($source['Collection Nomisma URI'], 'nomisma.org') !== FALSE){
                                     $collection['URI'] = $source['Collection Nomisma URI'];
                                     $collection['label'] = $nomismaURIs[$source['Collection Nomisma URI']]['label'];
+                                    if (strlen(trim($row['Source ID number'])) > 0){
+                                        $collection['ID'] = trim($row['Source ID number']);
+                                    }
                                 } else {
                                     $collection['label'] = $ref;
+                                    if (strlen(trim($row['Source ID number'])) > 0){
+                                        $collection['ID'] = trim($row['Source ID number']);
+                                    }
                                 }
                                 
                                 $record['collection'] = $collection;
                                 
-                                //if there's also a Donum URI, insert as a citation, since this corresponds to a collection catalog
-                                if (strlen($source['Donum URI']) > 0){
+                                //citations
+                                if (strlen($row['Web Link']) > 0) {
+                                    $seeOther = trim($row['Web Link']);
+                                    
+                                    //if there is a Web Link value, then create a citation pointing to it
+                                    $record['citation'] = array('title'=>$seeOther, 'URI'=>$seeOther);
+                                    
+                                    
+                                } elseif (strlen($source['Donum URI']) > 0){
+                                    //if there's also a Donum URI, insert as a citation, since this corresponds to a collection catalog
+                                    
                                     $donumURI = $source['Donum URI'];
                                     
                                     //read bibliographic metadata from Donum MODS XML                                    
@@ -128,7 +143,7 @@ foreach ($sheets as $sheet){
                                     }
                                 } else {
                                     $citation = array();
-                                    $citation['label'] = $ref;
+                                    $citation['title'] = $ref;
                                     $record['citation'] = $citation;
                                 }
                             } else {
@@ -534,9 +549,14 @@ function generate_nuds($record, $fileName){
                     if (array_key_exists('URI', $record['collection'])){
                         $writer->writeAttribute('xlink:type', 'simple');
                         $writer->writeAttribute('xlink:href', $record['collection']['URI']);
-                    }
-                    $writer->text($record['collection']['label']);
+                    }                    
+                    $writer->text($record['collection']['label']);                    
                 $writer->endElement();
+                
+                //accession number
+                if (array_key_exists('ID', $record['collection'])){
+                    $writer->writeElement('identifier', $record['collection']['ID']);
+                }
             }
             //construct provenance
             if (array_key_exists('provenance', $record)) {
